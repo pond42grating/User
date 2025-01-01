@@ -117,7 +117,7 @@
         // Create user in Firebase Auth for email management (no email verification)
         await createUserWithEmailAndPassword(auth, email, password);
 
-        alert("Sign up successful! Your account is awaiting admin approval.");
+        alert("Sign up successful! Your account is awaiting for admin approval.");
         window.location.href = "index.html";
       } catch (error) {
         console.error("Error during sign up: ", error);
