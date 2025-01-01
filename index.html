@@ -26,19 +26,35 @@
     // Write Admin Credentials
     async function writeAdminCredentials() {
       const username = document.getElementById("adminUsername").value.trim();
+      const email = document.getElementById("adminEmail").value.trim();
       const password = document.getElementById("adminPassword").value.trim();
 
-      if (!username || !password) {
-        alert("Both fields are required.");
+      if (!username || !email || !password) {
+        alert("All fields are required.");
+        return;
+      }
+
+      if (!email.includes("@")) {
+        alert("Please enter a valid email address.");
+        return;
+      }
+
+      if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
+        alert("Password must be at least 8 characters long, contain at least one number, and one special character.");
         return;
       }
 
       try {
         const hashedPassword = btoa(password); // Basic hash using Base64 encoding
-        await setDoc(doc(db, "Admin", "credentials"), {
+
+        // Save admin credentials to Firestore
+        const adminDocRef = doc(db, "Admin", username); // Use username as document ID
+        await setDoc(adminDocRef, {
           username: username,
+          email: email,
           password: hashedPassword
         });
+
         alert("Admin credentials saved successfully!");
       } catch (error) {
         console.error("Error saving admin credentials: ", error);
@@ -48,15 +64,22 @@
 
     // Read Admin Credentials
     async function readAdminCredentials() {
+      const username = document.getElementById("adminUsername").value.trim();
+
+      if (!username) {
+        alert("Please enter a username to fetch data.");
+        return;
+      }
+
       try {
-        const adminDoc = await getDoc(doc(db, "Admin", "credentials"));
+        const adminDoc = await getDoc(doc(db, "Admin", username));
         if (adminDoc.exists()) {
           const data = adminDoc.data();
-          const username = data.username;
+          const email = data.email;
           const password = atob(data.password); // Decode Base64 password
-          alert(`Admin Username: ${username}\nAdmin Password: ${password}`);
+          alert(`Admin Username: ${data.username}\nAdmin Email: ${email}\nAdmin Password: ${password}`);
         } else {
-          alert("No admin credentials found.");
+          alert("No admin credentials found for this username.");
         }
       } catch (error) {
         console.error("Error reading admin credentials: ", error);
@@ -121,6 +144,7 @@
   <div class="container">
     <h2>Admin Credential Management</h2>
     <input type="text" id="adminUsername" class="input-field" placeholder="Enter admin username" required>
+    <input type="email" id="adminEmail" class="input-field" placeholder="Enter admin email" required>
     <input type="password" id="adminPassword" class="input-field" placeholder="Enter admin password" required>
     <button class="button" onclick="writeAdminCredentials()">Save Admin Credentials</button>
     <button class="button" onclick="readAdminCredentials()">Read Admin Credentials</button>
