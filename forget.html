@@ -1,1 +1,72 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forgot Password - DWS Management</title>
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Forgot Password Function
+    async function resetPassword() {
+      const email = document.getElementById("email").value.trim();
+
+      if (!email) {
+        alert("Please enter your email address.");
+        return;
+      }
+
+      try {
+        // Check if email exists in Firestore
+        const userRef = doc(db, "users", email);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists()) {
+          // Email exists, allow user to reset password
+          alert("We have sent a password reset link to your email.");
+          // Here you can either send a custom reset link or allow user to reset password directly
+          
+          // For demo purposes, let's just simulate password update
+          const newPassword = prompt("Enter your new password: ");
+          
+          // Update the password in Firestore (ensure password is hashed for security)
+          await updateDoc(userRef, { password: newPassword });
+          alert("Your password has been updated.");
+        } else {
+          alert("No account found with this email.");
+        }
+      } catch (error) {
+        console.error("Error during password reset: ", error);
+        alert("Error: " + error.message);
+      }
+    }
+
+    window.resetPassword = resetPassword;
+  </script>
+</head>
+<body>
+  <h2>Forgot Password</h2>
+  <form onsubmit="event.preventDefault(); resetPassword();">
+    <input type="email" id="email" placeholder="Enter your email" required><br>
+    <button type="submit">Reset Password</button>
+  </form>
+</body>
+</html>
