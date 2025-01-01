@@ -1,1 +1,156 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - DWS Management</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.appspot.com",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadPendingApprovals() {
+      const usersCollection = collection(db, "Users");
+      const snapshot = await getDocs(usersCollection);
+      const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const pendingUsers = users.filter(user => user.isApproved === false);
+
+      const pendingTable = document.getElementById("pending-approvals");
+      pendingTable.innerHTML = ""; // Clear previous data
+
+      pendingUsers.forEach(user => {
+        const row = `
+          <tr>
+            <td>${user.username || "N/A"}</td>
+            <td>${user.email}</td>
+            <td>
+              <button onclick="approveUser('${user.id}')">Approve</button>
+              <button onclick="rejectUser('${user.id}')">Reject</button>
+            </td>
+          </tr>
+        `;
+        pendingTable.innerHTML += row;
+      });
+    }
+
+    async function approveUser(userId) {
+      const userDocRef = doc(db, "Users", userId);
+      await updateDoc(userDocRef, { isApproved: true });
+      alert("User approved successfully!");
+      loadPendingApprovals();
+    }
+
+    async function rejectUser(userId) {
+      await deleteDoc(doc(db, "Users", userId));
+      alert("User rejected and removed.");
+      loadPendingApprovals();
+    }
+
+    window.onload = loadPendingApprovals;
+    window.approveUser = approveUser;
+    window.rejectUser = rejectUser;
+  </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    .navbar {
+      background: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .navbar h1 {
+      margin: 0;
+    }
+
+    .navbar .theme-toggle {
+      cursor: pointer;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+
+    table th {
+      background-color: #f4f4f4;
+    }
+
+    button {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #ddd;
+    }
+
+    button:nth-child(1) {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    button:nth-child(2) {
+      background-color: #f44336;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h1>Admin Dashboard</h1>
+    <span class="theme-toggle" onclick="toggleTheme()">Toggle Theme</span>
+  </div>
+  <div class="container">
+    <h2>Pending User Approvals</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="pending-approvals">
+        <!-- Data will be dynamically added here -->
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
