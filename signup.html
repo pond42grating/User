@@ -35,6 +35,30 @@
       return hashedPassword;
     }
 
+    // Password validation function
+    function validatePassword(password) {
+      const minLength = 8;
+      const hasNumber = /\d/;
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/;
+      
+      if (password.length < minLength) {
+        alert("Password must be at least 8 characters long.");
+        return false;
+      }
+      
+      if (!hasNumber.test(password)) {
+        alert("Password must contain at least one number.");
+        return false;
+      }
+      
+      if (!hasSpecialChar.test(password)) {
+        alert("Password must contain at least one special character.");
+        return false;
+      }
+      
+      return true;
+    }
+
     // Sign Up Function
     async function signUp() {
       const username = document.getElementById("username").value.trim();
@@ -52,8 +76,12 @@
         return;
       }
 
+      if (!validatePassword(password)) {
+        return; // Password does not meet criteria
+      }
+
       try {
-        // Check if username already exists
+        // Check if username already exists in Firestore
         const userDocRef = doc(db, "Users", username);
         const userSnapshot = await getDoc(userDocRef);
 
