@@ -1,25 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sign In - DWS Management</title>
-  
-  <!-- Firebase Authentication -->
+
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { 
+      getAuth, 
+      GoogleAuthProvider, 
+      signInWithPopup 
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { 
+      getFirestore, 
+      doc, 
+      getDoc, 
+      collection, 
+      query, 
+      where, 
+      getDocs 
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-    // Firebase configuration
+    // Firebase config
     const firebaseConfig = {
-      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-      authDomain: "dws-management.firebaseapp.com",
-      projectId: "dws-management",
-      storageBucket: "dws-management.appspot.com",
-      messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID",
+      measurementId: "YOUR_MEASUREMENT_ID"
     };
 
     // Initialize Firebase
@@ -27,244 +39,328 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Sign In Function
+    // SIGN IN function
     async function signIn() {
-      const usernameOrEmail = document.getElementById("usernameOrEmail").value.trim();
+      const userInput = document.getElementById("userInput").value.trim();
       const password = document.getElementById("password").value.trim();
       const rememberMe = document.getElementById("rememberMe").checked;
 
-      if (!usernameOrEmail || !password) {
-        alert("Please fill in all fields.");
+      if (!userInput || !password) {
+        alert("Please fill in both fields.");
         return;
       }
 
       try {
-        // Check if it's an email or username
-        let userDocRef;
-        let userSnapshot;
+        // 1) Check Admin credentials first:
+        const adminDocRef = doc(db, "Admin", "admin_credentials");
+        const adminSnap = await getDoc(adminDocRef);
+        if (
+          adminSnap.exists() && 
+          (
+            adminSnap.data().username === userInput || 
+            adminSnap.data().email === userInput
+          ) &&
+          adminSnap.data().password === password
+        ) {
+          alert("Welcome, Admin!");
+          if (rememberMe) localStorage.setItem("savedUser", userInput);
+          window.location.href = "admin.html";
+          return;
+        }
 
-        if (usernameOrEmail.includes("@")) {
-          // Email sign-in with Firebase Auth
-          await signInWithEmailAndPassword(auth, usernameOrEmail, password);
-          alert("Sign-in successful!");
-          window.location.href = "login.html"; // Redirect to login page
-        } else {
-          // Username sign-in (checking Firestore Users collection)
-          userDocRef = doc(db, "Users", usernameOrEmail);
-          userSnapshot = await getDoc(userDocRef);
-          if (userSnapshot.exists() && userSnapshot.data().password === password) {
-            // If username exists and password matches
-            alert("Sign-in successful!");
-            window.location.href = "login.html"; // Redirect to login page
+        // 2) If not admin, check if input is an email or username for a regular user
+        let matchedEmail = "";
+        if (userInput.includes("@")) {
+          // Assume it's an email, so let's see if there's a user doc by that email
+          // We stored user docs by 'username' as the doc ID in "Users", 
+          // so we need to do a query to find the user whose 'email' matches userInput.
+          const usersRef = collection(db, "Users");
+          const emailQuery = query(usersRef, where("email", "==", userInput));
+          const querySnap = await getDocs(emailQuery);
+          if (!querySnap.empty) {
+            // If we find a doc, get the doc ref
+            const docData = querySnap.docs[0].data();
+            if (docData.passwordHash === btoa(password)) {
+              alert("Sign-in successful (by email)!");
+              if (rememberMe) localStorage.setItem("savedUser", userInput);
+              window.location.href = "login.html";
+            } else {
+              alert("Invalid credentials for user email.");
+            }
           } else {
-            alert("Invalid credentials.");
+            alert("No user found with that email.");
+          }
+        } else {
+          // It's a username, so let's fetch doc by that username
+          const userDocRef = doc(db, "Users", userInput);
+          const userSnap = await getDoc(userDocRef);
+          if (userSnap.exists()) {
+            // Compare password
+            const userData = userSnap.data();
+            if (userData.passwordHash === btoa(password)) {
+              alert("Sign-in successful (by username)!");
+              if (rememberMe) localStorage.setItem("savedUser", userInput);
+              window.location.href = "login.html";
+            } else {
+              alert("Invalid credentials for user username.");
+            }
+          } else {
+            alert("No user found with that username.");
           }
         }
-        
-        // Admin verification in Firestore
-        const adminDocRef = doc(db, "Admin", "admin_credentials");
-        const adminSnapshot = await getDoc(adminDocRef);
-        if (adminSnapshot.exists() && adminSnapshot.data().username === usernameOrEmail && adminSnapshot.data().password === password) {
-          window.location.href = "admin.html"; // Redirect to admin page
-        }
+
       } catch (error) {
-        console.error("Error during sign-in: ", error);
+        console.error("Error during sign-in:", error);
         alert("Error: " + error.message);
       }
     }
 
-    // Google Sign-In Function
+    // Google Sign-In 
     async function signInWithGoogle() {
       const provider = new GoogleAuthProvider();
       try {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
-        alert("Google Sign-in successful!");
-        window.location.href = "login.html"; // Redirect to login page
+        alert(`Google Sign-in successful!\nWelcome, ${user.displayName}`);
+        window.location.href = "login.html";
       } catch (error) {
-        console.error("Error during Google sign-in: ", error);
-        alert("Error: " + error.message);
+        console.error("Google sign-in error:", error);
+        alert("Google sign-in error: " + error.message);
       }
     }
 
     // Toggle password visibility
-    function togglePasswordVisibility(id) {
-      const input = document.getElementById(id);
-      const icon = document.getElementById(`${id}Icon`);
-      if (input.type === "password") {
-        input.type = "text";
+    function togglePasswordVisibility() {
+      const passInput = document.getElementById("password");
+      const icon = document.getElementById("toggleIcon");
+      if (passInput.type === "password") {
+        passInput.type = "text";
         icon.textContent = "visibility";
       } else {
-        input.type = "password";
+        passInput.type = "password";
         icon.textContent = "visibility_off";
       }
     }
 
-    // Night Mode Toggle
+    // Dark/Light Mode Toggle
     function toggleNightMode() {
-      document.body.classList.toggle('dark-mode');
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
+      document.body.classList.toggle("dark-mode");
+      if (document.body.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
       } else {
-        localStorage.setItem('theme', 'light');
+        localStorage.setItem("theme", "light");
       }
     }
 
-    window.onload = function() {
-      const storedTheme = localStorage.getItem('theme');
-      if (storedTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-      } else {
-        document.body.classList.remove('dark-mode');
+    // On page load
+    window.onload = () => {
+      // Apply stored theme
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark") {
+        document.body.classList.add("dark-mode");
+      }
+
+      // Populate rememberMe info if saved
+      const savedUser = localStorage.getItem("savedUser");
+      if (savedUser) {
+        document.getElementById("userInput").value = savedUser;
+        document.getElementById("rememberMe").checked = true;
       }
     };
 
-    // Expose functions globally
     window.signIn = signIn;
-    window.togglePasswordVisibility = togglePasswordVisibility;
     window.signInWithGoogle = signInWithGoogle;
+    window.togglePasswordVisibility = togglePasswordVisibility;
     window.toggleNightMode = toggleNightMode;
   </script>
 
-  <!-- Google Material Icons -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Google Fonts & Material Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:400,600&display=swap" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
   <style>
+    /* Basic Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f6f9;
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      margin: 0;
+      transition: background 0.3s ease;
+    }
+
+    /* Dark Mode */
+    .dark-mode {
+      background: linear-gradient(135deg, #2a2a72, #009ffd);
+      transition: background 0.3s ease;
     }
 
     .container {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      max-width: 400px;
-      width: 100%;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      width: 350px;
+      text-align: center;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .dark-mode .container {
+      background: #2c2c54;
+      color: #fff;
     }
 
     h2 {
-      text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      font-size: 1.5rem;
     }
 
     .input-field {
       width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      position: relative;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #ccc;
+      font-size: 1rem;
     }
 
     .input-container {
-      display: flex;
-      align-items: center;
       position: relative;
+      width: 100%;
+      margin-bottom: 1rem;
     }
 
     .input-container input {
-      flex: 1;
+      width: 100%;
+      padding-right: 3rem;
     }
 
-    .input-container .material-icons {
+    .material-icons {
       position: absolute;
-      right: 10px;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
       cursor: pointer;
       color: #888;
     }
 
+    .dark-mode .material-icons {
+      color: #ccc;
+    }
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    #rememberMe {
+      margin-right: 0.5rem;
+    }
+
     .button {
       width: 100%;
-      padding: 10px;
-      background-color: #4CAF50;
-      color: white;
+      padding: 0.75rem;
+      margin-top: 1rem;
       border: none;
-      border-radius: 5px;
+      border-radius: 0.5rem;
+      font-size: 1rem;
       cursor: pointer;
+      background-color: #4caf50;
+      color: #fff;
+      transition: background 0.2s ease;
     }
 
     .button:hover {
-      background-color: #45a049;
+      background-color: #43a047;
+    }
+
+    .google-btn {
+      background-color: #DB4437;
+      margin-top: 0.5rem;
+    }
+
+    .google-btn:hover {
+      background-color: #c33d30;
     }
 
     .link {
       display: block;
-      text-align: center;
-      margin-top: 15px;
-      color: #4CAF50;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      color: #333;
       text-decoration: none;
+    }
+
+    .dark-mode .link {
+      color: #ddd;
     }
 
     .link:hover {
       text-decoration: underline;
     }
 
-    .night-mode-btn {
-      background-color: #333;
+    .toggle-mode {
+      margin-top: 1rem;
+      background: #333;
       color: #fff;
-      padding: 10px;
-      border-radius: 5px;
-      border: none;
-      cursor: pointer;
-      text-align: center;
-      margin-top: 15px;
-      width: 100%;
     }
 
-    .night-mode-btn:hover {
-      background-color: #555;
+    .dark-mode .toggle-mode {
+      background: #555;
     }
-
-    .forgot-password, .sign-out {
-      display: none;
-      margin-top: 15px;
-      text-align: center;
-    }
-
-    .dark-mode .forgot-password,
-    .dark-mode .sign-out {
-      display: block;
-    }
-
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h2>Sign In</h2>
-    <input type="text" id="usernameOrEmail" class="input-field" placeholder="Username or Email" required>
+    <h2>Sign In to DWS</h2>
 
+    <!-- Username or Email Field -->
+    <input type="text" id="userInput" class="input-field" placeholder="Username or Email" required />
+
+    <!-- Password Field with Toggle -->
     <div class="input-container">
-      <input type="password" id="password" class="input-field" placeholder="Enter your password" required>
-      <span class="material-icons" id="passwordIcon" onclick="togglePasswordVisibility('password')">visibility_off</span>
+      <input
+        type="password"
+        id="password"
+        class="input-field"
+        placeholder="Password"
+        required
+      />
+      <span class="material-icons" id="toggleIcon" onclick="togglePasswordVisibility()">visibility_off</span>
     </div>
 
+    <!-- Remember Me -->
     <label>
-      <input type="checkbox" id="rememberMe"> Remember Me
+      <input type="checkbox" id="rememberMe" />
+      Remember Me
     </label>
 
+    <!-- Sign In Button -->
     <button class="button" onclick="signIn()">Sign In</button>
 
-    <button class="button" onclick="signInWithGoogle()">Sign In with Google</button>
+    <!-- Google Sign-In -->
+    <button class="button google-btn" onclick="signInWithGoogle()">Sign In with Google</button>
 
-    <div class="forgot-password">
-      <p><a href="forget.html">Forgot Password?</a></p>
-    </div>
+    <!-- Forgot Password Link -->
+    <a class="link" href="forget.html">Forgot Password?</a>
 
-    <div class="sign-out">
-      <p><a href="index.html">Sign Out</a></p>
-    </div>
+    <!-- Sign Up Link -->
+    <a class="link" href="signup.html">Don't have an account? Sign Up</a>
 
-    <p class="link"><a href="signup.html">Don't have an account? Sign Up</a></p>
-
-    <button class="night-mode-btn" onclick="toggleNightMode()">Toggle Night Mode</button>
+    <!-- Night/Light Mode Toggle -->
+    <button class="button toggle-mode" onclick="toggleNightMode()">Toggle Night Mode</button>
   </div>
 </body>
 </html>
