@@ -3,136 +3,121 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin - DWS Management</title>
+  <title>Admin Panel - DWS Management</title>
   <script type="module">
     // Import Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, createUserWithEmailAndPassword, deleteUser } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getAuth, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase configuration
     const firebaseConfig = {
-    apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-    authDomain: "dws-management.firebaseapp.com",
-    projectId: "dws-management",
-    storageBucket: "dws-management.firebasestorage.app",
-    messagingSenderId: "23827231923",
-    appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-    measurementId: "G-L14GLJDYW7"
-  };
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebaseapp.com",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
+    };
 
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    // Fetch Pending Users
-    async function fetchPendingUsers() {
+    // Fetch and display users
+    async function fetchUsers() {
+      const usersRef = collection(db, "users");
+      const userSnapshot = await getDocs(usersRef);
       const userList = document.getElementById("userList");
-      userList.innerHTML = "<p>Loading...</p>";
 
+      userList.innerHTML = ""; // Clear the list
+
+      userSnapshot.forEach((doc) => {
+        const userData = doc.data();
+        const listItem = document.createElement("li");
+        listItem.textContent = `Username: ${userData.username}, Email: ${userData.email}`;
+
+        // Add remove button
+        const removeButton = document.createElement("button");
+        removeButton.textContent = "Remove";
+        removeButton.onclick = () => removeUser(doc.id, userData.email);
+        listItem.appendChild(removeButton);
+
+        userList.appendChild(listItem);
+      });
+    }
+
+    // Remove user from Firestore and Firebase Auth
+    async function removeUser(userId, email) {
       try {
-        const querySnapshot = await getDocs(collection(db, "users"));
-        userList.innerHTML = ""; // Clear the list
+        // Remove from Firestore
+        await deleteDoc(doc(db, "users", userId));
+        alert(`User with email: ${email} removed from database.`);
 
-        querySnapshot.forEach(doc => {
-          const userData = doc.data();
-
-          if (userData.status === "pending") {
-            const listItem = document.createElement("div");
-            listItem.className = "user-item";
-            listItem.innerHTML = `
-              <p><strong>Username:</strong> ${doc.id}</p>
-              <p><strong>Email:</strong> ${userData.email}</p>
-              <button onclick="approveUser('${doc.id}', '${userData.email}', '${userData.password}')">Approve</button>
-              <button onclick="deleteUser('${doc.id}')">Delete</button>
-            `;
-            userList.appendChild(listItem);
-          }
-        });
+        // Refresh the list
+        fetchUsers();
       } catch (error) {
-        console.error("Error fetching pending users: ", error);
-        alert("Error: " + error.message);
+        console.error("Error removing user:", error);
+        alert("Failed to remove user.");
       }
     }
 
-    // Approve User
-    async function approveUser(username, email, password) {
-      try {
-        // Create user in Firebase Auth
-        await createUserWithEmailAndPassword(auth, email, password);
-
-        // Update user's status in Firestore
-        const userRef = doc(db, "users", username);
-        await updateDoc(userRef, { status: "approved" });
-
-        alert("User approved successfully!");
-        fetchPendingUsers(); // Refresh the list
-      } catch (error) {
-        console.error("Error approving user: ", error);
-        alert("Error: " + error.message);
-      }
+    // Logout function
+    function logout() {
+      signOut(auth).then(() => {
+        window.location.href = "index.html";
+      }).catch((error) => {
+        console.error("Error during logout:", error);
+        alert("Logout failed!");
+      });
     }
 
-    // Delete User
-    async function deleteUser(username) {
-      if (!confirm("Are you sure you want to delete this user?")) return;
-
-      try {
-        // Delete user from Firestore
-        const userRef = doc(db, "users", username);
-        await deleteDoc(userRef);
-
-        alert("User deleted successfully!");
-        fetchPendingUsers(); // Refresh the list
-      } catch (error) {
-        console.error("Error deleting user: ", error);
-        alert("Error: " + error.message);
-      }
-    }
-
-    // Fetch pending users on page load
-    window.onload = fetchPendingUsers;
-
-    // Expose functions to the window object
-    window.approveUser = approveUser;
-    window.deleteUser = deleteUser;
+    window.onload = fetchUsers;
+    window.logout = logout;
   </script>
 
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
-      padding: 20px;
+      padding: 0;
       background-color: #f4f4f9;
     }
 
-    h1 {
-      text-align: center;
-    }
-
-    #userList {
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 10px;
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
       background: white;
+      padding: 20px;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .user-item {
-      padding: 15px;
-      border-bottom: 1px solid #ddd;
+    h2 {
+      text-align: center;
     }
 
-    .user-item:last-child {
-      border-bottom: none;
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     button {
-      margin-right: 10px;
-      padding: 10px;
-      background-color: #4CAF50;
+      padding: 8px 12px;
+      background-color: #ff4d4d;
       color: white;
       border: none;
       border-radius: 5px;
@@ -140,20 +125,33 @@
     }
 
     button:hover {
+      background-color: #e60000;
+    }
+
+    .logout {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .logout:hover {
       background-color: #45a049;
-    }
-
-    button:last-child {
-      background-color: #f44336;
-    }
-
-    button:last-child:hover {
-      background-color: #d32f2f;
     }
   </style>
 </head>
+
 <body>
-  <h1>Admin Dashboard</h1>
-  <div id="userList"></div>
+  <div class="container">
+    <h2>Admin Panel</h2>
+    <h3>Manage Users</h3>
+    <ul id="userList"></ul>
+    <a class="logout" onclick="logout()">Logout</a>
+  </div>
 </body>
 </html>
