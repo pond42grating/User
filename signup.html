@@ -7,7 +7,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase configuration
     const firebaseConfig = {
@@ -25,50 +25,6 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Email validation function
-    function validateEmail(email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        alert("Please enter a valid email address.");
-        return false;
-      }
-      return true;
-    }
-
-    // Hash password using SHA-256
-    async function hashPassword(password) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(password);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashedPassword = hashArray.map(byte => byte.toString(16).padStart(2, "0")).join("");
-      return hashedPassword;
-    }
-
-    // Password validation function
-    function validatePassword(password) {
-      const minLength = 8;
-      const hasNumber = /\d/;
-      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/;
-
-      if (password.length < minLength) {
-        alert("Password must be at least 8 characters long.");
-        return false;
-      }
-
-      if (!hasNumber.test(password)) {
-        alert("Password must contain at least one number.");
-        return false;
-      }
-
-      if (!hasSpecialChar.test(password)) {
-        alert("Password must contain at least one special character.");
-        return false;
-      }
-
-      return true;
-    }
-
     // Sign Up Function
     async function signUp() {
       const username = document.getElementById("username").value.trim();
@@ -81,8 +37,14 @@
         return;
       }
 
-      if (!validateEmail(email)) {
-        return; // Invalid email format
+      if (!email.includes("@")) {
+        alert("Please enter a valid email address.");
+        return;
+      }
+
+      if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
+        alert("Password must be at least 8 characters long, include a number and a special character.");
+        return;
       }
 
       if (password !== confirmPassword) {
@@ -90,34 +52,29 @@
         return;
       }
 
-      if (!validatePassword(password)) {
-        return; // Password does not meet criteria
-      }
-
       try {
-        // Check if username already exists in Firestore
-        const userDocRef = doc(db, "Users", username);
-        const userSnapshot = await getDoc(userDocRef);
-
-        if (userSnapshot.exists()) {
+        // Check if the username already exists in Firestore
+        const usersCollection = collection(db, "Users");
+        const userDocRef = doc(usersCollection, username);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
           alert("Username already exists. Please choose a different one.");
           return;
         }
 
-        // Hash the password
-        const hashedPassword = await hashPassword(password);
+        // Create Firebase Auth user
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-        // Save user data to Firestore
+        // Save user data to Firestore with `Users/{username}` structure
         await setDoc(userDocRef, {
+          username: username,
           email: email,
-          password: hashedPassword, // Store the hashed password
-          isApproved: false // Admin approval needed
+          passwordHash: btoa(password), // Base64 encoding for demonstration
+          isApproved: false // Admin approval required
         });
 
-        // Create user in Firebase Auth for email management (no email verification)
-        await createUserWithEmailAndPassword(auth, email, password);
-
-        alert("Sign up successful! Your account is awaiting for admin approval.");
+        alert("Sign up successful! Please wait for admin approval.");
         window.location.href = "index.html";
       } catch (error) {
         console.error("Error during sign up: ", error);
@@ -141,25 +98,6 @@
     // Expose functions globally
     window.signUp = signUp;
     window.togglePasswordVisibility = togglePasswordVisibility;
-    
-    function toggleTheme() {
-      document.body.classList.toggle("dark-mode");
-      if (document.body.classList.contains("dark-mode")) {
-        localStorage.setItem("theme", "dark");
-      } else {
-        localStorage.setItem("theme", "light");
-      }
-    }
-
-    // Apply the stored theme when the page loads
-    window.onload = function() {
-      const storedTheme = localStorage.getItem("theme");
-      if (storedTheme === "dark") {
-        document.body.classList.add("dark-mode");
-      } else {
-        document.body.classList.remove("dark-mode");
-      }
-    };
   </script>
 
   <!-- Include Google Material Icons -->
@@ -247,20 +185,14 @@
 <body>
   <div class="container">
     <h2>Sign Up</h2>
-
-    <!-- Username input -->
     <input type="text" id="username" class="input-field" placeholder="Enter your username" required>
-
-    <!-- Email input -->
     <input type="email" id="email" class="input-field" placeholder="Enter your email" required>
 
-    <!-- Password input -->
     <div class="input-container">
       <input type="password" id="password" class="input-field" placeholder="Enter your password" required>
       <span class="material-icons" id="passwordIcon" onclick="togglePasswordVisibility('password')">visibility_off</span>
     </div>
 
-    <!-- Confirm Password input -->
     <div class="input-container">
       <input type="password" id="confirmPassword" class="input-field" placeholder="Confirm your password" required>
       <span class="material-icons" id="confirmPasswordIcon" onclick="togglePasswordVisibility('confirmPassword')">visibility_off</span>
