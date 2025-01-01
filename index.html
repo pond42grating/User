@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign In - DWS Management</title>
+  
+  <!-- Firebase Authentication -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signInWithCredential } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase configuration
@@ -39,26 +41,48 @@
       try {
         // Check if it's an email or username
         let userDocRef;
+        let userSnapshot;
+
         if (usernameOrEmail.includes("@")) {
-          // It's an email, use Firebase Auth
+          // Email sign-in with Firebase Auth
           await signInWithEmailAndPassword(auth, usernameOrEmail, password);
+          alert("Sign-in successful!");
+          window.location.href = "login.html"; // Redirect to login page
         } else {
-          // It's a username, check Firestore for the user document
+          // Username sign-in (checking Firestore Users collection)
           userDocRef = doc(db, "Users", usernameOrEmail);
-          const userSnapshot = await getDoc(userDocRef);
+          userSnapshot = await getDoc(userDocRef);
           if (userSnapshot.exists() && userSnapshot.data().password === password) {
-            // Correct password, allow sign-in
+            // If username exists and password matches
             alert("Sign-in successful!");
-            if (rememberMe) {
-              localStorage.setItem("usernameOrEmail", usernameOrEmail);
-            }
-            window.location.href = "dashboard.html"; // Redirect to dashboard or admin page
+            window.location.href = "login.html"; // Redirect to login page
           } else {
-            alert("Invalid credentials. Please try again.");
+            alert("Invalid credentials.");
           }
+        }
+        
+        // Admin verification in Firestore
+        const adminDocRef = doc(db, "Admin", "admin_credentials");
+        const adminSnapshot = await getDoc(adminDocRef);
+        if (adminSnapshot.exists() && adminSnapshot.data().username === usernameOrEmail && adminSnapshot.data().password === password) {
+          window.location.href = "admin.html"; // Redirect to admin page
         }
       } catch (error) {
         console.error("Error during sign-in: ", error);
+        alert("Error: " + error.message);
+      }
+    }
+
+    // Google Sign-In Function
+    async function signInWithGoogle() {
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        alert("Google Sign-in successful!");
+        window.location.href = "login.html"; // Redirect to login page
+      } catch (error) {
+        console.error("Error during Google sign-in: ", error);
         alert("Error: " + error.message);
       }
     }
@@ -76,11 +100,8 @@
       }
     }
 
-    // Expose functions globally
-    window.signIn = signIn;
-    window.togglePasswordVisibility = togglePasswordVisibility;
-    
-    function toggleTheme() {
+    // Night Mode Toggle
+    function toggleNightMode() {
       document.body.classList.toggle('dark-mode');
       if (document.body.classList.contains('dark-mode')) {
         localStorage.setItem('theme', 'dark');
@@ -89,7 +110,6 @@
       }
     }
 
-    // Apply the stored theme when the page loads
     window.onload = function() {
       const storedTheme = localStorage.getItem('theme');
       if (storedTheme === 'dark') {
@@ -97,16 +117,16 @@
       } else {
         document.body.classList.remove('dark-mode');
       }
-
-      // Auto-fill remember me username if available
-      const savedUsername = localStorage.getItem("usernameOrEmail");
-      if (savedUsername) {
-        document.getElementById("usernameOrEmail").value = savedUsername;
-      }
     };
+
+    // Expose functions globally
+    window.signIn = signIn;
+    window.togglePasswordVisibility = togglePasswordVisibility;
+    window.signInWithGoogle = signInWithGoogle;
+    window.toggleNightMode = toggleNightMode;
   </script>
 
-  <!-- Include Google Material Icons -->
+  <!-- Google Material Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
   <style>
@@ -185,6 +205,34 @@
     .link:hover {
       text-decoration: underline;
     }
+
+    .night-mode-btn {
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 15px;
+      width: 100%;
+    }
+
+    .night-mode-btn:hover {
+      background-color: #555;
+    }
+
+    .forgot-password, .sign-out {
+      display: none;
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .dark-mode .forgot-password,
+    .dark-mode .sign-out {
+      display: block;
+    }
+
   </style>
 </head>
 
@@ -203,7 +251,20 @@
     </label>
 
     <button class="button" onclick="signIn()">Sign In</button>
+
+    <button class="button" onclick="signInWithGoogle()">Sign In with Google</button>
+
+    <div class="forgot-password">
+      <p><a href="forget.html">Forgot Password?</a></p>
+    </div>
+
+    <div class="sign-out">
+      <p><a href="index.html">Sign Out</a></p>
+    </div>
+
     <p class="link"><a href="signup.html">Don't have an account? Sign Up</a></p>
+
+    <button class="night-mode-btn" onclick="toggleNightMode()">Toggle Night Mode</button>
   </div>
 </body>
 </html>
