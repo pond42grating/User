@@ -27,27 +27,33 @@
     const db = getFirestore(app);
 
     // Fetch and display users
-    async function fetchUsers() {
-      const usersRef = collection(db, "users");
-      const userSnapshot = await getDocs(usersRef);
-      const userList = document.getElementById("userList");
+    // Fetch and display users
+async function fetchUsers() {
+  const usersRef = collection(db, "users");
+  const userSnapshot = await getDocs(usersRef);
+  const userList = document.getElementById("userList");
 
-      userList.innerHTML = ""; // Clear the list
+  userList.innerHTML = ""; // Clear the list
 
-      userSnapshot.forEach((doc) => {
-        const userData = doc.data();
-        const listItem = document.createElement("li");
-        listItem.textContent = `Username: ${userData.username}, Email: ${userData.email}`;
+  userSnapshot.forEach((doc) => {
+    const userData = doc.data();
 
-        // Add remove button
-        const removeButton = document.createElement("button");
-        removeButton.textContent = "Remove";
-        removeButton.onclick = () => removeUser(doc.id, userData.email);
-        listItem.appendChild(removeButton);
+    // Safeguard against undefined username or email
+    const username = userData.username || "Unknown";
+    const email = userData.email || "Unknown";
 
-        userList.appendChild(listItem);
-      });
-    }
+    const listItem = document.createElement("li");
+    listItem.textContent = `Username: ${username}, Email: ${email}`;
+
+    // Add remove button
+    const removeButton = document.createElement("button");
+    removeButton.textContent = "Remove";
+    removeButton.onclick = () => removeUser(doc.id, email);
+    listItem.appendChild(removeButton);
+
+    userList.appendChild(listItem);
+  });
+}
 
     // Remove user from Firestore and Firebase Auth
     async function removeUser(userId, email) {
