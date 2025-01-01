@@ -3,19 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel - DWS Management</title>
+  <title>Admin Credential Management</title>
   <script type="module">
-    // Import Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getAuth, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebaseapp.com",
+      storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7"
@@ -23,141 +21,109 @@
 
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Fetch and display users
-    // Fetch and display users
-async function fetchUsers() {
-  const usersRef = collection(db, "users");
-  const userSnapshot = await getDocs(usersRef);
-  const userList = document.getElementById("userList");
+    // Write Admin Credentials
+    async function writeAdminCredentials() {
+      const username = document.getElementById("adminUsername").value.trim();
+      const password = document.getElementById("adminPassword").value.trim();
 
-  userList.innerHTML = ""; // Clear the list
+      if (!username || !password) {
+        alert("Both fields are required.");
+        return;
+      }
 
-  userSnapshot.forEach((doc) => {
-    const userData = doc.data();
-
-    // Safeguard against undefined username or email
-    const username = userData.username || "Unknown";
-    const email = userData.email || "Unknown";
-
-    const listItem = document.createElement("li");
-    listItem.textContent = `Username: ${username}, Email: ${email}`;
-
-    // Add remove button
-    const removeButton = document.createElement("button");
-    removeButton.textContent = "Remove";
-    removeButton.onclick = () => removeUser(doc.id, email);
-    listItem.appendChild(removeButton);
-
-    userList.appendChild(listItem);
-  });
-}
-
-    // Remove user from Firestore and Firebase Auth
-    async function removeUser(userId, email) {
       try {
-        // Remove from Firestore
-        await deleteDoc(doc(db, "users", userId));
-        alert(`User with email: ${email} removed from database.`);
-
-        // Refresh the list
-        fetchUsers();
+        const hashedPassword = btoa(password); // Basic hash using Base64 encoding
+        await setDoc(doc(db, "Admin", "credentials"), {
+          username: username,
+          password: hashedPassword
+        });
+        alert("Admin credentials saved successfully!");
       } catch (error) {
-        console.error("Error removing user:", error);
-        alert("Failed to remove user.");
+        console.error("Error saving admin credentials: ", error);
+        alert("Error: " + error.message);
       }
     }
 
-    // Logout function
-    function logout() {
-      signOut(auth).then(() => {
-        window.location.href = "index.html";
-      }).catch((error) => {
-        console.error("Error during logout:", error);
-        alert("Logout failed!");
-      });
+    // Read Admin Credentials
+    async function readAdminCredentials() {
+      try {
+        const adminDoc = await getDoc(doc(db, "Admin", "credentials"));
+        if (adminDoc.exists()) {
+          const data = adminDoc.data();
+          const username = data.username;
+          const password = atob(data.password); // Decode Base64 password
+          alert(`Admin Username: ${username}\nAdmin Password: ${password}`);
+        } else {
+          alert("No admin credentials found.");
+        }
+      } catch (error) {
+        console.error("Error reading admin credentials: ", error);
+        alert("Error: " + error.message);
+      }
     }
 
-    window.onload = fetchUsers;
-    window.logout = logout;
+    // Expose functions globally
+    window.writeAdminCredentials = writeAdminCredentials;
+    window.readAdminCredentials = readAdminCredentials;
   </script>
-
   <style>
     body {
       font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
       margin: 0;
-      padding: 0;
-      background-color: #f4f4f9;
     }
 
     .container {
-      max-width: 800px;
-      margin: 50px auto;
       background: white;
-      padding: 20px;
+      padding: 30px;
       border-radius: 10px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    h2 {
+      max-width: 400px;
+      width: 100%;
       text-align: center;
     }
 
-    ul {
-      list-style-type: none;
-      padding: 0;
+    h2 {
+      margin-bottom: 20px;
     }
 
-    li {
-      margin: 10px 0;
+    .input-field {
+      width: 100%;
       padding: 10px;
-      background: #f9f9f9;
+      margin: 10px 0;
       border: 1px solid #ddd;
       border-radius: 5px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
 
-    button {
-      padding: 8px 12px;
-      background-color: #ff4d4d;
+    .button {
+      width: 100%;
+      padding: 10px;
+      background-color: #4CAF50;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      margin-top: 10px;
     }
 
-    button:hover {
-      background-color: #e60000;
-    }
-
-    .logout {
-      display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      background-color: #4CAF50;
-      color: white;
-      text-align: center;
-      text-decoration: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .logout:hover {
+    .button:hover {
       background-color: #45a049;
     }
   </style>
 </head>
-
 <body>
   <div class="container">
-    <h2>Admin Panel</h2>
-    <h3>Manage Users</h3>
-    <ul id="userList"></ul>
-    <a class="logout" onclick="logout()">Logout</a>
+    <h2>Admin Credential Management</h2>
+    <input type="text" id="adminUsername" class="input-field" placeholder="Enter admin username" required>
+    <input type="password" id="adminPassword" class="input-field" placeholder="Enter admin password" required>
+    <button class="button" onclick="writeAdminCredentials()">Save Admin Credentials</button>
+    <button class="button" onclick="readAdminCredentials()">Read Admin Credentials</button>
   </div>
 </body>
 </html>
