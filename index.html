@@ -196,10 +196,6 @@
       adminSnap.data().password === password
     ) {
       alert("Welcome, Admin!");
-      // Log admin login timestamp
-      await updateDoc(adminDocRef, {
-        lastLogin: new Date().toISOString(),
-      });
       window.location.href = "admin.html";
       return; // Exit the function after successful admin login
     }
