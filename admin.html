@@ -6,15 +6,14 @@
   <title>Admin Dashboard - DWS Management</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { 
-      getFirestore, 
-      collection, 
-      getDocs, 
-      doc, 
-      updateDoc, 
-      deleteDoc, 
-      query, 
-      where 
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      doc,
+      updateDoc,
+      query,
+      where,
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
@@ -33,94 +32,67 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Fetch users pending approval
-    async function fetchPendingApprovals() {
-      const userList = document.getElementById("user-list");
-      const badge = document.getElementById("notification-badge");
-      userList.innerHTML = "Loading...";
-      badge.innerText = "0";
+    // Fetch online users
+    async function fetchOnlineUsers() {
+      const onlineUsersList = document.getElementById("online-users-list");
+      onlineUsersList.innerHTML = "Loading...";
 
       try {
-        const querySnapshot = await getDocs(collection(db, "Users"));
-        let pendingUsers = "";
-        let pendingCount = 0;
+        const q = query(collection(db, "Users"), where("isOnline", "==", true));
+        const querySnapshot = await getDocs(q);
 
+        let onlineUsers = "";
         querySnapshot.forEach((doc) => {
           const user = doc.data();
-          if (!user.isApproved) {
-            pendingUsers += `
-              <li>
-                <strong>${user.username}</strong> (${user.email})
-                <button onclick="approveUser('${doc.id}')">Approve</button>
-                <button onclick="deleteUser('${doc.id}')">Delete</button>
-              </li>
-            `;
-            pendingCount++;
-          }
+          onlineUsers += `
+            <li>
+              <strong>${user.username}</strong> (${user.email}) 
+              <span>Online</span>
+            </li>
+          `;
         });
 
-        badge.innerText = pendingCount;
-        userList.innerHTML = pendingUsers || "<li>No pending approvals</li>";
+        onlineUsersList.innerHTML = onlineUsers || "<li>No users online.</li>";
       } catch (error) {
-        console.error("Error fetching pending approvals: ", error);
-        userList.innerHTML = "<li>Error fetching data.</li>";
+        console.error("Error fetching online users: ", error);
+        onlineUsersList.innerHTML = "<li>Error fetching data.</li>";
       }
     }
 
-    // Approve a user
-    async function approveUser(userId) {
-      try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { isApproved: true });
-        alert("User approved successfully!");
-        fetchPendingApprovals();
-      } catch (error) {
-        console.error("Error approving user: ", error);
-      }
-    }
-
-    // Delete a user
-    async function deleteUser(userId) {
-      try {
-        const userDocRef = doc(db, "Users", userId);
-        await deleteDoc(userDocRef);
-        alert("User deleted successfully!");
-        fetchPendingApprovals();
-      } catch (error) {
-        console.error("Error deleting user: ", error);
-      }
-    }
-
-    // Search users
-    async function searchUsers() {
-      const searchInput = document.getElementById("search").value.trim().toLowerCase();
-      const userList = document.getElementById("user-list");
-      userList.innerHTML = "Searching...";
+    // Fetch user logs
+    async function fetchUserLogs() {
+      const logsList = document.getElementById("user-logs-list");
+      logsList.innerHTML = "Loading...";
 
       try {
         const querySnapshot = await getDocs(collection(db, "Users"));
-        let resultUsers = "";
+        let userLogs = "";
 
         querySnapshot.forEach((doc) => {
           const user = doc.data();
-          if (
-            user.username.toLowerCase().includes(searchInput) ||
-            user.email.toLowerCase().includes(searchInput)
-          ) {
-            resultUsers += `
+          if (user.loginLogs && user.loginLogs.length > 0) {
+            userLogs += `
               <li>
                 <strong>${user.username}</strong> (${user.email})
-                ${user.isApproved ? "<span>Approved</span>" : "<button onclick=\"approveUser('" + doc.id + "')\">Approve</button>"}
-                <button onclick="deleteUser('${doc.id}')">Delete</button>
+                <ul>
+                  ${user.loginLogs
+                    .map(
+                      (log) =>
+                        `<li>${log.activity} - ${new Date(
+                          log.timestamp
+                        ).toLocaleString()}</li>`
+                    )
+                    .join("")}
+                </ul>
               </li>
             `;
           }
         });
 
-        userList.innerHTML = resultUsers || "<li>No results found.</li>";
+        logsList.innerHTML = userLogs || "<li>No logs available.</li>";
       } catch (error) {
-        console.error("Error during search: ", error);
-        userList.innerHTML = "<li>Error fetching data.</li>";
+        console.error("Error fetching user logs: ", error);
+        logsList.innerHTML = "<li>Error fetching data.</li>";
       }
     }
 
@@ -136,10 +108,14 @@
       }
     }
 
-    window.fetchPendingApprovals = fetchPendingApprovals;
-    window.approveUser = approveUser;
-    window.deleteUser = deleteUser;
-    window.searchUsers = searchUsers;
+    // Fetch data on load
+    window.onload = function () {
+      fetchOnlineUsers();
+      fetchUserLogs();
+    };
+
+    window.fetchOnlineUsers = fetchOnlineUsers;
+    window.fetchUserLogs = fetchUserLogs;
     window.logout = logout;
   </script>
 
@@ -199,9 +175,6 @@
     }
 
     li {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       background: white;
       margin-bottom: 1rem;
       padding: 1rem;
@@ -209,18 +182,15 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
-    button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      margin-left: 0.5rem;
-      border-radius: 5px;
-      cursor: pointer;
+    ul li ul {
+      margin-top: 1rem;
+      padding-left: 1rem;
     }
 
-    button:hover {
-      background-color: #45a049;
+    ul li ul li {
+      background: #f8f8f8;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
     }
 
     footer {
@@ -229,42 +199,19 @@
       text-align: center;
       padding: 1rem;
     }
-
-    .search-container {
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-
-    .search-container input {
-      padding: 0.5rem;
-      width: 80%;
-      max-width: 300px;
-      border-radius: 5px;
-      border: 1px solid #ddd;
-    }
-
-    .notification {
-      background-color: red;
-      color: white;
-      padding: 0.2rem 0.5rem;
-      border-radius: 50%;
-      font-size: 0.8rem;
-      vertical-align: top;
-      margin-left: 0.5rem;
-    }
   </style>
 </head>
-<body onload="fetchPendingApprovals()">
+<body>
   <header>
     <h1>Admin Dashboard</h1>
     <button id="logout" onclick="logout()">Log Out</button>
   </header>
   <main>
-    <h2>Pending User Approvals <span id="notification-badge" class="notification">0</span></h2>
-    <div class="search-container">
-      <input type="text" id="search" placeholder="Search users..." oninput="searchUsers()">
-    </div>
-    <ul id="user-list"></ul>
+    <h2>Online Users</h2>
+    <ul id="online-users-list"></ul>
+
+    <h2>User Logs</h2>
+    <ul id="user-logs-list"></ul>
   </main>
   <footer>
     <p>&copy; 2025 DWS Management. All rights reserved.</p>
