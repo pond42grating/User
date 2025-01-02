@@ -5,20 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login - DWS Management</title>
 
-  <!-- Google Material Icons (optional) -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <!-- Google Material Icons (for the visibility_off icon) -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
 
   <style>
-    /* Basic resets */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
       font-family: Arial, sans-serif;
       background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -26,28 +21,22 @@
       transition: background-color 0.3s ease;
     }
 
-    /* Optional dark mode styling, if you want to apply it from localStorage */
-    .dark-mode {
-      background-color: #333;
-      color: white;
-    }
-
     .container {
-      width: 350px;
+      width: 360px;
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
       padding: 2rem;
     }
 
-    .dark-mode .container {
-      background-color: #444;
-      color: white;
-    }
-
     h2 {
       text-align: center;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-container {
+      position: relative;
+      margin: 0.5rem 0;
     }
 
     .input-field {
@@ -57,6 +46,15 @@
       border: 1px solid #ddd;
       border-radius: 5px;
       font-size: 1rem;
+    }
+
+    .icon-visibility {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #888;
     }
 
     .button {
@@ -69,7 +67,6 @@
       border-radius: 5px;
       cursor: pointer;
       font-size: 1rem;
-      transition: background 0.2s ease;
     }
 
     .button:hover {
@@ -80,7 +77,6 @@
       background-color: #4285F4;
       margin-top: 0.75rem;
     }
-
     .google-signin-btn:hover {
       background-color: #357ae8;
     }
@@ -92,7 +88,6 @@
       color: #4CAF50;
       text-decoration: none;
     }
-
     .link:hover {
       text-decoration: underline;
     }
@@ -102,44 +97,69 @@
 <body>
   <div class="container">
     <h2>Login to DWS</h2>
-    <!-- User can input username or email -->
-    <input
-      type="text"
-      id="userInput"
-      class="input-field"
-      placeholder="Username or Email"
-      required
+
+    <!-- Username or Email field -->
+    <input 
+      type="text" 
+      id="userInput" 
+      class="input-field" 
+      placeholder="Username or Email" 
+      required 
     />
-    <!-- Password field -->
-    <input
-      type="password"
-      id="password"
-      class="input-field"
-      placeholder="Password"
-      required
-    />
+
+    <!-- Password with visibility toggle -->
+    <div class="input-container">
+      <input 
+        type="password" 
+        id="password" 
+        class="input-field" 
+        placeholder="Password" 
+        required 
+      />
+      <span 
+        class="material-icons icon-visibility" 
+        id="toggleIcon" 
+        onclick="togglePassword()"
+      >
+        visibility_off
+      </span>
+    </div>
 
     <!-- Sign In button -->
     <button class="button" onclick="signIn()">Sign In</button>
 
-    <!-- Google sign-in button (optional) -->
+    <!-- Google Sign-In button -->
     <button class="button google-signin-btn" onclick="googleLogin()">Sign In with Google</button>
 
-    <!-- Forgot Password link -->
+    <!-- Forgot password link -->
     <a class="link" href="forget.html">Forgot Password?</a>
 
-    <!-- Sign Up link -->
+    <!-- Sign up link -->
     <a class="link" href="signup.html">Don't have an account? Sign Up</a>
   </div>
 
-  <!-- Scripts -->
   <script type="module">
+    /* 
+      1) Firebase SDK imports
+      2) Firestore-based logic for admin & user checks
+      3) Optional Google sign-in
+      4) Password visibility toggle
+    */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { 
+      getFirestore, 
+      doc, 
+      getDoc, 
+      collection, 
+      getDocs, 
+      query, 
+      where 
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
     import { 
       GoogleAuthProvider, 
-      signInWithPopup, 
-      getAuth 
+      signInWithPopup,
+      getAuth
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     // 1) Firebase config
@@ -152,15 +172,26 @@
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7"
     };
-
     // 2) Initialize
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
-    // We keep an optional Google sign-in
+    // For optional Google sign in:
     const auth = getAuth(app);
 
-    // 3) signIn logic purely with Firestore
+    // 3) Toggle password visibility
+    function togglePassword() {
+      const passInput = document.getElementById("password");
+      const icon = document.getElementById("toggleIcon");
+      if (passInput.type === "password") {
+        passInput.type = "text";
+        icon.textContent = "visibility";
+      } else {
+        passInput.type = "password";
+        icon.textContent = "visibility_off";
+      }
+    }
+
+    // 4) Sign In function using Firestore
     async function signIn() {
       const userInput = document.getElementById("userInput").value.trim();
       const password = document.getElementById("password").value.trim();
@@ -171,13 +202,13 @@
       }
 
       try {
-        // First check Admin credentials
-        const adminDocRef = doc(db, "Admin", "admin_credentials");
-        const adminSnap = await getDoc(adminDocRef);
+        // Admin check
+        const adminRef = doc(db, "Admin", "admin_credentials");
+        const adminSnap = await getDoc(adminRef);
         if (
           adminSnap.exists() &&
           (
-            adminSnap.data().username === userInput ||
+            adminSnap.data().username === userInput || 
             adminSnap.data().email === userInput
           ) &&
           adminSnap.data().password === password
@@ -187,22 +218,22 @@
           return;
         }
 
-        // Not Admin => check the 'Users' collection
+        // Normal user check
         let userDocData = null;
 
         if (userInput.includes("@")) {
-          // It's an email => query by email
-          const usersCollection = collection(db, "Users");
-          const emailQuery = query(usersCollection, where("email", "==", userInput));
-          const qSnap = await getDocs(emailQuery);
+          // It's an email
+          const cRef = collection(db, "Users");
+          const qRef = query(cRef, where("email", "==", userInput));
+          const qSnap = await getDocs(qRef);
 
           if (!qSnap.empty) {
             userDocData = qSnap.docs[0].data();
           }
         } else {
-          // It's a username => docID = userInput
-          const userDocRef = doc(db, "Users", userInput);
-          const userSnap = await getDoc(userDocRef);
+          // It's a username
+          const userRef = doc(db, "Users", userInput);
+          const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
             userDocData = userSnap.data();
           }
@@ -214,7 +245,7 @@
         }
 
         // Compare password
-        // If storing as plain 'password'
+        // If your Firestore user doc has 'password' or 'passwordHash'
         if (userDocData.password && userDocData.password !== password) {
           alert("Incorrect password.");
           return;
@@ -222,7 +253,7 @@
           alert("Incorrect password. (hash mismatch)");
           return;
         } else if (!userDocData.password && !userDocData.passwordHash) {
-          alert("No valid password field found.");
+          alert("No valid password field found in user doc.");
           return;
         }
 
@@ -233,23 +264,23 @@
         }
 
         alert("Sign-in successful!");
-        window.location.href = "login.html"; // Or your user page
-      } catch (error) {
-        console.error("Error in signIn:", error);
-        alert("Error: " + error.message);
+        window.location.href = "login.html"; // Or user dashboard
+      } catch (err) {
+        console.error("Error in signIn:", err);
+        alert("Error: " + err.message);
       }
     }
 
-    // 4) Google sign in if user wants
+    // 5) Google sign-in
     async function googleLogin() {
       try {
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
         alert(`Google Sign-in successful!\nHello, ${result.user.displayName}`);
-        window.location.href = "login.html"; 
+        window.location.href = "login.html";
       } catch (error) {
-        console.error("Google sign-in error:", error);
-        alert("Google sign-in error: " + error.message);
+        console.error("Google login error:", error);
+        alert("Google login error: " + error.message);
       }
     }
 
