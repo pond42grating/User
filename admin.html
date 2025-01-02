@@ -36,7 +36,7 @@
         const querySnapshot = await getDocs(collection(db, "Users"));
         querySnapshot.forEach((doc) => {
           const userData = doc.data();
-          if (userData. isApproved=== "false") {
+          if (userData.isApproved=== "false") {
             const row = document.createElement("tr");
             row.innerHTML = `
               <td>${userData.username || "N/A"}</td>
