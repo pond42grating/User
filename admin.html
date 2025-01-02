@@ -43,47 +43,50 @@
 
     // Fetch user logs
     async function fetchUserLogs() {
-      const logsList = document.getElementById("logs-list");
-      logsList.innerHTML = "Loading...";
-
+      const logsContainer = document.getElementById("logs-container");
+      logsContainer.innerHTML = "Loading user logs...";
+      
       try {
-        const querySnapshot = await getDocs(collection(db, "UserLogs"));
+        const querySnapshot = await getDocs(collection(db, "Users"));
         let logsHTML = "";
 
         querySnapshot.forEach((doc) => {
-          const log = doc.data();
-          logsHTML += `
-            <li>
-              <strong>${log.username}</strong> - ${log.activity} at ${new Date(log.timestamp)..toLocaleString()}
-            </li>
-          `;
+          const user = doc.data();
+          if (user.loginLogs && user.loginLogs.length > 0) {
+            logsHTML += `<h3>${user.username}</h3>`;
+            user.loginLogs.forEach((log) => {
+              logsHTML += `<p>${log.activity} - ${new Date(log.timestamp).toLocaleString()}</p>`;
+            });
+          }
         });
 
-        logsList.innerHTML = logsHTML || "<li>No logs found.</li>";
+        logsContainer.innerHTML = logsHTML || "No user logs found.";
       } catch (error) {
-        console.error("Error fetching logs: ", error);
-        logsList.innerHTML = "<li>Error fetching logs.</li>";
+        console.error("Error fetching user logs: ", error);
+        logsContainer.innerHTML = "Error loading logs.";
       }
     }
 
     // Fetch online users
     async function fetchOnlineUsers() {
-      const onlineUsersList = document.getElementById("online-users-list");
-      onlineUsersList.innerHTML = "Loading...";
+      const onlineContainer = document.getElementById("online-container");
+      onlineContainer.innerHTML = "Loading online users...";
 
       try {
-        const querySnapshot = await getDocs(query(collection(db, "Users"), where("isOnline", "==", true)));
-        let onlineHTML = "";
+        const querySnapshot = await getDocs(collection(db, "Users"));
+        let onlineUsersHTML = "";
 
         querySnapshot.forEach((doc) => {
           const user = doc.data();
-          onlineHTML += `<li><strong>${user.username}</strong> (${user.email})</li>`;
+          if (user.isOnline) {
+            onlineUsersHTML += `<p>${user.username} (${user.email})</p>`;
+          }
         });
 
-        onlineUsersList.innerHTML = onlineHTML || "<li>No users currently online.</li>";
+        onlineContainer.innerHTML = onlineUsersHTML || "No users online.";
       } catch (error) {
         console.error("Error fetching online users: ", error);
-        onlineUsersList.innerHTML = "<li>Error fetching data.</li>";
+        onlineContainer.innerHTML = "Error loading online users.";
       }
     }
 
