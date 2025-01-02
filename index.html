@@ -231,7 +231,7 @@
           alert("Incorrect password.");
           return;
         } else if (foundUser.passwordHash && foundUser.passwordHash !== btoa(password)) {
-          alert("Incorrect password (hash mismatch).");
+          alert("Incorrect password.");
           return;
         } else if (!foundUser.password && !foundUser.passwordHash) {
           alert("No valid password field found in user record.");
