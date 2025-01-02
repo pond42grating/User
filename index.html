@@ -124,7 +124,7 @@
     <input type="text" id="emailOrUsername" class="input-field" placeholder="Email or Username" required>
     <div class="password-container">
       <input type="password" id="password" class="input-field" placeholder="Password" required>
-      <span id="togglePassword" class="toggle-password">👁️</span>
+      <span id="togglePassword" class="toggle-password">🔓</span>
     </div>
     <button class="button" onclick="login()">Login</button>
     <p class="link"><a href="signup.html">Sign Up</a></p>
@@ -192,7 +192,7 @@
 
     if (
       adminSnap.exists() &&
-      (adminSnap.data().username === userInput || adminSnap.data().email === userInput) &&
+      (adminSnap.data().username === userInput || adminSnap.data().id === userInput) &&
       adminSnap.data().password === password
     ) {
       alert("Welcome, Admin!");
