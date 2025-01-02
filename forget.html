@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,67 +5,163 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Forgot Password - DWS Management</title>
   <script type="module">
-    // Import Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import {
+      getAuth,
+      sendPasswordResetEmail
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      collection,
+      query,
+      where,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
+      storageBucket: "dws-management.firebaseapp.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Forgot Password Function
+    // Reset Password Function
     async function resetPassword() {
-      const email = document.getElementById("email").value.trim();
+      const userInput = document.getElementById("emailOrUsername").value.trim();
 
-      if (!email) {
-        alert("Please enter your email address.");
+      if (!userInput) {
+        alert("Please enter your email or username.");
         return;
       }
 
       try {
-        // Check if email exists in Firestore
-        const userRef = doc(db, "users", email);
-        const userDoc = await getDoc(userRef);
+        let email = userInput; // Assume email if @ is present
+        let isApproved = false;
 
-        if (userDoc.exists()) {
-          // Email exists, allow user to reset password
-          alert("We have sent a password reset link to your email.");
-          // Here you can either send a custom reset link or allow user to reset password directly
-          
-          // For demo purposes, let's just simulate password update
-          const newPassword = prompt("Enter your new password: ");
-          
-          // Update the password in Firestore (ensure password is hashed for security)
-          await updateDoc(userRef, { password: newPassword });
-          alert("Your password has been updated.");
+        // Check if input is username
+        if (!userInput.includes("@")) {
+          const userDocRef = doc(db, "Users", userInput);
+          const userSnap = await getDoc(userDocRef);
+
+          if (!userSnap.exists()) {
+            alert("No user found with that username.");
+            return;
+          }
+
+          const userData = userSnap.data();
+          email = userData.email;
+          isApproved = userData.isApproved;
         } else {
-          alert("No account found with this email.");
+          // Input is an email
+          const usersRef = collection(db, "Users");
+          const q = query(usersRef, where("email", "==", userInput));
+          const qSnap = await getDocs(q);
+
+          if (qSnap.empty) {
+            alert("No user found with that email.");
+            return;
+          }
+
+          // Assume the first matching document
+          const userData = qSnap.docs[0].data();
+          isApproved = userData.isApproved;
         }
+
+        // Check approval status
+        if (!isApproved) {
+          alert("Your account is pending admin approval. Please wait for admin approval.");
+          return;
+        }
+
+        // Send password reset email via Firebase Auth
+        await sendPasswordResetEmail(auth, email);
+        alert("Password reset email sent successfully! Please check your inbox.");
+        window.location.href = "index.html";
       } catch (error) {
-        console.error("Error during password reset: ", error);
+        console.error("Error during password reset:", error);
         alert("Error: " + error.message);
       }
     }
 
     window.resetPassword = resetPassword;
   </script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      width: 400px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 1.5rem;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background-color: #45a049;
+    }
+
+    .link {
+      margin-top: 1rem;
+      display: inline-block;
+      color: #4CAF50;
+      text-decoration: none;
+    }
+
+    .link:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
+
 <body>
-  <h2>Forgot Password</h2>
-  <form onsubmit="event.preventDefault(); resetPassword();">
-    <input type="email" id="email" placeholder="Enter your email" required><br>
-    <button type="submit">Reset Password</button>
-  </form>
+  <div class="container">
+    <h2>Forgot Password</h2>
+    <input type="text" id="emailOrUsername" class="input-field" placeholder="Email or Username" required>
+    <button class="button" onclick="resetPassword()">Reset Password</button>
+    <a href="index.html" class="link">Back to Login</a>
+  </div>
 </body>
 </html>
