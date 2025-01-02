@@ -36,7 +36,7 @@
         const querySnapshot = await getDocs(collection(db, "Users"));
         querySnapshot.forEach((doc) => {
           const userData = doc.data();
-          if (userData.status === "pending") {
+          if (userData. isApproved=== "false") {
             const row = document.createElement("tr");
             row.innerHTML = `
               <td>${userData.username || "N/A"}</td>
@@ -60,7 +60,7 @@
     async function approveUser(userId) {
       try {
         const userRef = doc(db, "Users", userId);
-        await updateDoc(userRef, { status: "approved" });
+        await updateDoc(userRef, { isApproved: "true" });
         alert("User approved successfully!");
         fetchPendingUsers(); // Refresh the table
       } catch (error) {
