@@ -3,140 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Login</title>
-  <!-- Material Icons -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #a8edea, #fed6e3);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      color: #333;
-      transition: background-color 0.3s ease, color 0.3s ease;
-    }
-
-    .dark-mode {
-      background: linear-gradient(135deg, #2a2a72, #009ffd);
-      color: #fff;
-    }
-
-    .container {
-      width: 400px;
-      background: #fff;
-      border-radius: 8px;
-      padding: 2rem;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    }
-
-    .dark-mode .container {
-      background-color: #444;
-      color: #fff;
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 1.5rem;
-      font-size: 1.6rem;
-    }
-
-    .input-field {
-      width: 100%;
-      padding: 0.75rem;
-      margin: 0.5rem 0;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-
-    .password-container {
-      position: relative;
-    }
-
-    .toggle-password {
-      position: absolute;
-      top: 50%;
-      right: 10px;
-      transform: translateY(-50%);
-      cursor: pointer;
-      color: #888;
-    }
-
-    .dark-mode .toggle-password {
-      color: #ccc;
-    }
-
-    .button {
-      width: 100%;
-      padding: 0.75rem;
-      background-color: #4CAF50;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      margin-top: 1rem;
-      cursor: pointer;
-    }
-
-    .button:hover {
-      background-color: #45a049;
-    }
-
-    .google-signin-btn {
-      background-color: #4285F4;
-    }
-
-    .google-signin-btn:hover {
-      background-color: #357ae8;
-    }
-
-    .link {
-      display: block;
-      text-align: center;
-      margin-top: 1rem;
-      color: #4CAF50;
-    }
-
-    .dark-mode .link {
-      color: #57e4ff;
-    }
-
-    .toggle-theme {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <div class="toggle-theme" onclick="toggleTheme()">🌙</div>
-
-  <div class="container">
-    <h2>Login to DWS</h2>
-    <input type="text" id="emailOrUsername" class="input-field" placeholder="Email or Username" required>
-    <div class="password-container">
-      <input type="password" id="password" class="input-field" placeholder="Password" required>
-      <span id="togglePassword" class="toggle-password material-icons">visibility_off</span>
-    </div>
-    <button class="button" onclick="login()">Login</button>
-    <p class="link"><a href="signup.html">Sign Up</a></p>
-    <p class="link"><a href="forget.html">Forgot Password?</a></p>
-    <button class="button google-signin-btn" onclick="googleLogin()">Sign in with Google</button>
-  </div>
-
+  <title>Admin Dashboard</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      doc,
+      updateDoc,
+      deleteDoc,
+      query,
+      where,
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
@@ -144,167 +25,259 @@
       storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
+      measurementId: "G-L14GLJDYW7",
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Toggle theme (dark/light mode)
-    function toggleTheme() {
-      document.body.classList.toggle("dark-mode");
-      localStorage.setItem("theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
-    }
-
-    window.onload = function () {
-      if (localStorage.getItem("theme") === "dark") {
-        document.body.classList.add("dark-mode");
+    // Redirect to index.html if not logged in
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "index.html";
       }
-    };
-
-    const togglePassword = document.getElementById("togglePassword");
-    const passwordField = document.getElementById("password");
-
-    togglePassword.addEventListener("click", () => {
-      const type = passwordField.type === "password" ? "text" : "password";
-      passwordField.type = type;
-      togglePassword.textContent = type === "password" ? "visibility_off" : "visibility";
     });
 
-    // Login function
-    async function login() {
-      const userInput = document.getElementById("emailOrUsername").value.trim();
-      const password = document.getElementById("password").value.trim();
-
-      if (!userInput || !password) {
-        alert("Please enter both email/username and password.");
-        return;
-      }
+    // Fetch Online Users
+    async function fetchOnlineUsers() {
+      const onlineUsersList = document.getElementById("online-users-list");
+      onlineUsersList.innerHTML = "Loading online users...";
 
       try {
-        let email = userInput;
-        let isApproved = false;
-        let isAdmin = false;
-        let username = null;
+        const querySnapshot = await getDocs(
+          query(collection(db, "Users"), where("isOnline", "==", true))
+        );
 
-        // Admin login check
-        const adminDocRef = doc(db, "Admin", "Details");
-        const adminSnap = await getDoc(adminDocRef);
+        let onlineHTML = "";
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          onlineHTML += `<li>${user.username} (${user.email})</li>`;
+        });
 
-        if (
-          adminSnap.exists() &&
-          (adminSnap.data().username === userInput || adminSnap.data().id === userInput) &&
-          adminSnap.data().password === password
-        ) {
-          alert("Welcome, Admin!");
-          window.location.href = "admin.html";
-          return;
-        }
-
-        // User login check
-        if (!userInput.includes("@")) {
-          const userDocRef = doc(db, "Users", userInput);
-          const userSnap = await getDoc(userDocRef);
-
-          if (!userSnap.exists()) {
-            alert("No user found with that username.");
-            return;
-          }
-
-          const userData = userSnap.data();
-          email = userData.email;
-          isApproved = userData.isApproved;
-          username = userData.username;
-          
-          if (userData.status === "Hold") {
-            alert("Your account is on hold by the admin. Please contact support.");
-            return;
-          }
-          if (userData.status === "Blocked") {
-            alert("Your account has been blocked by the admin.Please contact support");
-            return;
-            }
-        } else {
-          const usersRef = collection(db, "Users");
-          const q = query(usersRef, where("email", "==", userInput));
-          const qSnap = await getDocs(q);
-
-          if (qSnap.empty) {
-            alert("No user found with that email.");
-            return;
-          }
-
-          const userData = qSnap.docs[0].data();
-          isApproved = userData.isApproved;
-          username = userData.username;
-        }
-
-        if (!isApproved) {
-          alert("Your account is pending admin approval.");
-          return;
-        }
-        
-        if (userData.status === "Hold") {
-            alert("Your account is on hold by the admin. Please contact support.");
-            return;
-          }
-          if (userData.status === "Blocked") {
-            alert("Your account has been blocked by the admin. Please contact support");
-            return;
-            }
-
-        // Firebase Auth Login
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        // Log user activity
-        const userDocRef = doc(db, "Users", username);
-        await setDoc(userDocRef, {
-          isOnline: true,
-          lastLogin: new Date().toISOString(),
-          loginLogs: arrayUnion({
-            activity: "Login",
-            timestamp: new Date().toISOString(),
-          }),
-        }, { merge: true });
-
-        alert("Login successful!");
-        window.location.href = "login.html";
+        onlineUsersList.innerHTML = onlineHTML || "<li>No users online.</li>";
       } catch (error) {
-        console.error("Login error:", error);
-        alert("Error: " + error.message);
+        console.error("Error fetching online users: ", error);
+        onlineUsersList.innerHTML = "<li>Error loading online users.</li>";
       }
     }
 
-    // Google Login function
-    async function googleLogin() {
-      const provider = new GoogleAuthProvider();
+    // Fetch User Logs
+    async function fetchUserLogs() {
+      const logsList = document.getElementById("logs-list");
+      logsList.innerHTML = "Loading user logs...";
 
       try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
+        const querySnapshot = await getDocs(collection(db, "Users"));
+        let logsHTML = "";
 
-        // Check approval status
-        const userDocRef = doc(db, "Users", user.uid);
-        const userSnap = await getDoc(userDocRef);
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          if (user.loginLogs && user.loginLogs.length > 0) {
+            logsHTML += `
+              <li>
+                <strong>${user.username}</strong>
+                <button onclick="clearLogs('${doc.id}')">Clear Logs</button>
+                ${user.loginLogs
+                  .map(
+                    (log) =>
+                      `<p>${log.activity} - ${new Date(
+                        log.timestamp
+                      ).toLocaleString()}</p>`
+                  )
+                  .join("")}
+              </li>
+            `;
+          }
+        });
 
-        if (!userSnap.exists() || !userSnap.data().isApproved) {
-          alert("Your account is pending admin approval.");
-          return;
-        }
-
-        alert("Google Sign-in successful!");
-        window.location.href = "login.html";
+        logsList.innerHTML = logsHTML || "<li>No logs found.</li>";
       } catch (error) {
-        console.error("Google login error:", error);
-        alert("Error: " + error.message);
+        console.error("Error fetching user logs: ", error);
+        logsList.innerHTML = "<li>Error loading logs.</li>";
       }
     }
 
-    window.login = login;
-    window.toggleTheme = toggleTheme;
-    window.googleLogin = googleLogin;
+    // Clear Logs
+    async function clearLogs(userId) {
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { loginLogs: [] });
+        alert("Logs cleared successfully.");
+        fetchUserLogs();
+      } catch (error) {
+        console.error("Error clearing logs: ", error);
+      }
+    }
+
+    // Fetch Approved Users
+    async function fetchApprovedUsers() {
+      const approvedUsersList = document.getElementById("approved-users-list");
+      approvedUsersList.innerHTML = "Loading approved users...";
+
+      try {
+        const querySnapshot = await getDocs(
+          query(collection(db, "Users"), where("isApproved", "==", true))
+        );
+        let approvedHTML = "";
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          approvedHTML += `
+            <li>
+              <strong>${user.username}</strong> (${user.email})
+              <button onclick="holdUser('${doc.id}')">Hold</button>
+              <button onclick="blockUser('${doc.id}')">Block</button>
+              <button onclick="removeUser('${doc.id}')">Remove</button>
+            </li>
+          `;
+        });
+
+        approvedUsersList.innerHTML =
+          approvedHTML || "<li>No approved users found.</li>";
+      } catch (error) {
+        console.error("Error fetching approved users: ", error);
+        approvedUsersList.innerHTML = "<li>Error loading approved users.</li>";
+      }
+    }
+
+    // Hold User
+    async function holdUser(userId) {
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { status: "hold" });
+        alert("User held successfully.");
+        fetchApprovedUsers();
+      } catch (error) {
+        console.error("Error holding user: ", error);
+      }
+    }
+
+    // Block User
+    async function blockUser(userId) {
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { status: "block" });
+        alert("User blocked successfully.");
+        fetchApprovedUsers();
+      } catch (error) {
+        console.error("Error blocking user: ", error);
+      }
+    }
+
+    // Remove User
+    async function removeUser(userId) {
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await deleteDoc(userDocRef);
+        alert("User removed successfully.");
+        fetchApprovedUsers();
+      } catch (error) {
+        console.error("Error removing user: ", error);
+      }
+    }
+
+    // Logout Function
+    async function logout() {
+      try {
+        await signOut(auth);
+        alert("Logged out successfully!");
+        window.location.href = "index.html";
+      } catch (error) {
+        console.error("Error during logout: ", error);
+      }
+    }
+
+    window.onload = () => {
+      fetchOnlineUsers();
+      fetchUserLogs();
+      fetchApprovedUsers();
+    };
+
+    window.fetchOnlineUsers = fetchOnlineUsers;
+    window.fetchUserLogs = fetchUserLogs;
+    window.fetchApprovedUsers = fetchApprovedUsers;
+    window.holdUser = holdUser;
+    window.blockUser = blockUser;
+    window.removeUser = removeUser;
+    window.logout = logout;
   </script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+    }
+
+    #logout {
+      background-color: white;
+      color: #4CAF50;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    main {
+      padding: 1rem;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    section {
+      margin-bottom: 1rem;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: white;
+      margin-bottom: 0.5rem;
+      padding: 1rem;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin Dashboard</h1>
+    <button id="logout" onclick="logout()">Log Out</button>
+  </header>
+  <main>
+    <section>
+      <h2>Online Users</h2>
+      <ul id="online-users-list"></ul>
+    </section>
+    <section>
+      <h2>User Logs</h2>
+      <ul id="logs-list"></ul>
+    </section>
+    <section>
+      <h2>Approved Users</h2>
+      <ul id="approved-users-list"></ul>
+    </section>
+  </main>
 </body>
 </html>
