@@ -4,13 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - DWS Management</title>
-  
-  <!-- Include Google Material Icons -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase configuration
     const firebaseConfig = {
@@ -23,76 +19,63 @@
       measurementId: "G-L14GLJDYW7"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Fetch Users for Approval
-    async function fetchPendingUsers() {
-      const userTableBody = document.getElementById("userTableBody");
-      userTableBody.innerHTML = ""; // Clear previous data
+    // Fetch users pending approval
+    async function fetchPendingApprovals() {
+      const userList = document.getElementById("user-list");
+      userList.innerHTML = "Loading...";
 
       try {
         const querySnapshot = await getDocs(collection(db, "Users"));
+        let pendingUsers = "";
+
         querySnapshot.forEach((doc) => {
-          const userData = doc.data();
-          if (userData.isApproved=== "false") {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-              <td>${userData.username || "N/A"}</td>
-              <td>${userData.email}</td>
-              <td>${userData.status}</td>
-              <td>
+          const user = doc.data();
+          if (!user.isApproved) {
+            pendingUsers += `
+              <li>
+                <strong>${user.username}</strong> (${user.email})
                 <button onclick="approveUser('${doc.id}')">Approve</button>
                 <button onclick="deleteUser('${doc.id}')">Delete</button>
-              </td>
+              </li>
             `;
-            userTableBody.appendChild(row);
           }
         });
+
+        userList.innerHTML = pendingUsers || "<li>No pending approvals</li>";
       } catch (error) {
-        console.error("Error fetching users:", error);
-        alert("Error fetching users: " + error.message);
+        console.error("Error fetching pending approvals: ", error);
+        userList.innerHTML = "<li>Error fetching data.</li>";
       }
     }
 
-    // Approve User
+    // Approve a user
     async function approveUser(userId) {
       try {
-        const userRef = doc(db, "Users", userId);
-        await updateDoc(userRef, { isApproved: "true" });
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { isApproved: true });
         alert("User approved successfully!");
-        fetchPendingUsers(); // Refresh the table
+        fetchPendingApprovals();
       } catch (error) {
-        console.error("Error approving user:", error);
-        alert("Error approving user: " + error.message);
+        console.error("Error approving user: ", error);
       }
     }
 
-    // Delete User
+    // Delete a user
     async function deleteUser(userId) {
       try {
-        const userRef = doc(db, "Users", userId);
-        await deleteDoc(userRef);
+        const userDocRef = doc(db, "Users", userId);
+        await deleteDoc(userDocRef);
         alert("User deleted successfully!");
-        fetchPendingUsers(); // Refresh the table
+        fetchPendingApprovals();
       } catch (error) {
-        console.error("Error deleting user:", error);
-        alert("Error deleting user: " + error.message);
+        console.error("Error deleting user: ", error);
       }
     }
 
-    // Apply stored theme
-    window.onload = () => {
-      const storedTheme = localStorage.getItem("theme");
-      if (storedTheme === "dark") {
-        document.body.classList.add("dark-mode");
-      } else {
-        document.body.classList.remove("dark-mode");
-      }
-      fetchPendingUsers(); // Fetch users on load
-    };
-
+    window.fetchPendingApprovals = fetchPendingApprovals;
     window.approveUser = approveUser;
     window.deleteUser = deleteUser;
   </script>
@@ -102,92 +85,79 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #f4f4f9;
-      transition: background-color 0.3s ease;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
 
-    .dark-mode {
-      background-color: #333;
+    header {
+      background-color: #4CAF50;
       color: white;
+      padding: 1rem;
+      text-align: center;
     }
 
-    .container {
-      max-width: 800px;
-      margin: 20px auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .dark-mode .container {
-      background-color: #444;
+    main {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
     }
 
     h2 {
       text-align: center;
+      margin-bottom: 1rem;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
+    ul {
+      list-style: none;
+      padding: 0;
     }
 
-    table th, table td {
-      padding: 10px;
-      text-align: left;
-      border: 1px solid #ddd;
-    }
-
-    table th {
-      background-color: #f4f4f9;
-    }
-
-    .dark-mode table th {
-      background-color: #555;
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
     button {
-      padding: 8px 12px;
-      margin: 5px;
+      background-color: #4CAF50;
+      color: white;
       border: none;
+      padding: 0.5rem 1rem;
+      margin-left: 0.5rem;
       border-radius: 5px;
       cursor: pointer;
     }
 
     button:hover {
-      opacity: 0.9;
+      background-color: #45a049;
     }
 
-    button:first-child {
-      background-color: #4CAF50;
+    footer {
+      background-color: #333;
       color: white;
-    }
-
-    button:last-child {
-      background-color: #f44336;
-      color: white;
+      text-align: center;
+      padding: 1rem;
     }
   </style>
 </head>
-
-<body>
-  <div class="container">
-    <h2>Admin Dashboard</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Username</th>
-          <th>Email</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="userTableBody">
-        <!-- Pending users will be loaded here -->
-      </tbody>
-    </table>
-  </div>
+<body onload="fetchPendingApprovals()">
+  <header>
+    <h1>Admin Dashboard</h1>
+  </header>
+  <main>
+    <h2>Pending User Approvals</h2>
+    <ul id="user-list"></ul>
+  </main>
+  <footer>
+    <p>&copy; 2025 DWS Management. All rights reserved.</p>
+  </footer>
 </body>
 </html>
