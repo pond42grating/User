@@ -6,23 +6,24 @@
   <title>Admin Dashboard - DWS Management</title>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { 
-      getFirestore, 
-      collection, 
-      getDocs, 
-      doc, 
-      updateDoc, 
-      deleteDoc, 
-      onSnapshot 
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      doc,
+      updateDoc,
+      deleteDoc,
+      query,
+      where,
+      onSnapshot
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebaseapp.com",
+      storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7"
@@ -40,109 +41,137 @@
       }
     });
 
-    // Fetch registered users
-    async function fetchUsers() {
-      const userList = document.getElementById("user-list");
-      userList.innerHTML = "Loading...";
+    // Fetch user logs
+    async function fetchUserLogs() {
+      const logsList = document.getElementById("logs-list");
+      logsList.innerHTML = "Loading...";
 
       try {
-        const querySnapshot = await getDocs(collection(db, "Users"));
-        let usersHTML = "";
+        const querySnapshot = await getDocs(collection(db, "UserLogs"));
+        let logsHTML = "";
 
         querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          usersHTML += `
+          const log = doc.data();
+          logsHTML += `
             <li>
-              <strong>${user.username}</strong> (${user.email})
-              <span>Status: ${user.isApproved ? user.status || "Approved" : "Pending Approval"}</span>
-              ${getActionButtons(doc.id, user.status || "approved")}
+              <strong>${log.username}</strong> - ${log.activity} at ${new Date(log.timestamp)..toLocaleString()}
             </li>
           `;
         });
 
-        userList.innerHTML = usersHTML || "<li>No users found.</li>";
+        logsList.innerHTML = logsHTML || "<li>No logs found.</li>";
       } catch (error) {
-        console.error("Error fetching users: ", error);
-        userList.innerHTML = "<li>Error fetching data.</li>";
+        console.error("Error fetching logs: ", error);
+        logsList.innerHTML = "<li>Error fetching logs.</li>";
       }
     }
 
-    // Generate action buttons based on user status
-    function getActionButtons(userId, status) {
-      const commonActions = `
-        <button onclick="removeUser('${userId}')">Remove</button>
-      `;
-      if (status === "approved") {
-        return `
-          ${commonActions}
-          <button onclick="holdUser('${userId}')">Hold</button>
-          <button onclick="blockUser('${userId}')">Block</button>
-        `;
-      } else if (status === "hold") {
-        return `
-          ${commonActions}
-          <button onclick="approveUser('${userId}')">Approve</button>
-          <button onclick="blockUser('${userId}')">Block</button>
-        `;
-      } else if (status === "block") {
-        return `
-          ${commonActions}
-          <button onclick="approveUser('${userId}')">Approve</button>
-          <button onclick="holdUser('${userId}')">Hold</button>
-        `;
-      }
-      return commonActions;
-    }
+    // Fetch online users
+    async function fetchOnlineUsers() {
+      const onlineUsersList = document.getElementById("online-users-list");
+      onlineUsersList.innerHTML = "Loading...";
 
-    // Approve a user
-    async function approveUser(userId) {
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { status: "approved", isApproved: true });
-        alert("User approved successfully!");
-        fetchUsers();
+        const querySnapshot = await getDocs(query(collection(db, "Users"), where("isOnline", "==", true)));
+        let onlineHTML = "";
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          onlineHTML += `<li><strong>${user.username}</strong> (${user.email})</li>`;
+        });
+
+        onlineUsersList.innerHTML = onlineHTML || "<li>No users currently online.</li>";
       } catch (error) {
-        console.error("Error approving user: ", error);
-        alert("Error approving user.");
+        console.error("Error fetching online users: ", error);
+        onlineUsersList.innerHTML = "<li>Error fetching data.</li>";
+      }
+    }
+
+    // Fetch approved users
+    async function fetchApprovedUsers() {
+      const approvedUsersList = document.getElementById("approved-users-list");
+      approvedUsersList.innerHTML = "Loading...";
+
+      try {
+        const querySnapshot = await getDocs(query(collection(db, "Users"), where("isApproved", "==", true)));
+        let approvedHTML = "";
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          approvedHTML += `
+            <li>
+              <strong>${user.username}</strong> (${user.email})
+              <button onclick="holdUser('${doc.id}')">Hold</button>
+              <button onclick="blockUser('${doc.id}')">Block</button>
+              <button onclick="removeUser('${doc.id}')">Remove</button>
+            </li>
+          `;
+        });
+
+        approvedUsersList.innerHTML = approvedHTML || "<li>No approved users found.</li>";
+      } catch (error) {
+        console.error("Error fetching approved users: ", error);
+        approvedUsersList.innerHTML = "<li>Error fetching data.</li>";
       }
     }
 
     // Hold a user
     async function holdUser(userId) {
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { status: "hold", isApproved: false });
-        alert("User put on hold.");
-        fetchUsers();
+        await updateDoc(doc(db, "Users", userId), { status: "Hold" });
+        alert("User held successfully.");
+        fetchApprovedUsers();
       } catch (error) {
         console.error("Error holding user: ", error);
-        alert("Error holding user.");
       }
     }
 
     // Block a user
     async function blockUser(userId) {
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { status: "block", isApproved: false });
-        alert("User blocked.");
-        fetchUsers();
+        await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
+        alert("User blocked successfully.");
+        fetchApprovedUsers();
       } catch (error) {
         console.error("Error blocking user: ", error);
-        alert("Error blocking user.");
       }
     }
 
     // Remove a user
     async function removeUser(userId) {
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await deleteDoc(userDocRef);
-        alert("User removed successfully!");
-        fetchUsers();
+        await deleteDoc(doc(db, "Users", userId));
+        alert("User removed successfully.");
+        fetchApprovedUsers();
       } catch (error) {
         console.error("Error removing user: ", error);
-        alert("Error removing user.");
+      }
+    }
+
+    // Search users
+    async function searchUsers() {
+      const searchInput = document.getElementById("search").value.trim().toLowerCase();
+      const searchResults = document.getElementById("search-results");
+      searchResults.innerHTML = "Searching...";
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "Users"));
+        let resultsHTML = "";
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          if (
+            user.username.toLowerCase().includes(searchInput) ||
+            user.email.toLowerCase().includes(searchInput)
+          ) {
+            resultsHTML += `<li><strong>${user.username}</strong> (${user.email})</li>`;
+          }
+        });
+
+        searchResults.innerHTML = resultsHTML || "<li>No results found.</li>";
+      } catch (error) {
+        console.error("Error searching users: ", error);
+        searchResults.innerHTML = "<li>Error fetching data.</li>";
       }
     }
 
@@ -158,11 +187,19 @@
       }
     }
 
-    window.fetchUsers = fetchUsers;
-    window.approveUser = approveUser;
+    window.onload = () => {
+      fetchUserLogs();
+      fetchOnlineUsers();
+      fetchApprovedUsers();
+    };
+
+    window.fetchUserLogs = fetchUserLogs;
+    window.fetchOnlineUsers = fetchOnlineUsers;
+    window.fetchApprovedUsers = fetchApprovedUsers;
     window.holdUser = holdUser;
     window.blockUser = blockUser;
     window.removeUser = removeUser;
+    window.searchUsers = searchUsers;
     window.logout = logout;
   </script>
 
@@ -210,8 +247,11 @@
       overflow-y: auto;
     }
 
-    h2 {
-      text-align: center;
+    section {
+      margin-bottom: 2rem;
+    }
+
+    section h2 {
       margin-bottom: 1rem;
     }
 
@@ -221,14 +261,14 @@
     }
 
     li {
+      background: white;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: white;
-      margin-bottom: 1rem;
-      padding: 1rem;
-      border-radius: 5px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
     button {
@@ -236,7 +276,6 @@
       color: white;
       border: none;
       padding: 0.5rem 1rem;
-      margin-left: 0.5rem;
       border-radius: 5px;
       cursor: pointer;
     }
@@ -245,25 +284,43 @@
       background-color: #45a049;
     }
 
-    footer {
-      background-color: #333;
-      color: white;
-      text-align: center;
-      padding: 1rem;
+    .search-container {
+      margin-bottom: 1rem;
+    }
+
+    .search-container input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
     }
   </style>
 </head>
-<body onload="fetchUsers()">
+<body>
   <header>
     <h1>Admin Dashboard</h1>
     <button id="logout" onclick="logout()">Log Out</button>
   </header>
   <main>
-    <h2>Registered Users</h2>
-    <ul id="user-list"></ul>
+    <section>
+      <h2>Search Users</h2>
+      <div class="search-container">
+        <input type="text" id="search" placeholder="Search users by username or email..." oninput="searchUsers()">
+        <ul id="search-results"></ul>
+      </div>
+    </section>
+    <section>
+      <h2>Online Users</h2>
+      <ul id="online-users-list"></ul>
+    </section>
+    <section>
+      <h2>User Logs</h2>
+      <ul id="logs-list"></ul>
+    </section>
+    <section>
+      <h2>Approved Users</h2>
+      <ul id="approved-users-list"></ul>
+    </section>
   </main>
-  <footer>
-    <p>&copy; 2025 DWS Management. All rights reserved.</p>
-  </footer>
 </body>
 </html>
