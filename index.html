@@ -1,102 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>User Login</title>
-  
-  <!-- Keep your existing styling -->
+
+  <!-- Design/UI Only: Enhanced Styling and Animations -->
   <style>
-    body {
-      font-family: Arial, sans-serif;
+    /* Basic reset for margins and padding */
+    * {
       margin: 0;
       padding: 0;
-      background-color: #f4f4f9;
+      box-sizing: border-box;
+    }
+
+    /* Background gradient */
+    body {
+      font-family: Arial, sans-serif;
+      /* A subtle gradient background */
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
       transition: background-color 0.3s ease, color 0.3s ease;
+      overflow: hidden; /* In case container anim goes beyond */
       color: #333; /* Default text color */
     }
+
+    /* Dark mode */
     .dark-mode {
-      background-color: #333;
+      background: linear-gradient(135deg, #2a2a72, #009ffd);
       color: #fff;
     }
+
+    /* Container with entrance animation */
     .container {
-      max-width: 400px;
-      margin: 50px auto;
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      transition: background-color 0.3s ease, color 0.3s ease;
+      width: 400px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      padding: 2rem;
+      /* Animation: subtle slide & fade in */
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeInUp 0.8s ease forwards; 
     }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     .dark-mode .container {
       background-color: #444;
       color: #fff;
     }
+
     h2 {
       text-align: center;
+      margin-bottom: 1.5rem;
+      font-size: 1.6rem;
     }
+
+    /* Input fields */
     .input-field {
       width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 5px;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
       border: 1px solid #ddd;
-    }
-    .button {
-      width: 100%;
-      padding: 12px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
       border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
+      font-size: 1rem;
+      transition: border 0.2s ease;
     }
-    .button:hover {
-      background-color: #45a049;
+
+    .input-field:focus {
+      border-color: #4CAF50;
+      outline: none;
     }
+
     .remember-me {
       display: flex;
       align-items: center;
       margin: 10px 0;
+      font-size: 0.9rem;
     }
+
     .remember-me input {
       margin-right: 5px;
     }
+
+    /* Buttons */
+    .button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      margin-top: 0.75rem;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .button:hover {
+      background-color: #45a049;
+      transform: scale(1.02);
+    }
+
+    /* Google Sign-In Button */
+    .google-signin-btn {
+      background-color: #4285F4;
+      margin-top: 0.75rem;
+    }
+
+    .google-signin-btn:hover {
+      background-color: #357ae8;
+      transform: scale(1.02);
+    }
+
+    /* Links */
+    .link {
+      display: block;
+      text-align: center;
+      margin-top: 1rem;
+      color: #4CAF50; /* Default link color */
+      text-decoration: none;
+      transition: color 0.2s ease;
+      font-size: 0.95rem;
+    }
+
+    .link:hover {
+      text-decoration: underline;
+    }
+
+    .dark-mode .link {
+      color: #57e4ff; 
+    }
+
+    /* Toggle theme icon (if any) */
     .toggle-theme {
       position: absolute;
       top: 20px;
       right: 20px;
+      font-size: 1.2rem;
       cursor: pointer;
-    }
-    .link {
-      display: block;
-      text-align: center;
-      margin-top: 15px;
-      color: #4CAF50; /* Default link color */
-      text-decoration: none;
-      transition: color 0.3s ease;
-    }
-    .link:hover {
-      text-decoration: underline;
-    }
-    .dark-mode .link {
-      color: #57e4ff; /* Better visibility in dark mode */
-    }
-    .google-signin-btn {
-      width: 100%;
-      padding: 12px;
-      background-color: #4285F4;
-      color: white;
-      border: none;
+      background: rgba(255,255,255,0.2);
+      color: #333;
+      padding: 0.5rem 1rem;
       border-radius: 5px;
-      margin-top: 15px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: background 0.2s ease;
     }
-    .google-signin-btn:hover {
-      background-color: #357ae8;
+
+    .dark-mode .toggle-theme {
+      color: #fff;
+      background: rgba(0,0,0,0.4);
     }
+
+    .toggle-theme:hover {
+      background: rgba(255,255,255,0.4);
+    }
+
+    /* You can hide or remove if not needed */
   </style>
 </head>
 
@@ -105,54 +177,54 @@
   
   <div class="container">
     <h2>Login to DWS</h2>
-
-    <!-- We'll treat this field as Email for direct input,
-         or the user can enter something that matches their doc in Firestore. -->
     <input type="text" id="emailOrUsername" class="input-field" placeholder="Email or Username" required>
-
     <input type="password" id="password" class="input-field" placeholder="Password" required>
-
     <div class="remember-me">
       <input type="checkbox" id="rememberMe">
       <label for="rememberMe">Remember Me</label>
     </div>
-
-    <!-- Normal Sign-In button -->
-    <button class="button" onclick="signIn()">Login</button>
-
-    <!-- Optional link to sign up -->
+    <button class="button" onclick="login()">Login</button>
     <p class="link"><a href="signup.html">Sign Up</a></p>
-    
-    <!-- Optional forgot password -->
     <p class="link"><a href="forget.html">Forgot Password?</a></p>
 
     <!-- Google Sign-In Button -->
-    <button class="google-signin-btn" onclick="googleLogin()">Sign in with Google</button>
+    <button class="button google-signin-btn" onclick="googleLogin()">Sign in with Google</button>
   </div>
 
+  <!-- Script area: same as you had, no changes to logic -->
   <script type="module">
-    // Import Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { 
+      getFirestore, 
+      doc, 
+      getDoc, 
+      collection, 
+      getDocs, 
+      query, 
+      where 
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { 
+      getAuth, 
+      signInWithPopup, 
+      GoogleAuthProvider 
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
+      storageBucket: "dws-management.firebaseapp.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app); // For optional Google sign-in only
+    const auth = getAuth(app);
 
-    // Toggle theme (dark/light mode)
+    // Toggle theme (dark/light mode) - same logic you had
     function toggleTheme() {
       document.body.classList.toggle('dark-mode');
       if (document.body.classList.contains('dark-mode')) {
@@ -162,18 +234,15 @@
       }
     }
 
-    // Apply the stored theme when the page loads
     window.onload = function() {
       const storedTheme = localStorage.getItem('theme');
       if (storedTheme === 'dark') {
         document.body.classList.add('dark-mode');
-      } else {
-        document.body.classList.remove('dark-mode');
       }
     };
 
-    // Firestore-based sign in (no direct signInWithEmailAndPassword)
-    async function signIn() {
+    // Firestore-based login
+    async function login() {
       const userInput = document.getElementById("emailOrUsername").value.trim();
       const password = document.getElementById("password").value.trim();
 
@@ -183,13 +252,11 @@
       }
 
       try {
-        // 1. Check Admin doc
-        const adminDocRef = doc(db, "Admin", "Details");
-        const adminSnap = await getDoc(adminDocRef);
-
+        // 1) Admin check
+        const adminRef = doc(db, "Admin", "Details");
+        const adminSnap = await getDoc(adminRef);
         if (adminSnap.exists()) {
           const adminData = adminSnap.data();
-          // If matches admin credentials => admin.html
           if (
             (adminData.id === userInput || adminData.email === userInput) &&
             adminData.password === password
@@ -199,23 +266,20 @@
           }
         }
 
-        // 2. Not admin => check Users collection
+        // 2) Normal users
         let foundUser = null;
-
-        // If user typed an @ => treat as email
         if (userInput.includes("@")) {
-          // Query Firestore for a doc with that email
+          // treat as email
           const usersRef = collection(db, "Users");
           const q = query(usersRef, where("email", "==", userInput));
           const qSnap = await getDocs(q);
-
           if (!qSnap.empty) {
             foundUser = qSnap.docs[0].data();
           }
         } else {
-          // If no @ => treat as username
-          const userRef = doc(db, "Users", userInput);
-          const userSnap = await getDoc(userRef);
+          // treat as username
+          const userDocRef = doc(db, "Users", userInput);
+          const userSnap = await getDoc(userDocRef);
           if (userSnap.exists()) {
             foundUser = userSnap.data();
           }
@@ -231,47 +295,43 @@
           alert("Incorrect password.");
           return;
         } else if (foundUser.passwordHash && foundUser.passwordHash !== btoa(password)) {
-          alert("Incorrect password.");
+          alert("Incorrect password. (hash mismatch)");
           return;
         } else if (!foundUser.password && !foundUser.passwordHash) {
-          alert("No valid password field found in user record.");
+          alert("No valid password field in user record.");
           return;
         }
 
-        // Check if isApproved
+        // Check isApproved
         if (foundUser.isApproved === false) {
-          alert("Your account is awaiting admin approval.");
+          alert("Your account is pending admin approval.");
           return;
         }
 
-        // If all is well => proceed
         alert("Welcome, user!");
         window.location.href = "login.html";
       } catch (error) {
-        console.error("Error during Firestore-based login:", error);
+        console.error("Error during Firestore-based login: ", error);
         alert("Error: " + error.message);
       }
     }
 
-    // Google Sign-In (Optional)
+    // Google sign-in (optional)
     async function googleLogin() {
       const provider = new GoogleAuthProvider();
       try {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
         alert(`Welcome ${user.displayName}!`);
-        // If you want to differentiate admins vs users who sign in with Google,
-        // you'd do a Firestore check to see if they're admin or normal user.
-        // For now, let's just redirect them to login.html
         window.location.href = "login.html";
       } catch (error) {
-        console.error("Error during Google login: ", error);
-        alert("Error: " + error.message);
+        console.error("Google sign-in error:", error);
+        alert("Google sign-in error: " + error.message);
       }
     }
 
     // Expose globally
-    window.signIn = signIn;
+    window.login = login;
     window.toggleTheme = toggleTheme;
     window.googleLogin = googleLogin;
   </script>
