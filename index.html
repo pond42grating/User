@@ -146,22 +146,8 @@
       4) Password visibility toggle
     */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { 
-      getFirestore, 
-      doc, 
-      getDoc, 
-      collection, 
-      getDocs, 
-      query, 
-      where 
-    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-
-    import { 
-      GoogleAuthProvider, 
-      signInWithPopup,
-      getAuth
-    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-
+    import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     // 1) Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
