@@ -216,6 +216,15 @@
           email = userData.email;
           isApproved = userData.isApproved;
           username = userData.username;
+          
+          if (userData.status === "hold") {
+            alert("Your account is on hold by the admin. Please contact support.");
+            return;
+          }
+          if (userData.status === "block") {
+            alert("Your account has been blocked by the admin.Please contact support");
+            return;
+            }
         } else {
           const usersRef = collection(db, "Users");
           const q = query(usersRef, where("email", "==", userInput));
@@ -235,6 +244,15 @@
           alert("Your account is pending admin approval.");
           return;
         }
+        
+        if (userData.status === "hold") {
+            alert("Your account is on hold by the admin. Please contact support.");
+            return;
+          }
+          if (userData.status === "block") {
+            alert("Your account has been blocked by the admin. Please contact support");
+            return;
+            }
 
         // Firebase Auth Login
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
