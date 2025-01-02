@@ -171,22 +171,15 @@
     // Logout function
     async function logout() {
   try {
-    console.log("Logging out...");
-
-    // Sign out the user
+    console.log("Signing out...");
     await signOut(auth);
-
-    // Add a short delay before redirecting
-    setTimeout(() => {
-      console.log("Redirecting to login...");
-      window.location.href = "index.html";
-    }, 500);
-
-    console.log("Logged out successfully.");
+    console.log("Redirecting to login...");
+    window.location.href = "index.html";
   } catch (error) {
-    console.error("Error during logout: ", error);
+    console.error("Logout error:", error);
     alert("Error during logout: " + error.message);
   }
+}
 }
 
     // On load
