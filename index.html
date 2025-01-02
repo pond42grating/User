@@ -243,6 +243,7 @@
         // Log user activity
         const userDocRef = doc(db, "Users", username);
         await setDoc(userDocRef, {
+          isOnline: true,
           lastLogin: new Date().toISOString(),
           loginLogs: arrayUnion({
             activity: "Login",
