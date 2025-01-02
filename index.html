@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Login</title>
-
-  <!-- Styling -->
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -115,7 +115,6 @@
     }
   </style>
 </head>
-
 <body>
   <div class="toggle-theme" onclick="toggleTheme()">🌙</div>
 
@@ -124,7 +123,7 @@
     <input type="text" id="emailOrUsername" class="input-field" placeholder="Email or Username" required>
     <div class="password-container">
       <input type="password" id="password" class="input-field" placeholder="Password" required>
-      <span id="togglePassword" class="toggle-password">🔓</span>
+      <span id="togglePassword" class="toggle-password material-icons">visibility_off</span>
     </div>
     <button class="button" onclick="login()">Login</button>
     <p class="link"><a href="signup.html">Sign Up</a></p>
@@ -134,14 +133,15 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebaseapp.com",
+      storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7"
@@ -151,6 +151,7 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    // Toggle theme (dark/light mode)
     function toggleTheme() {
       document.body.classList.toggle("dark-mode");
       localStorage.setItem("theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
@@ -168,102 +169,112 @@
     togglePassword.addEventListener("click", () => {
       const type = passwordField.type === "password" ? "text" : "password";
       passwordField.type = type;
-      togglePassword.textContent = type === "password" ? "🔓" : "🔒";
+      togglePassword.textContent = type === "password" ? "visibility_off" : "visibility";
     });
 
+    // Login function
     async function login() {
-  const userInput = document.getElementById("emailOrUsername").value.trim();
-  const password = document.getElementById("password").value.trim();
+      const userInput = document.getElementById("emailOrUsername").value.trim();
+      const password = document.getElementById("password").value.trim();
 
-  if (!userInput || !password) {
-    alert("Please enter both email/username and password.");
-    return;
-  }
-
-  try {
-    let email = userInput; // Default to email input
-    let isApproved = false;
-    let isAdmin = false;
-    let username = null;
-
-    // Check if the input is for admin credentials
-    const adminDocRef = doc(db, "Admin", "Details");
-    const adminSnap = await getDoc(adminDocRef);
-
-    if (
-      adminSnap.exists() &&
-      (adminSnap.data().username === userInput || adminSnap.data().id === userInput) &&
-      adminSnap.data().password === password
-    ) {
-      alert("Welcome, Admin!");
-      window.location.href = "admin.html";
-      return; // Exit the function after successful admin login
-    }
-
-    // For regular users
-    // If the input is a username
-    if (!userInput.includes("@")) {
-      const userDocRef = doc(db, "Users", userInput);
-      const userSnap = await getDoc(userDocRef);
-
-      if (!userSnap.exists()) {
-        alert("No user found with that username.");
+      if (!userInput || !password) {
+        alert("Please enter both email/username and password.");
         return;
       }
 
-      const userData = userSnap.data();
-      email = userData.email; // Fetch email linked to the username
-      isApproved = userData.isApproved;
-      username = userData.username;
-    } else {
-      // Input is an email
-      const usersRef = collection(db, "Users");
-      const q = query(usersRef, where("email", "==", userInput));
-      const qSnap = await getDocs(q);
+      try {
+        let email = userInput;
+        let isApproved = false;
+        let isAdmin = false;
+        let username = null;
 
-      if (qSnap.empty) {
-        alert("No user found with that email.");
-        return;
+        // Admin login check
+        const adminDocRef = doc(db, "Admin", "Details");
+        const adminSnap = await getDoc(adminDocRef);
+
+        if (
+          adminSnap.exists() &&
+          (adminSnap.data().username === userInput || adminSnap.data().id === userInput) &&
+          adminSnap.data().password === password
+        ) {
+          alert("Welcome, Admin!");
+          window.location.href = "admin.html";
+          return;
+        }
+
+        // User login check
+        if (!userInput.includes("@")) {
+          const userDocRef = doc(db, "Users", userInput);
+          const userSnap = await getDoc(userDocRef);
+
+          if (!userSnap.exists()) {
+            alert("No user found with that username.");
+            return;
+          }
+
+          const userData = userSnap.data();
+          email = userData.email;
+          isApproved = userData.isApproved;
+          username = userData.username;
+        } else {
+          const usersRef = collection(db, "Users");
+          const q = query(usersRef, where("email", "==", userInput));
+          const qSnap = await getDocs(q);
+
+          if (qSnap.empty) {
+            alert("No user found with that email.");
+            return;
+          }
+
+          const userData = qSnap.docs[0].data();
+          isApproved = userData.isApproved;
+          username = userData.username;
+        }
+
+        if (!isApproved) {
+          alert("Your account is pending admin approval.");
+          return;
+        }
+
+        // Firebase Auth Login
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Log user activity
+        const userDocRef = doc(db, "Users", username);
+        await setDoc(userDocRef, {
+          lastLogin: new Date().toISOString(),
+          loginLogs: arrayUnion({
+            activity: "Login",
+            timestamp: new Date().toISOString(),
+          }),
+        }, { merge: true });
+
+        alert("Login successful!");
+        window.location.href = "login.html";
+      } catch (error) {
+        console.error("Login error:", error);
+        alert("Error: " + error.message);
       }
-
-      // Assume the first matching document
-      const userData = qSnap.docs[0].data();
-      isApproved = userData.isApproved;
-      username = userData.username;
     }
 
-    if (!isApproved) {
-      alert("Your account is pending admin approval.");
-      return;
-    }
-
-    // Firebase Auth Login
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    // Log user login activity
-    const userDocRef = doc(db, "Users", username);
-    await setDoc(userDocRef, {
-      lastLogin: new Date().toISOString(),
-      loginLogs: arrayUnion({
-        activity: "Login",
-        timestamp: new Date().toISOString(),
-      }),
-    });
-
-    alert("Login successful!");
-    window.location.href = "login.html"; // Redirect to user dashboard
-  } catch (error) {
-    console.error("Login error:", error);
-    alert("Error: " + error.message);
-  }
-}
-
+    // Google Login function
     async function googleLogin() {
       const provider = new GoogleAuthProvider();
 
       try {
         const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        // Check approval status
+        const userDocRef = doc(db, "Users", user.uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (!userSnap.exists() || !userSnap.data().isApproved) {
+          alert("Your account is pending admin approval.");
+          return;
+        }
+
         alert("Google Sign-in successful!");
         window.location.href = "login.html";
       } catch (error) {
