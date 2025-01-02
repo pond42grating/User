@@ -78,7 +78,7 @@
 
         querySnapshot.forEach((doc) => {
           const user = doc.data();
-          if (user.isOnline) {
+          if (user.isOnline=true) {
             onlineUsersHTML += `<p>${user.username} (${user.email})</p>`;
           }
         });
