@@ -170,15 +170,24 @@
 
     // Logout function
     async function logout() {
-      try {
-        await signOut(auth);
-        alert("Logged out successfully!");
-        window.location.href = "index.html";
-      } catch (error) {
-        console.error("Error during logout: ", error);
-        alert("Error: " + error.message);
-      }
-    }
+  try {
+    console.log("Logging out...");
+
+    // Sign out the user
+    await signOut(auth);
+
+    // Add a short delay before redirecting
+    setTimeout(() => {
+      console.log("Redirecting to login...");
+      window.location.href = "index.html";
+    }, 500);
+
+    console.log("Logged out successfully.");
+  } catch (error) {
+    console.error("Error during logout: ", error);
+    alert("Error during logout: " + error.message);
+  }
+}
 
     // On load
     window.onload = () => {
