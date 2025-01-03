@@ -8,11 +8,12 @@
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #a8edea, #fed6e3);
-      color: #333;
       margin: 0;
       padding: 0;
+      color: #333;
+      display: flex;
+      flex-direction: column;
       height: 100vh;
-      overflow: hidden;
     }
 
     header {
@@ -50,9 +51,9 @@
       display: none;
       position: absolute;
       background-color: white;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
       border-radius: 5px;
-      min-width: 150px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      right: 0;
       z-index: 1;
     }
 
@@ -61,12 +62,11 @@
       padding: 10px;
       text-decoration: none;
       display: block;
-      text-align: left;
       border-radius: 5px;
     }
 
     .dropdown-content a:hover {
-      background-color: #f1f1f1;
+           background-color: #f1f1f1;
     }
 
     .settings-dropdown:hover .dropdown-content {
@@ -74,9 +74,9 @@
     }
 
     main {
-      padding: 1rem;
+      flex: 1;
+      padding: 2rem;
       overflow-y: auto;
-      height: calc(100vh - 60px);
     }
 
     section {
@@ -87,54 +87,46 @@
       margin-bottom: 1rem;
     }
 
-    .user-list {
+    ul {
       list-style: none;
       padding: 0;
     }
 
-    .user-item {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: flex-start;
+    li {
       background: white;
-      margin-bottom: 1rem;
       padding: 1rem;
+      margin-bottom: 1rem;
       border-radius: 5px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .user-item h3 {
-      margin: 0;
-    }
-
-    .user-options {
-      display: none;
-      flex-direction: column;
-      margin-top: 10px;
-    }
-
-    .user-options button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      padding: 0.5rem;
-      margin-bottom: 5px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .user-options button:hover {
-      background-color: #45a049;
-    }
-
-    .notification-badge {
+    .badge {
       background-color: red;
       color: white;
       padding: 0.2rem 0.5rem;
       border-radius: 50%;
       font-size: 0.8rem;
-      vertical-align: top;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
@@ -144,44 +136,39 @@
     <div class="settings-dropdown">
       <button class="settings-button">Settings</button>
       <div class="dropdown-content">
+        <a href="#" onclick="togglePushNotifications()">Push Notifications</a>
         <a href="adminprofile.html">Admin Profile</a>
-        <a href="#" onclick="enablePushNotifications()">Push Notifications</a>
-        <a href="#" onclick="logout()">Logout</a>
+        <a href="#" onclick="logout()">Log Out</a>
       </div>
     </div>
   </header>
+
   <main>
     <section>
       <h2>Online Users</h2>
-      <ul class="user-list" id="online-users-list"></ul>
+      <ul id="online-users-list">Loading...</ul>
     </section>
+
     <section>
       <h2>User Logs</h2>
-      <ul class="user-list" id="user-logs-list"></ul>
+      <ul id="logs-list">Loading...</ul>
     </section>
+
     <section>
       <h2>Approved Users</h2>
-      <ul class="user-list" id="approved-users-list"></ul>
+      <ul id="approved-users-list">Loading...</ul>
     </section>
+
     <section>
       <h2>Hold/Blocked Users</h2>
-      <ul class="user-list" id="hold-blocked-users-list"></ul>
+      <ul id="hold-blocked-list">Loading...</ul>
     </section>
   </main>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      getDocs,
-      doc,
-      updateDoc,
-      deleteDoc,
-      query,
-      where,
-      onSnapshot
-    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
@@ -197,84 +184,121 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    async function fetchApprovedUsers() {
-      const list = document.getElementById("approved-users-list");
-      list.innerHTML = "Loading...";
-      try {
-        const users = await getDocs(query(collection(db, "Users"), where("isApproved", "==", true)));
-        list.innerHTML = users.docs
-          .map(doc => `
-            <li class="user-item">
-              <h3>${doc.data().username} (${doc.data().email})</h3>
-              <button onclick="toggleOptions('${doc.id}')">Options</button>
-              <div id="options-${doc.id}" class="user-options">
-                <button onclick="holdUser('${doc.id}')">Hold</button>
-                <button onclick="blockUser('${doc.id}')">Block</button>
-                <button onclick="removeUser('${doc.id}')">Remove</button>
-              </div>
-            </li>
-          `)
-          .join("") || "<li>No approved users</li>";
-      } catch (error) {
-        console.error("Error fetching approved users:", error);
-        list.innerHTML = "Error loading approved users.";
+    // Redirect to login if not authenticated
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "index.html";
       }
+    });
+
+    async function fetchOnlineUsers() {
+      const onlineUsersList = document.getElementById("online-users-list");
+      onlineUsersList.innerHTML = "Loading...";
+      const querySnapshot = await getDocs(query(collection(db, "Users"), where("isOnline", "==", true)));
+      let html = "";
+      querySnapshot.forEach((doc) => {
+        const user = doc.data();
+        html += `<li>${user.username} (${user.email})</li>`;
+      });
+      onlineUsersList.innerHTML = html || "<li>No users online.</li>";
     }
 
-    function toggleOptions(userId) {
-      const options = document.getElementById(`options-${userId}`);
-      options.style.display = options.style.display === "none" || !options.style.display ? "flex" : "none";
-    }
-
-    function enablePushNotifications() {
-      Notification.requestPermission().then(permission => {
-        if (permission === "granted") {
-          const q = query(collection(db, "Users"), where("isApproved", "==", false));
-          onSnapshot(q, snapshot => {
-            snapshot.docChanges().forEach(change => {
-              if (change.type === "added") {
-                new Notification("New User Request", {
-                  body: `${change.doc.data().username} (${change.doc.data().email}) has requested approval.`,
-                  icon: "notification-icon.png" // Add an icon if needed
-                });
-              }
-            });
+    async function fetchUserLogs() {
+      const logsList = document.getElementById("logs-list");
+      logsList.innerHTML = "Loading...";
+      const querySnapshot = await getDocs(collection(db, "Users"));
+      let html = "";
+      querySnapshot.forEach((doc) => {
+        const user = doc.data();
+        if (user.loginLogs) {
+          html += `<li>${user.username}<ul>`;
+          user.loginLogs.forEach((log) => {
+            html += `<li>${log.activity} at ${new Date(log.timestamp).toLocaleString()}</li>`;
           });
-        } else {
-          alert("Push notifications denied.");
+          html += "</ul></li>";
         }
       });
+      logsList.innerHTML = html || "<li>No user logs found.</li>";
+    }
+
+    async function fetchApprovedUsers() {
+      const approvedUsersList = document.getElementById("approved-users-list");
+      approvedUsersList.innerHTML = "Loading...";
+      const querySnapshot = await getDocs(query(collection(db, "Users"), where("isApproved", "==", true)));
+      let html = "";
+      querySnapshot.forEach((doc) => {
+        const user = doc.data();
+        html += `
+          <li>${user.username} (${user.email})
+            <div class="action-buttons">
+              <button onclick="holdUser('${doc.id}')">Hold</button>
+              <button onclick="blockUser('${doc.id}')">Block</button>
+              <button onclick="removeUser('${doc.id}')">Remove</button>
+            </div>
+          </li>`;
+      });
+      approvedUsersList.innerHTML = html || "<li>No approved users found.</li>";
+    }
+
+    async function fetchHoldBlockedUsers() {
+      const holdBlockedList = document.getElementById("hold-blocked-list");
+      holdBlockedList.innerHTML = "Loading...";
+      const querySnapshot = await getDocs(
+        query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"]))
+      );
+      let html = "";
+      querySnapshot.forEach((doc) => {
+        const user = doc.data();
+        html += `
+          <li>${user.username} (${user.email}) - ${user.status}
+            <button onclick="unblockUser('${doc.id}')">Unblock/Unhold</button>
+          </li>`;
+      });
+      holdBlockedList.innerHTML = html || "<li>No hold/blocked users found.</li>";
+    }
+
+    async function holdUser(userId) {
+      await updateDoc(doc(db, "Users", userId), { status: "Hold" });
+      fetchApprovedUsers();
+      fetchHoldBlockedUsers();
+    }
+
+    async function blockUser(userId) {
+      await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
+      fetchApprovedUsers();
+      fetchHoldBlockedUsers();
+    }
+
+    async function removeUser(userId) {
+      await deleteDoc(doc(db, "Users", userId));
+      fetchApprovedUsers();
+    }
+
+    async function unblockUser(userId) {
+      await updateDoc(doc(db, "Users", userId), { status: null });
+      fetchHoldBlockedUsers();
+    }
+
+    function togglePushNotifications() {
+      alert("Push notifications are now enabled.");
     }
 
     async function logout() {
       await signOut(auth);
-      alert("Logged out");
       window.location.href = "index.html";
     }
 
     window.onload = () => {
+      fetchOnlineUsers();
+      fetchUserLogs();
       fetchApprovedUsers();
+      fetchHoldBlockedUsers();
     };
 
-    window.holdUser = async userId => {
-      await updateDoc(doc(db, "Users", userId), { status: "Hold" });
-      alert("User put on hold");
-      fetchApprovedUsers();
-    };
-
-    window.blockUser = async userId => {
-      await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
-      alert("User blocked");
-      fetchApprovedUsers();
-    };
-
-    window.removeUser = async userId => {
-      await deleteDoc(doc(db, "Users", userId));
-      alert("User removed");
-      fetchApprovedUsers();
-    };
-
-    window.enablePushNotifications = enablePushNotifications;
+    window.holdUser = holdUser;
+    window.blockUser = blockUser;
+    window.removeUser = removeUser;
+    window.unblockUser = unblockUser;
     window.logout = logout;
   </script>
 </body>
