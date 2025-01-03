@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
   <style>
+    /* Styles retained from the previously saved code */
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #a8edea, #fed6e3);
@@ -55,6 +56,17 @@
     h2 {
       cursor: pointer;
     }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 0.3rem 0.5rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
@@ -103,6 +115,9 @@
       query,
       where,
       onSnapshot,
+      updateDoc,
+      doc,
+      deleteDoc
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -128,59 +143,6 @@
       });
     }
 
-    function fetchApprovalRequests() {
-      const list = document.getElementById("approval-requests-list");
-      const badge = document.getElementById("approval-badge");
-      const q = query(collection(db, "Users"), where("isApproved", "==", false));
-      onSnapshot(q, (snapshot) => {
-        let html = "";
-        let count = 0;
-        snapshot.forEach((doc) => {
-          count++;
-          html += `<li>${doc.data().username} (${doc.data().email})</li>`;
-        });
-        list.innerHTML = html || "<li>No approval requests.</li>";
-        badge.textContent = count;
-      });
-    }
-
-    function fetchOnlineUsers() {
-      const list = document.getElementById("online-users-list");
-      const badge = document.getElementById("online-badge");
-      const q = query(collection(db, "Users"), where("isOnline", "==", true));
-      onSnapshot(q, (snapshot) => {
-        let html = "";
-        let count = 0;
-        snapshot.forEach((doc) => {
-          count++;
-          html += `<li>${doc.data().username} (${doc.data().email})</li>`;
-        });
-        list.innerHTML = html || "<li>No online users.</li>";
-        badge.textContent = count;
-      });
-    }
-
-    function fetchUserLogs() {
-      const list = document.getElementById("logs-list");
-      const badge = document.getElementById("logs-badge");
-      const q = query(collection(db, "Users"));
-      onSnapshot(q, (snapshot) => {
-        let html = "";
-        let count = 0;
-        snapshot.forEach((doc) => {
-          const logs = doc.data().loginLogs || [];
-          logs.forEach((log) => {
-            count++;
-            html += `<li>${log.activity} by ${doc.data().username} at ${new Date(
-              log.timestamp
-            ).toLocaleString()}</li>`;
-          });
-        });
-        list.innerHTML = html || "<li>No logs found.</li>";
-        badge.textContent = count;
-      });
-    }
-
     function fetchApprovedUsers() {
       const list = document.getElementById("approved-users-list");
       const badge = document.getElementById("approved-badge");
@@ -190,7 +152,12 @@
         let count = 0;
         snapshot.forEach((doc) => {
           count++;
-          html += `<li>${doc.data().username} (${doc.data().email})</li>`;
+          const user = doc.data();
+          html += `<li>${user.username} (${user.email})
+            <button onclick="holdUser('${doc.id}')">Hold</button>
+            <button onclick="blockUser('${doc.id}')">Block</button>
+            <button onclick="removeUser('${doc.id}')">Remove</button>
+          </li>`;
         });
         list.innerHTML = html || "<li>No approved users.</li>";
         badge.textContent = count;
@@ -209,21 +176,47 @@
         let count = 0;
         snapshot.forEach((doc) => {
           count++;
-          html += `<li>${doc.data().username} (${doc.data().email}) - ${doc.data().status}</li>`;
+          const user = doc.data();
+          const timeAgo = new Date(user.timestamp).toLocaleString();
+          html += `<li>${user.username} (${user.email}) - ${user.status} (${timeAgo})
+            <button onclick="unblockUser('${doc.id}')">Unblock</button>
+          </li>`;
         });
         list.innerHTML = html || "<li>No hold/blocked users.</li>";
         badge.textContent = count;
       });
     }
 
+    async function holdUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      await updateDoc(userRef, { status: "Hold", timestamp: new Date().toISOString() });
+    }
+
+    async function blockUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      await updateDoc(userRef, { status: "Blocked", timestamp: new Date().toISOString() });
+    }
+
+    async function removeUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      await deleteDoc(userRef);
+    }
+
+    async function unblockUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      await updateDoc(userRef, { status: "" });
+    }
+
     window.onload = () => {
       addToggleFunctionality();
-      fetchApprovalRequests();
-      fetchOnlineUsers();
-      fetchUserLogs();
       fetchApprovedUsers();
       fetchHoldBlockedUsers();
     };
+
+    window.holdUser = holdUser;
+    window.blockUser = blockUser;
+    window.removeUser = removeUser;
+    window.unblockUser = unblockUser;
   </script>
 </body>
 </html>
