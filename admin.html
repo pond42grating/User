@@ -4,212 +4,249 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background: #f7faff;
+            background: #f1f5f9;
         }
-
-        header {
-            background: #4caf50;
-            color: white;
+        .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: #4caf50;
+            color: white;
             padding: 10px 20px;
         }
-
-        header h1 {
-            margin: 0;
-        }
-
-        .settings {
+        .dropdown {
             position: relative;
+            display: inline-block;
         }
-
-        #settingsDropdown {
-            position: absolute;
-            top: 40px;
-            right: 0;
-            background: white;
-            border: 1px solid #ccc;
-            padding: 5px;
-            list-style: none;
-            margin: 0;
+        .dropdown-content {
             display: none;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: absolute;
+            right: 0;
+            background-color: white;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            z-index: 1;
         }
-
-        #settingsDropdown li {
-            margin: 5px 0;
-            cursor: pointer;
-        }
-
-        #settingsDropdown li a {
-            text-decoration: none;
-            color: black;
-        }
-
-        #settingsButton:hover + #settingsDropdown,
-        #settingsDropdown:hover {
+        .dropdown:hover .dropdown-content {
             display: block;
         }
-
-        section {
+        .section {
             margin: 20px;
+            padding: 15px;
             background: white;
-            border: 1px solid #ccc;
-            padding: 20px;
-            border-radius: 5px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
         }
-
+        .section h2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0;
+        }
         .badge {
             background: red;
             color: white;
-            border-radius: 50%;
             padding: 5px 10px;
-            font-size: 0.9em;
+            border-radius: 15px;
+            font-size: 12px;
         }
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .user-item:last-child {
+            border-bottom: none;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-approve { background: green; color: white; }
+        .btn-reject, .btn-clear { background: red; color: white; }
+        .btn-clear { background: #2196f3; }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
 </head>
 <body>
-    <div class="dashboard">
-        <header>
-            <h1>Admin Dashboard</h1>
-            <div class="settings">
-                <button id="settingsButton">Settings</button>
-                <ul id="settingsDropdown" class="hidden">
-                    <li><a href="adminprofile.html">Admin Profile</a></li>
-                    <li id="logoutButton">Logout</li>
-                </ul>
+    <div class="navbar">
+        <h1>Admin Dashboard</h1>
+        <div class="dropdown">
+            <button>Settings</button>
+            <div class="dropdown-content">
+                <a href="adminprofile.html">Admin Profile</a>
+                <a href="#" id="logout">Logout</a>
             </div>
-        </header>
+        </div>
+    </div>
 
-        <main>
-            <section id="approvalRequests">
-                <h2>Approval Requests <span id="approvalBadge" class="badge">0</span></h2>
-                <div id="approvalList">Loading...</div>
-            </section>
+    <!-- Sections -->
+    <div class="section" id="approvalRequests">
+        <h2>Approval Requests <span class="badge" id="approvalCount">0</span></h2>
+        <div id="approvalList">Loading...</div>
+    </div>
 
-            <section id="onlineUsers">
-                <h2>Online Users <span id="onlineBadge" class="badge">0</span></h2>
-                <div id="onlineList">Loading...</div>
-            </section>
+    <div class="section" id="onlineUsers">
+        <h2>Online Users <span class="badge" id="onlineCount">0</span></h2>
+        <div id="onlineList">Loading...</div>
+    </div>
 
-            <section id="userLogs">
-                <h2>User Logs <span id="logsBadge" class="badge">0</span></h2>
-                <div id="logsList">Loading...</div>
-            </section>
+    <div class="section" id="userLogs">
+        <h2>User Logs <span class="badge" id="logsCount">0</span></h2>
+        <div>
+            <input type="date" id="fromDate"> to <input type="date" id="toDate">
+            <button class="btn-clear" id="clearLogs">Clear Logs</button>
+        </div>
+        <div id="logsList">Loading...</div>
+    </div>
 
-            <section id="approvedUsers">
-                <h2>Approved Users <span id="approvedBadge" class="badge">0</span></h2>
-                <div id="approvedList">Loading...</div>
-            </section>
+    <div class="section" id="approvedUsers">
+        <h2>Approved Users <span class="badge" id="approvedCount">0</span></h2>
+        <div id="approvedList">Loading...</div>
+    </div>
 
-            <section id="holdBlockedUsers">
-                <h2>Hold/Blocked Users <span id="holdBadge" class="badge">0</span></h2>
-                <div id="holdList">Loading...</div>
-            </section>
-        </main>
+    <div class="section" id="holdBlockedUsers">
+        <h2>Hold/Blocked Users <span class="badge" id="holdBlockedCount">0</span></h2>
+        <div id="holdBlockedList">Loading...</div>
     </div>
 
     <script>
-        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
             authDomain: "dws-management.firebaseapp.com",
             projectId: "dws-management",
-            storageBucket: "dws-management.firebasestorage.app",
+            storageBucket: "dws-management.firebaseapp.com",
             messagingSenderId: "23827231923",
             appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-            measurementId: "G-L14GLJDYW7",
+            measurementId: "G-L14GLJDYW7"
         };
 
-        // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const auth = firebase.getAuth(app);
+        const db = firebase.getFirestore(app);
 
-        // Fetch and update Approval Requests
-        function fetchApprovalRequests() {
-            db.collection("Users").where("isApproved", "==", false).onSnapshot((snapshot) => {
-                const approvalList = document.getElementById("approvalList");
-                const approvalBadge = document.getElementById("approvalBadge");
-                approvalList.innerHTML = "";
-                let count = 0;
+        // Logout Function
+        document.getElementById('logout').addEventListener('click', () => {
+            firebase.signOut(auth).then(() => {
+                window.location.href = "index.html";
+            });
+        });
 
-                snapshot.forEach((doc) => {
-                    count++;
-                    const user = doc.data();
-                    const div = document.createElement("div");
-                    div.innerHTML = `
-                        ${user.name} (${user.email})
-                        <button onclick="approveUser('${doc.id}')">Approve</button>
-                        <button onclick="rejectUser('${doc.id}')">Reject</button>
-                    `;
-                    approvalList.appendChild(div);
-                });
-
-                approvalBadge.textContent = count;
-                if (count === 0) {
-                    approvalList.innerHTML = "No approval requests found.";
+        const fetchApprovalRequests = async () => {
+            const approvalList = document.getElementById("approvalList");
+            let approvalCount = 0;
+            const approvalSnap = await firebase.getDocs(firebase.collection(db, "Users"));
+            approvalSnap.forEach((doc) => {
+                if (!doc.data().isApproved) {
+                    approvalCount++;
+                    approvalList.innerHTML += `<div class="user-item">${doc.id} 
+                    <div class="buttons">
+                        <button class="btn-approve">Approve</button> 
+                        <button class="btn-reject">Reject</button>
+                    </div></div>`;
                 }
             });
-        }
+            document.getElementById("approvalCount").textContent = approvalCount;
+        };
 
-        // Approve user
-        function approveUser(userId) {
-            db.collection("Users").doc(userId).update({ isApproved: true });
-        }
-
-        // Reject user
-        function rejectUser(userId) {
-            db.collection("Users").doc(userId).delete();
-        }
-
-        // Fetch and update Online Users
-        function fetchOnlineUsers() {
-            db.collection("Users").where("isOnline", "==", true).onSnapshot((snapshot) => {
-                const onlineList = document.getElementById("onlineList");
-                const onlineBadge = document.getElementById("onlineBadge");
-                onlineList.innerHTML = "";
-                let count = 0;
-
-                snapshot.forEach((doc) => {
-                    count++;
-                    const user = doc.data();
-                    const onlineTime = getTimeElapsed(user.lastLogin);
-                    const div = document.createElement("div");
-                    div.textContent = `${user.name} (${user.email}) - Online for ${onlineTime}`;
-                    onlineList.appendChild(div);
-                });
-
-                onlineBadge.textContent = count;
-                if (count === 0) {
-                    onlineList.innerHTML = "No users online.";
+        const fetchOnlineUsers = async () => {
+            const onlineList = document.getElementById("onlineList");
+            let onlineCount = 0;
+            const onlineSnap = await firebase.getDocs(firebase.collection(db, "Users"));
+            onlineSnap.forEach((doc) => {
+                if (doc.data().isOnline) {
+                    onlineCount++;
+                    const lastLogin = new Date(doc.data().lastLogin);
+                    const now = new Date();
+                    const diffHours = Math.round((now - lastLogin) / (1000 * 60 * 60));
+                    onlineList.innerHTML += `<div class="user-item">${doc.id} - Online for ${diffHours} hours</div>`;
                 }
             });
-        }
+            document.getElementById("onlineCount").textContent = onlineCount;
+        };
 
-        // Helper: Get time elapsed
-        function getTimeElapsed(timestamp) {
-            const loginTime = new Date(timestamp);
-            const currentTime = new Date();
-            const diff = Math.floor((currentTime - loginTime) / 1000); // in seconds
+        const fetchUserLogs = async () => {
+            const logsList = document.getElementById("logsList");
+            let logsCount = 0;
+            const logsSnap = await firebase.getDocs(firebase.collection(db, "Logs"));
+            logsSnap.forEach((doc) => {
+                logsCount++;
+                logsList.innerHTML += `<div class="user-item">${doc.data().activity} at ${doc.data().timestamp}</div>`;
+            });
+            document.getElementById("logsCount").textContent = logsCount;
+        };
 
-            const hours = Math.floor(diff / 3600);
-            const minutes = Math.floor((diff % 3600) / 60);
-            return `${hours} hours ${minutes} minutes`;
-        }
+        const fetchApprovedUsers = async () => {
+            const approvedList = document.getElementById("approvedList");
+            let approvedCount = 0;
+            const approvedSnap = await firebase.getDocs(firebase.collection(db, "Users"));
+            approvedSnap.forEach((doc) => {
+                if (doc.data().isApproved) {
+                    approvedCount++;
+                    approvedList.innerHTML += `<div class="user-item">${doc.id}
+                    <div class="buttons">
+                        <button class="btn-approve">Hold</button> 
+                        <button class="btn-reject">Block</button>
+                    </div></div>`;
+                }
+            });
+            document.getElementById("approvedCount").textContent = approvedCount;
+        };
 
-        // Initialize
+        const fetchHoldBlockedUsers = async () => {
+            const holdBlockedList = document.getElementById("holdBlockedList");
+            let holdBlockedCount = 0;
+            const holdBlockedSnap = await firebase.getDocs(firebase.collection(db, "Users"));
+            holdBlockedSnap.forEach((doc) => {
+                if (doc.data().status === "Hold" || doc.data().status === "Blocked") {
+                    holdBlockedCount++;
+                    holdBlockedList.innerHTML += `<div class="user-item">${doc.id} - ${doc.data().status}</div>`;
+                }
+            });
+            document.getElementById("holdBlockedCount").textContent = holdBlockedCount;
+        };
+
+        const clearLogs = async () => {
+            const fromDate = document.getElementById("fromDate").value;
+            const toDate = document.getElementById("toDate").value;
+            if (!fromDate || !toDate) {
+                alert("Please select both dates.");
+                return;
+            }
+
+            const logsSnap = await firebase.getDocs(firebase.collection(db, "Logs"));
+            logsSnap.forEach((doc) => {
+                const logDate = new Date(doc.data().timestamp);
+                if (logDate >= new Date(fromDate) && logDate <= new Date(toDate)) {
+                    firebase.deleteDoc(firebase.doc(db, "Logs", doc.id));
+                }
+            });
+            alert("Logs cleared successfully.");
+            fetchUserLogs();
+        };
+
+        document.getElementById("clearLogs").addEventListener("click", clearLogs);
+
         fetchApprovalRequests();
         fetchOnlineUsers();
+        fetchUserLogs();
+        fetchApprovedUsers();
+        fetchHoldBlockedUsers();
     </script>
 </body>
 </html>
