@@ -9,11 +9,8 @@
     body {
       font-family: Arial, sans-serif;
       background-color: #f3f6f9;
-    }
-    .container {
-      padding: 20px;
-      max-width: 800px;
-      margin: 0 auto;
+      margin: 0;
+      padding: 0;
     }
     .header {
       background-color: #4CAF50;
@@ -21,12 +18,18 @@
       padding: 15px;
       text-align: center;
     }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
     .card {
       background-color: white;
       padding: 20px;
       margin-bottom: 10px;
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: none;
     }
     .card h3 {
       margin-top: 0;
@@ -43,6 +46,20 @@
     .button:hover {
       background-color: #45a049;
     }
+    .badge {
+      background-color: red;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    .toggle-section {
+      cursor: pointer;
+    }
+    .section-content {
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -52,185 +69,73 @@
   </div>
 
   <div class="container">
-    <div class="card">
-      <h3>Approval Requests <span id="approval-count">0</span></h3>
-      <p>No approval requests found.</p>
+    <div class="card" id="approval-requests">
+      <h3 class="toggle-section" onclick="toggleSection('approval-requests')">Approval Requests <span id="approval-count" class="badge">0</span></h3>
+      <div class="section-content">
+        <p>No approval requests found.</p>
+      </div>
     </div>
 
-    <div class="card">
-      <h3>Online Users <span id="online-count">0</span></h3>
-      <div id="online-users"></div>
+    <div class="card" id="online-users">
+      <h3 class="toggle-section" onclick="toggleSection('online-users')">Online Users <span id="online-count" class="badge">0</span></h3>
+      <div class="section-content">
+        <p>Loading...</p>
+      </div>
     </div>
 
-    <div class="card">
-      <h3>User Logs <span id="logs-count">0</span></h3>
-      <div id="user-logs"></div>
-      <button class="button" id="clear-logs">Clear Logs</button>
+    <div class="card" id="user-logs">
+      <h3 class="toggle-section" onclick="toggleSection('user-logs')">User Logs <span id="logs-count" class="badge">0</span></h3>
+      <div class="section-content">
+        <p>Loading...</p>
+      </div>
     </div>
 
-    <div class="card">
-      <h3>Approved Users <span id="approved-count">0</span></h3>
-      <div id="approved-users"></div>
+    <div class="card" id="approved-users">
+      <h3 class="toggle-section" onclick="toggleSection('approved-users')">Approved Users <span id="approved-count" class="badge">0</span></h3>
+      <div class="section-content">
+        <p>Loading...</p>
+      </div>
     </div>
 
-    <div class="card">
-      <h3>Hold/Blocked Users <span id="blocked-count">0</span></h3>
-      <div id="blocked-users"></div>
+    <div class="card" id="hold-blocked-users">
+      <h3 class="toggle-section" onclick="toggleSection('hold-blocked-users')">Hold/Blocked Users <span id="blocked-count" class="badge">0</span></h3>
+      <div class="section-content">
+        <p>No hold/blocked users found.</p>
+      </div>
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-auth.js"></script>
-  
   <script>
-    // Firebase Configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-      authDomain: "dws-management.firebaseapp.com",
-      projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
-      messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
-    };
+    function toggleSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      const sectionContent = section.querySelector('.section-content');
+      const currentDisplay = sectionContent.style.display;
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
-    // Fetching Online Users
-    function fetchOnlineUsers() {
-      const onlineUsersRef = db.collection('Users').where('isOnline', '==', true);
-      onlineUsersRef.get().then(snapshot => {
-        let onlineUsersHTML = '';
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          onlineUsersHTML += `<p>${data.username} - Online for ${data.onlineDuration} mins</p>`;
-        });
-        document.getElementById('online-users').innerHTML = onlineUsersHTML;
-        document.getElementById('online-count').textContent = snapshot.size;
-      });
+      if (currentDisplay === 'block') {
+        sectionContent.style.display = 'none';
+      } else {
+        sectionContent.style.display = 'block';
+      }
     }
 
-    // Fetching User Logs
-    function fetchUserLogs() {
-      const logsRef = db.collection('UserLogs');
-      logsRef.get().then(snapshot => {
-        let logsHTML = '';
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          logsHTML += `<p>${data.activity} by ${data.username} at ${new Date(data.timestamp).toLocaleString()}</p>`;
-        });
-        document.getElementById('user-logs').innerHTML = logsHTML;
-        document.getElementById('logs-count').textContent = snapshot.size;
-      });
+    // Simulate fetching data from Firebase or any other source
+    function simulateData() {
+      setTimeout(() => {
+        document.getElementById('online-users').style.display = 'block';
+        document.getElementById('approval-requests').style.display = 'block';
+        document.getElementById('user-logs').style.display = 'block';
+        document.getElementById('approved-users').style.display = 'block';
+        document.getElementById('hold-blocked-users').style.display = 'block';
+
+        document.getElementById('approval-count').textContent = '5'; // Example count
+        document.getElementById('online-count').textContent = '2'; // Example count
+        document.getElementById('logs-count').textContent = '10'; // Example count
+        document.getElementById('approved-count').textContent = '3'; // Example count
+        document.getElementById('blocked-count').textContent = '1'; // Example count
+      }, 1000); // Simulating data fetch delay
     }
 
-    // Fetching Approved Users
-    function fetchApprovedUsers() {
-      const approvedUsersRef = db.collection('Users').where('isApproved', '==', true);
-      approvedUsersRef.get().then(snapshot => {
-        let approvedUsersHTML = '';
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          approvedUsersHTML += `<p>${data.username} (${data.email}) 
-                                  <button class="button" onclick="blockUser('${doc.id}')">Block</button>
-                                  <button class="button" onclick="holdUser('${doc.id}')">Hold</button>
-                                  <button class="button" onclick="removeUser('${doc.id}')">Remove</button>
-                                 </p>`;
-        });
-        document.getElementById('approved-users').innerHTML = approvedUsersHTML;
-        document.getElementById('approved-count').textContent = snapshot.size;
-      });
-    }
-
-    // Fetching Hold/Blocked Users
-    function fetchBlockedUsers() {
-      const blockedUsersRef = db.collection('Users').where('status', 'in', ['Hold', 'Blocked']);
-      blockedUsersRef.get().then(snapshot => {
-        let blockedUsersHTML = '';
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          blockedUsersHTML += `<p>${data.username} (${data.email}) - ${data.status}
-                                <button class="button" onclick="unblockUser('${doc.id}')">Unblock</button>
-                                <button class="button" onclick="unholdUser('${doc.id}')">Unhold</button>
-                               </p>`;
-        });
-        document.getElementById('blocked-users').innerHTML = blockedUsersHTML;
-        document.getElementById('blocked-count').textContent = snapshot.size;
-      });
-    }
-
-    // Blocking User
-    function blockUser(userId) {
-      db.collection('Users').doc(userId).update({
-        status: 'Blocked'
-      }).then(() => {
-        alert('User has been blocked');
-        fetchApprovedUsers(); // Refresh approved users
-        fetchBlockedUsers(); // Refresh blocked users
-      });
-    }
-
-    // Holding User
-    function holdUser(userId) {
-      db.collection('Users').doc(userId).update({
-        status: 'Hold'
-      }).then(() => {
-        alert('User is on hold');
-        fetchApprovedUsers(); // Refresh approved users
-        fetchBlockedUsers(); // Refresh blocked users
-      });
-    }
-
-    // Removing User
-    function removeUser(userId) {
-      db.collection('Users').doc(userId).delete().then(() => {
-        alert('User removed');
-        fetchApprovedUsers(); // Refresh approved users
-      });
-    }
-
-    // Unblocking User
-    function unblockUser(userId) {
-      db.collection('Users').doc(userId).update({
-        status: ''
-      }).then(() => {
-        alert('User has been unblocked');
-        fetchBlockedUsers(); // Refresh blocked users
-      });
-    }
-
-    // Unholding User
-    function unholdUser(userId) {
-      db.collection('Users').doc(userId).update({
-        status: ''
-      }).then(() => {
-        alert('User has been removed from hold');
-        fetchBlockedUsers(); // Refresh blocked users
-      });
-    }
-
-    // Clear Logs
-    document.getElementById('clear-logs').addEventListener('click', () => {
-      db.collection('UserLogs').get().then(snapshot => {
-        snapshot.forEach(doc => {
-          doc.ref.delete();
-        });
-        alert('Logs cleared');
-        fetchUserLogs(); // Refresh logs
-      });
-    });
-
-    // Load all data when page loads
-    window.onload = () => {
-      fetchOnlineUsers();
-      fetchUserLogs();
-      fetchApprovedUsers();
-      fetchBlockedUsers();
-    };
+    window.onload = simulateData;
   </script>
 </body>
 </html>
