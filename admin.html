@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - DWS Management</title>
   <style>
-    /* General styles */
     * {
       margin: 0;
       padding: 0;
@@ -38,28 +37,6 @@
       background-color: #45a049;
       color: white;
     }
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background-color: white;
-      min-width: 160px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-      border-radius: 5px;
-    }
-    .dropdown:hover .dropdown-content {
-      display: block;
-    }
-    .dropdown-content a {
-      padding: 12px;
-      text-decoration: none;
-      display: block;
-      color: black;
-    }
-    .dropdown-content a:hover {
-      background-color: #ddd;
-    }
     main {
       flex: 1;
       padding: 2rem;
@@ -72,32 +49,10 @@
     ul {
       list-style: none;
       padding: 0;
-      display: none; /* Initially hidden */
+      display: none;
     }
     ul.active {
       display: block;
-    }
-    li {
-      background: white;
-      margin-bottom: 1rem;
-      padding: 1rem;
-      border-radius: 5px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
     }
     .badge {
       background: red;
@@ -112,55 +67,29 @@
 <body>
   <header>
     <h1>Admin Dashboard</h1>
-    <div class="dropdown">
-      <button id="settings">Settings</button>
-      <div class="dropdown-content">
-        <a href="adminprofile.html">Admin Profile</a>
-        <a href="#" onclick="logout()">Log Out</a>
-      </div>
-    </div>
+    <button id="settings">Settings</button>
   </header>
 
   <main>
     <section>
-      <h2>
-        Approval Requests <span class="badge" id="approval-badge">0</span>
-      </h2>
-      <ul id="approval-requests-list">
-        Loading...
-      </ul>
+      <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
+      <ul id="approval-requests-list">Loading...</ul>
     </section>
     <section>
-      <h2>
-        Online Users <span class="badge" id="online-badge">0</span>
-      </h2>
-      <ul id="online-users-list">
-        Loading...
-      </ul>
+      <h2>Online Users <span class="badge" id="online-badge">0</span></h2>
+      <ul id="online-users-list">Loading...</ul>
     </section>
     <section>
-      <h2>
-        User Logs <span class="badge" id="logs-badge">0</span>
-      </h2>
-      <ul id="logs-list">
-        Loading...
-      </ul>
+      <h2>User Logs <span class="badge" id="logs-badge">0</span></h2>
+      <ul id="logs-list">Loading...</ul>
     </section>
     <section>
-      <h2>
-        Approved Users <span class="badge" id="approved-badge">0</span>
-      </h2>
-      <ul id="approved-users-list">
-        Loading...
-      </ul>
+      <h2>Approved Users <span class="badge" id="approved-badge">0</span></h2>
+      <ul id="approved-users-list">Loading...</ul>
     </section>
     <section>
-      <h2>
-        Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span>
-      </h2>
-      <ul id="hold-blocked-list">
-        Loading...
-      </ul>
+      <h2>Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span></h2>
+      <ul id="hold-blocked-list">Loading...</ul>
     </section>
   </main>
 
@@ -198,7 +127,7 @@
     function initializeSections() {
       const sections = document.querySelectorAll("main section ul");
       sections.forEach((section, index) => {
-        section.style.display = index === 0 ? "block" : "none";
+        section.style.display = index === 0 ? "block" : "none"; // Open only the first section
       });
     }
 
