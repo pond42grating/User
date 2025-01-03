@@ -275,20 +275,6 @@
       }
     }
 
-    // Other fetch functions...
-
-    async function logout() {
-      try {
-        await signOut(auth);
-        alert("Logged out successfully!");
-        window.location.href = "index.html";
-      } catch (error) {
-        console.error("Error during logout:", error);
-        alert("Error: " + error.message);
-      }
-    }
-      
-
     async function fetchOnlineUsers() {
       const onlineUsersList = document.getElementById("online-users-list");
       onlineUsersList.innerHTML = "Loading...";
