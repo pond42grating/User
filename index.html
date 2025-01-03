@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>User Login</title>
 
   <!-- Styling -->
@@ -121,9 +121,9 @@
 
   <div class="container">
     <h2>Login to DWS</h2>
-    <input type="text" id="emailOrUsername" class="input-field" placeholder="Email or Username" required>
+    <input type="text" id="emailOrUsername" class="input-field" placeholder="Email or Username" required />
     <div class="password-container">
-      <input type="password" id="password" class="input-field" placeholder="Password" required>
+      <input type="password" id="password" class="input-field" placeholder="Password" required />
       <span id="togglePassword" class="toggle-password">🔓</span>
     </div>
     <button class="button" onclick="login()">Login</button>
@@ -134,9 +134,25 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      collection,
+      query,
+      where,
+      getDocs,
+      arrayUnion,
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      GoogleAuthProvider,
+      signInWithPopup,
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
@@ -144,16 +160,20 @@
       storageBucket: "dws-management.firebaseapp.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
+      measurementId: "G-L14GLJDYW7",
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    // Theme Toggle
     function toggleTheme() {
       document.body.classList.toggle("dark-mode");
-      localStorage.setItem("theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
+      localStorage.setItem(
+        "theme",
+        document.body.classList.contains("dark-mode") ? "dark" : "light"
+      );
     }
 
     window.onload = function () {
@@ -162,6 +182,7 @@
       }
     };
 
+    // Password Visibility Toggle
     const togglePassword = document.getElementById("togglePassword");
     const passwordField = document.getElementById("password");
 
@@ -171,125 +192,117 @@
       togglePassword.textContent = type === "password" ? "🔓" : "🔒";
     });
 
+    // Login Function
     async function login() {
-  const userInput = document.getElementById("emailOrUsername").value.trim();
-  const password = document.getElementById("password").value.trim();
+      const userInput = document.getElementById("emailOrUsername").value.trim();
+      const password = document.getElementById("password").value.trim();
 
-  if (!userInput || !password) {
-    alert("Please enter both email/username and password.");
-    return;
-  }
+      if (!userInput || !password) {
+        alert("Please enter both email/username and password.");
+        return;
+      }
 
-  try {
-    let email = null;
-    let isAdmin = false;
-    let isApproved = false;
-    let userStatus = "Active"; // Default status as "Active"
+      try {
+        let email = null;
+        let isAdmin = false;
+        let isApproved = false;
+        let userStatus = "";
 
-    // Check if input is for admin
-    const adminDocRef = doc(db, "Admin", "Details");
-    const adminSnap = await getDoc(adminDocRef);
+        // Admin Check
+        const adminDocRef = doc(db, "Admin", "Details");
+        const adminSnap = await getDoc(adminDocRef);
 
-    if (
-      adminSnap.exists() &&
-      (adminSnap.data().username === userInput || adminSnap.data().id === userInput)
-    ) {
-      isAdmin = true;
-      email = adminSnap.data().email;
+        if (
+          adminSnap.exists() &&
+          (adminSnap.data().username === userInput ||
+            adminSnap.data().id === userInput)
+        ) {
+          isAdmin = true;
+          email = adminSnap.data().email;
 
-      // Proceed to Firebase Authentication for admin
-      const adminCredential = await signInWithEmailAndPassword(auth, email, password);
-      alert("Welcome, Admin!");
-      window.location.href = "admin.html"; // Redirect to admin dashboard
-      return;
-    }
-
-    // For regular users
-    if (!isAdmin) {
-      // Check if input is username
-      if (!userInput.includes("@")) {
-        const userDocRef = doc(db, "Users", userInput);
-        const userSnap = await getDoc(userDocRef);
-
-        if (!userSnap.exists()) {
-          alert("No user found with that username.");
+          const adminCredential = await signInWithEmailAndPassword(auth, email, password);
+          alert("Welcome, Admin!");
+          window.location.href = "admin.html";
           return;
         }
 
-        // Get email and status linked to username
-        const userData = userSnap.data();
-        email = userData.email;
-        isApproved = userData.isApproved;
-        userStatus = userData.status || "Active"; // Default to "Active" if no status field
-      } else {
-        // Input is an email
-        const usersRef = collection(db, "Users");
-        const q = query(usersRef, where("email", "==", userInput));
-        const qSnap = await getDocs(q);
+        // Regular User Check
+        if (!userInput.includes("@")) {
+          const userDocRef = doc(db, "Users", userInput);
+          const userSnap = await getDoc(userDocRef);
 
-        if (qSnap.empty) {
-          alert("No user found with that email.");
+          if (!userSnap.exists()) {
+            alert("No user found with that username.");
+            return;
+          }
+
+          const userData = userSnap.data();
+          email = userData.email;
+          isApproved = userData.isApproved;
+          userStatus = userData.status || "";
+        } else {
+          const usersRef = collection(db, "Users");
+          const q = query(usersRef, where("email", "==", userInput));
+          const qSnap = await getDocs(q);
+
+          if (qSnap.empty) {
+            alert("No user found with that email.");
+            return;
+          }
+
+          const userData = qSnap.docs[0].data();
+          email = userData.email;
+          isApproved = userData.isApproved;
+          userStatus = userData.status || "";
+        }
+
+        if (!isApproved) {
+          alert("Your account is pending admin approval.");
           return;
         }
 
-        // Get the first matching user's data
-        const userData = qSnap.docs[0].data();
-        email = userData.email;
-        isApproved = userData.isApproved;
-        userStatus = userData.status || ""; // Default to "Active" if no status field
+        if (status === "Hold") {
+          alert("Your account is on hold. Please contact the admin.");
+          return;
+        }
+
+        if (status === "Blocked") {
+          alert("Your account has been blocked. Please contact the admin.");
+          return;
+        }
+
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+        const userDocRef = doc(db, "Users", userCredential.user.uid);
+        await setDoc(
+          userDocRef,
+          {
+            isOnline: true,
+            lastLogin: new Date().toISOString(),
+            loginLogs: arrayUnion({
+              activity: "Login",
+              timestamp: new Date().toISOString(),
+            }),
+          },
+          { merge: true }
+        );
+
+        alert("Login successful!");
+        window.location.href = "dashboard.html";
+      } catch (error) {
+        console.error("Login error:", error);
+        alert("Error: " + error.message);
       }
-
-      // Check approval status
-      if (!isApproved) {
-        alert("Your account is pending admin approval.");
-        return;
-      }
-
-      // Check user status
-      if (userStatus === "Hold") {
-        alert("Your account is on hold. Please contact the admin.");
-        return;
-      }
-
-      if (userStatus === "Blocked") {
-        alert("Your account has been blocked. Please contact the admin.");
-        return;
-      }
-
-      // Authenticate the user via Firebase Auth
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-
-      // Log user activity in Firestore
-      const userDocRef = doc(db, "Users", userCredential.user.uid);
-      await setDoc(
-        userDocRef,
-        {
-          isOnline: true,
-          lastLogin: new Date().toISOString(),
-          loginLogs: arrayUnion({
-            activity: "Login",
-            timestamp: new Date().toISOString(),
-          }),
-        },
-        { merge: true }
-      );
-
-      alert("Login successful!");
-      window.location.href = "dashboard.html"; // Redirect to user dashboard
     }
-  } catch (error) {
-    console.error("Login error:", error);
-    alert("Error: " + error.message);
-  }
-}
 
+    // Google Login
     async function googleLogin() {
       const provider = new GoogleAuthProvider();
 
       try {
         const result = await signInWithPopup(auth, provider);
         alert("Google Sign-in successful!");
-        window.location.href = "login.html";
+        window.location.href = "dashboard.html";
       } catch (error) {
         console.error("Google login error:", error);
         alert("Error: " + error.message);
@@ -297,7 +310,6 @@
     }
 
     window.login = login;
-    window.toggleTheme = toggleTheme;
     window.googleLogin = googleLogin;
   </script>
 </body>
