@@ -5,95 +5,162 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to bottom, #a8edea, #fed6e3);
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
     header {
-      background-color: #4caf50;
-      padding: 15px;
+      background-color: #4CAF50;
       color: white;
-      text-align: center;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .section {
-      margin: 15px;
-      padding: 15px;
+
+    header button {
       background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      cursor: pointer;
-    }
-    .hidden {
-      display: none;
-    }
-    .user-options {
-      display: none;
-    }
-    .user-options.active {
-      display: block;
-    }
-    button {
-      padding: 8px 12px;
-      background-color: #4caf50;
-      color: white;
+      color: #4CAF50;
       border: none;
+      padding: 0.5rem 1rem;
       border-radius: 5px;
       cursor: pointer;
     }
-    button:hover {
+
+    header button:hover {
       background-color: #45a049;
+      color: white;
     }
-    .badge {
+
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    section h2 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    section h2 .badge {
       background-color: red;
       color: white;
-      padding: 5px 8px;
-      border-radius: 50%;
-      font-size: 12px;
-      margin-left: 10px;
+      padding: 0.2rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.8rem;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    ul {
+      list-style: none;
+      margin-top: 1rem;
+      padding: 0;
+    }
+
+    ul li {
+      background: white;
+      padding: 1rem;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+    }
+
+    ul li div {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    ul li button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    ul li button:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Admin Dashboard</h1>
+    <button onclick="logout()">Logout</button>
   </header>
-  
-  <div class="section" id="approval-requests-section">
-    <h2>Approval Requests <span id="approval-badge" class="badge">0</span></h2>
-    <ul id="approval-list" class="hidden">Loading...</ul>
-  </div>
-  
-  <div class="section" id="online-users-section">
-    <h2>Online Users <span id="online-badge" class="badge">0</span></h2>
-    <ul id="online-list" class="hidden">Loading...</ul>
-  </div>
-  
-  <div class="section" id="user-logs-section">
-    <h2>User Logs <span id="logs-badge" class="badge">0</span></h2>
-    <ul id="log-list" class="hidden">Loading...</ul>
-  </div>
-  
-  <div class="section" id="approved-users-section">
-    <h2>Approved Users <span id="approved-badge" class="badge">0</span></h2>
-    <ul id="approved-list" class="hidden">Loading...</ul>
-  </div>
-  
-  <div class="section" id="hold-blocked-section">
-    <h2>Hold/Blocked Users <span id="hold-badge" class="badge">0</span></h2>
-    <ul id="hold-blocked-list" class="hidden">Loading...</ul>
-  </div>
-  
+  <main>
+    <!-- Approval Requests -->
+    <section>
+      <h2 onclick="toggleSection('approval-requests')">Approval Requests <span class="badge" id="approval-count">0</span></h2>
+      <ul id="approval-requests" class="hidden">Loading...</ul>
+    </section>
+
+    <!-- Online Users -->
+    <section>
+      <h2 onclick="toggleSection('online-users')">Online Users <span class="badge" id="online-count">0</span></h2>
+      <ul id="online-users" class="hidden">Loading...</ul>
+    </section>
+
+    <!-- User Logs -->
+    <section>
+      <h2 onclick="toggleSection('user-logs')">User Logs <span class="badge" id="logs-count">0</span></h2>
+      <ul id="user-logs" class="hidden">Loading...</ul>
+    </section>
+
+    <!-- Approved Users -->
+    <section>
+      <h2 onclick="toggleSection('approved-users')">Approved Users <span class="badge" id="approved-count">0</span></h2>
+      <ul id="approved-users" class="hidden">Loading...</ul>
+    </section>
+
+    <!-- Hold/Blocked Users -->
+    <section>
+      <h2 onclick="toggleSection('hold-blocked-users')">Hold/Blocked Users <span class="badge" id="hold-count">0</span></h2>
+      <ul id="hold-blocked-users" class="hidden">Loading...</ul>
+    </section>
+  </main>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, query, where, onSnapshot, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      where,
+      onSnapshot,
+      updateDoc,
+      doc,
+      deleteDoc
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
+      storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7"
@@ -101,97 +168,59 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    // Fetch and Render Data
-    const fetchAndRenderData = () => {
-      const approvalList = document.getElementById("approval-list");
-      const onlineList = document.getElementById("online-list");
-      const logList = document.getElementById("log-list");
-      const approvedList = document.getElementById("approved-list");
-      const holdBlockedList = document.getElementById("hold-blocked-list");
+    // Logout Function
+    async function logout() {
+      try {
+        await signOut(auth);
+        alert("Logged out successfully");
+        window.location.href = "index.html";
+      } catch (error) {
+        console.error("Logout Error:", error);
+      }
+    }
 
-      // Approval Requests
-      const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
-      onSnapshot(approvalQuery, (snapshot) => {
-        let html = "";
+    // Section Toggle
+    function toggleSection(sectionId) {
+      const sections = document.querySelectorAll("section ul");
+      sections.forEach((section) => {
+        if (section.id === sectionId) {
+          section.classList.toggle("hidden");
+        } else {
+          section.classList.add("hidden");
+        }
+      });
+    }
+
+    // Real-time Listeners
+    function fetchApprovalRequests() {
+      const list = document.getElementById("approval-requests");
+      onSnapshot(query(collection(db, "Users"), where("isApproved", "==", false)), (snapshot) => {
+        let count = 0;
+        list.innerHTML = snapshot.empty ? "<li>No approval requests.</li>" : "";
         snapshot.forEach((doc) => {
-          const data = doc.data();
-          html += `<li>${data.username} (${data.email})</li>`;
+          const user = doc.data();
+          count++;
+          list.innerHTML += `<li>${user.email} <div><button onclick="approveUser('${doc.id}')">Approve</button><button onclick="rejectUser('${doc.id}')">Reject</button></div></li>`;
         });
-        approvalList.innerHTML = html || "No approval requests.";
-        document.getElementById("approval-badge").textContent = snapshot.size;
+        document.getElementById("approval-count").innerText = count;
       });
+    }
 
-      // Online Users
-      const onlineQuery = query(collection(db, "Users"), where("isOnline", "==", true));
-      onSnapshot(onlineQuery, (snapshot) => {
-        let html = "";
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          html += `<li>${data.username} (${data.email})</li>`;
-        });
-        onlineList.innerHTML = html || "No online users.";
-        document.getElementById("online-badge").textContent = snapshot.size;
-      });
+    // Approve and Reject Users
+    async function approveUser(userId) {
+      await updateDoc(doc(db, "Users", userId), { isApproved: true });
+      alert("User approved!");
+    }
 
-      // User Logs
-      const logsQuery = collection(db, "Users");
-      onSnapshot(logsQuery, (snapshot) => {
-        let logs = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.loginLogs) logs = logs.concat(data.loginLogs);
-        });
-        logList.innerHTML =
-          logs.length > 0
-            ? logs
-                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                .map((log) => `<li>${log.activity} at ${new Date(log.timestamp).toLocaleString()}</li>`)
-                .join("")
-            : "No logs found.";
-        document.getElementById("logs-badge").textContent = logs.length;
-      });
+    async function rejectUser(userId) {
+      await deleteDoc(doc(db, "Users", userId));
+      alert("User rejected!");
+    }
 
-      // Approved Users
-      const approvedQuery = query(collection(db, "Users"), where("isApproved", "==", true));
-      onSnapshot(approvedQuery, (snapshot) => {
-        let html = "";
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          html += `
-            <li>
-              ${data.username} (${data.email})
-              <button onclick="toggleUserOptions('${doc.id}')">Toggle Options</button>
-              <div class="user-options" id="options-${doc.id}">
-                <button onclick="holdUser('${doc.id}')">Hold</button>
-                <button onclick="blockUser('${doc.id}')">Block</button>
-                <button onclick="removeUser('${doc.id}')">Remove</button>
-              </div>
-            </li>`;
-        });
-        approvedList.innerHTML = html || "No approved users.";
-        document.getElementById("approved-badge").textContent = snapshot.size;
-      });
-    };
-
-    // Toggle Section
-    document.querySelectorAll('.section').forEach(section => {
-      section.addEventListener('click', (e) => {
-        const ul = section.querySelector('ul');
-        document.querySelectorAll('ul').forEach(otherUl => {
-          if (otherUl !== ul) otherUl.classList.add('hidden');
-        });
-        ul.classList.toggle('hidden');
-      });
-    });
-
-    // Toggle User Options
-    window.toggleUserOptions = (id) => {
-      const optionsDiv = document.getElementById(`options-${id}`);
-      optionsDiv.classList.toggle("active");
-    };
-
-    fetchAndRenderData();
+    // Initialize
+    fetchApprovalRequests();
   </script>
 </body>
 </html>
