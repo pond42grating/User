@@ -26,6 +26,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: relative;
     }
 
     header h1 {
@@ -39,6 +40,7 @@
       padding: 0.5rem 1rem;
       border-radius: 5px;
       cursor: pointer;
+      position: relative;
     }
 
     #settings:hover {
@@ -49,18 +51,17 @@
     .dropdown-content {
       display: none;
       position: absolute;
-      background-color: #f9f9f9;
+      top: 100%;
+      right: 0;
+      background-color: white;
       min-width: 160px;
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
       z-index: 1;
-    }
-
-    .dropdown:hover .dropdown-content {
-      display: block;
+      border-radius: 5px;
     }
 
     .dropdown-content a {
-      color: black;
+      color: #333;
       padding: 12px 16px;
       text-decoration: none;
       display: block;
@@ -68,6 +69,10 @@
 
     .dropdown-content a:hover {
       background-color: #ddd;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
     }
 
     main {
@@ -98,11 +103,28 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .dropdown-btn {
+      cursor: pointer;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
+    .dropdown-btn:hover {
+      color: #4CAF50;
     }
 
     .action-buttons {
-      display: flex;
+      display: none;
+      flex-direction: column;
       gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    li.active .action-buttons {
+      display: flex;
     }
 
     button {
@@ -116,6 +138,10 @@
 
     button:hover {
       background-color: #45a049;
+    }
+
+    #logs-list ul {
+      margin-left: 1rem;
     }
   </style>
 </head>
@@ -174,7 +200,7 @@
       storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
+      measurementId: "G-L14GLJDYW7",
     };
 
     const app = initializeApp(firebaseConfig);
@@ -243,12 +269,15 @@
         let html = "";
         querySnapshot.forEach((doc) => {
           const user = doc.data();
+          const userId = doc.id;
+
           html += `
-            <li>${user.username} (${user.email})
-              <div class="action-buttons">
-                <button onclick="holdUser('${doc.id}')">Hold</button>
-                <button onclick="blockUser('${doc.id}')">Block</button>
-                <button onclick="removeUser('${doc.id}')">Remove</button>
+            <li class="dropdown-btn" onclick="toggleDropdown('${userId}')">
+              ${user.username} (${user.email})
+              <div id="actions-${userId}" class="action-buttons">
+                <button onclick="holdUser('${userId}')">Hold</button>
+                <button onclick="blockUser('${userId}')">Block</button>
+                <button onclick="removeUser('${userId}')">Remove</button>
               </div>
             </li>`;
         });
@@ -274,14 +303,22 @@
               <button onclick="unblockUser('${doc.id}')">Unblock/Unhold</button>
             </li>`;
         });
-        holdBlockedList.innerHTML        = html || "<li>No hold/blocked users found.</li>";
+        holdBlockedList.innerHTML = html || "<li>No hold/blocked users found.</li>";
       } catch (error) {
         console.error("Error fetching hold/blocked users:", error);
         holdBlockedList.innerHTML = "Error loading users.";
       }
     }
 
-    // Clear logs for a user
+    function toggleDropdown(userId) {
+      const dropdown = document.getElementById(`actions-${userId}`);
+      if (dropdown.style.display === "flex") {
+        dropdown.style.display = "none";
+      } else {
+        dropdown.style.display = "flex";
+      }
+    }
+
     async function clearLogs(userId) {
       try {
         const userDocRef = doc(db, "Users", userId);
@@ -294,7 +331,6 @@
       }
     }
 
-    // Hold a user
     async function holdUser(userId) {
       try {
         const userDocRef = doc(db, "Users", userId);
@@ -308,7 +344,6 @@
       }
     }
 
-    // Block a user
     async function blockUser(userId) {
       try {
         const userDocRef = doc(db, "Users", userId);
@@ -322,7 +357,6 @@
       }
     }
 
-    // Remove a user
     async function removeUser(userId) {
       try {
         await deleteDoc(doc(db, "Users", userId));
@@ -334,7 +368,6 @@
       }
     }
 
-    // Unblock or unhold a user
     async function unblockUser(userId) {
       try {
         const userDocRef = doc(db, "Users", userId);
@@ -347,7 +380,6 @@
       }
     }
 
-    // Logout function
     async function logout() {
       try {
         await signOut(auth);
@@ -366,10 +398,7 @@
       fetchHoldBlockedUsers();
     };
 
-    window.fetchOnlineUsers = fetchOnlineUsers;
-    window.fetchUserLogs = fetchUserLogs;
-    window.fetchApprovedUsers = fetchApprovedUsers;
-    window.fetchHoldBlockedUsers = fetchHoldBlockedUsers;
+    window.toggleDropdown = toggleDropdown;
     window.clearLogs = clearLogs;
     window.holdUser = holdUser;
     window.blockUser = blockUser;
