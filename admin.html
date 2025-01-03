@@ -94,13 +94,18 @@
 
     .user-item {
       display: flex;
+      flex-direction: column;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       background: white;
       margin-bottom: 1rem;
       padding: 1rem;
       border-radius: 5px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-item h3 {
+      margin: 0;
     }
 
     .user-options {
@@ -173,7 +178,8 @@
       updateDoc,
       deleteDoc,
       query,
-      where
+      where,
+      onSnapshot
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
@@ -191,36 +197,6 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    async function fetchOnlineUsers() {
-      const list = document.getElementById("online-users-list");
-      list.innerHTML = "Loading...";
-      try {
-        const users = await getDocs(collection(db, "Users"));
-        list.innerHTML = users.docs
-          .filter(doc => doc.data().isOnline)
-          .map(doc => `<li>${doc.data().username} (${doc.data().email})</li>`)
-          .join("") || "<li>No online users</li>";
-      } catch (error) {
-        console.error("Error fetching online users:", error);
-        list.innerHTML = "Error loading online users.";
-      }
-    }
-
-    async function fetchUserLogs() {
-      const list = document.getElementById("user-logs-list");
-      list.innerHTML = "Loading...";
-      try {
-        const users = await getDocs(collection(db, "Users"));
-        list.innerHTML = users.docs
-          .filter(doc => doc.data().loginLogs)
-          .map(doc => `<li>${doc.data().username}: ${doc.data().loginLogs.map(log => `<p>${log.activity} - ${log.timestamp}</p>`).join("")}</li>`)
-          .join("") || "<li>No user logs found</li>";
-      } catch (error) {
-        console.error("Error fetching user logs:", error);
-        list.innerHTML = "Error loading user logs.";
-      }
-    }
-
     async function fetchApprovedUsers() {
       const list = document.getElementById("approved-users-list");
       list.innerHTML = "Loading...";
@@ -228,10 +204,10 @@
         const users = await getDocs(query(collection(db, "Users"), where("isApproved", "==", true)));
         list.innerHTML = users.docs
           .map(doc => `
-            <li>
-              ${doc.data().username} (${doc.data().email})
+            <li class="user-item">
+              <h3>${doc.data().username} (${doc.data().email})</h3>
               <button onclick="toggleOptions('${doc.id}')">Options</button>
-              <div id="options-${doc.id}" style="display:none;">
+              <div id="options-${doc.id}" class="user-options">
                 <button onclick="holdUser('${doc.id}')">Hold</button>
                 <button onclick="blockUser('${doc.id}')">Block</button>
                 <button onclick="removeUser('${doc.id}')">Remove</button>
@@ -245,56 +221,29 @@
       }
     }
 
-    async function fetchHoldBlockedUsers() {
-      const list = document.getElementById("hold-blocked-users-list");
-      list.innerHTML = "Loading...";
-      try {
-        const users = await getDocs(query(collection(db, "Users"), where("status", "!=", null)));
-        list.innerHTML = users.docs
-          .map(doc => `
-            <li>
-              ${doc.data().username} (${doc.data().email}) - ${doc.data().status}
-              <button onclick="unblockUser('${doc.id}')">Unblock</button>
-              <button onclick="unholdUser('${doc.id}')">Unhold</button>
-            </li>
-          `)
-          .join("") || "<li>No hold/blocked users</li>";
-      } catch (error) {
-        console.error("Error fetching hold/blocked users:", error);
-        list.innerHTML = "Error loading hold/blocked users.";
-      }
+    function toggleOptions(userId) {
+      const options = document.getElementById(`options-${userId}`);
+      options.style.display = options.style.display === "none" || !options.style.display ? "flex" : "none";
     }
 
-    async function holdUser(userId) {
-      await updateDoc(doc(db, "Users", userId), { status: "Hold" });
-      alert("User put on hold");
-      fetchApprovedUsers();
-      fetchHoldBlockedUsers();
-    }
-
-    async function blockUser(userId) {
-      await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
-      alert("User blocked");
-      fetchApprovedUsers();
-      fetchHoldBlockedUsers();
-    }
-
-    async function removeUser(userId) {
-      await deleteDoc(doc(db, "Users", userId));
-      alert("User removed");
-      fetchApprovedUsers();
-    }
-
-    async function unblockUser(userId) {
-      await updateDoc(doc(db, "Users", userId), { status: null });
-      alert("User unblocked");
-      fetchHoldBlockedUsers();
-    }
-
-    async function unholdUser(userId) {
-      await updateDoc(doc(db, "Users", userId), { status: null });
-      alert("User unheld");
-      fetchHoldBlockedUsers();
+    function enablePushNotifications() {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          const q = query(collection(db, "Users"), where("isApproved", "==", false));
+          onSnapshot(q, snapshot => {
+            snapshot.docChanges().forEach(change => {
+              if (change.type === "added") {
+                new Notification("New User Request", {
+                  body: `${change.doc.data().username} (${change.doc.data().email}) has requested approval.`,
+                  icon: "notification-icon.png" // Add an icon if needed
+                });
+              }
+            });
+          });
+        } else {
+          alert("Push notifications denied.");
+        }
+      });
     }
 
     async function logout() {
@@ -303,30 +252,30 @@
       window.location.href = "index.html";
     }
 
-    function enablePushNotifications() {
-      Notification.requestPermission().then(permission => {
-        if (permission === "granted") {
-          alert("Push notifications enabled");
-        } else {
-          alert("Push notifications denied");
-        }
-      });
-    }
-
     window.onload = () => {
-      fetchOnlineUsers();
-      fetchUserLogs();
       fetchApprovedUsers();
-      fetchHoldBlockedUsers();
     };
 
-    window.holdUser = holdUser;
-    window.blockUser = blockUser;
-    window.removeUser = removeUser;
-    window.unblockUser = unblockUser;
-    window.unholdUser = unholdUser;
-    window.logout = logout;
+    window.holdUser = async userId => {
+      await updateDoc(doc(db, "Users", userId), { status: "Hold" });
+      alert("User put on hold");
+      fetchApprovedUsers();
+    };
+
+    window.blockUser = async userId => {
+      await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
+      alert("User blocked");
+      fetchApprovedUsers();
+    };
+
+    window.removeUser = async userId => {
+      await deleteDoc(doc(db, "Users", userId));
+      alert("User removed");
+      fetchApprovedUsers();
+    };
+
     window.enablePushNotifications = enablePushNotifications;
+    window.logout = logout;
   </script>
 </body>
 </html>
