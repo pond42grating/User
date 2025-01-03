@@ -215,11 +215,13 @@
         querySnapshot.forEach((doc) => {
           const user = doc.data();
           if (user.loginLogs) {
-            html += `<li>${user.username}<ul>`;
+            html += `
+              <li>
+                ${user.username}
+                <button onclick="clearLogs('${doc.id}')">Clear Logs</button>
+                <ul>`;
             user.loginLogs.forEach((log) => {
-              html += `<li>${log.activity} at ${new Date(
-                log.timestamp
-              ).toLocaleString()}</li>`;
+              html += `<li>${log.activity} at ${new Date(log.timestamp).toLocaleString()}</li>`;
             });
             html += "</ul></li>";
           }
@@ -272,39 +274,89 @@
               <button onclick="unblockUser('${doc.id}')">Unblock/Unhold</button>
             </li>`;
         });
-        holdBlockedList.innerHTML = html || "<li>No hold/blocked users found.</li>";
+        holdBlockedList.innerHTML        = html || "<li>No hold/blocked users found.</li>";
       } catch (error) {
         console.error("Error fetching hold/blocked users:", error);
         holdBlockedList.innerHTML = "Error loading users.";
       }
     }
 
+    // Clear logs for a user
+    async function clearLogs(userId) {
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { loginLogs: [] });
+        alert("User logs cleared successfully.");
+        fetchUserLogs();
+      } catch (error) {
+        console.error("Error clearing logs:", error);
+        alert("Error clearing logs.");
+      }
+    }
+
+    // Hold a user
     async function holdUser(userId) {
-      await updateDoc(doc(db, "Users", userId), { status: "Hold" });
-      fetchApprovedUsers();
-      fetchHoldBlockedUsers();
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { status: "Hold" });
+        alert("User held successfully.");
+        fetchApprovedUsers();
+        fetchHoldBlockedUsers();
+      } catch (error) {
+        console.error("Error holding user:", error);
+        alert("Error holding user.");
+      }
     }
 
+    // Block a user
     async function blockUser(userId) {
-      await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
-      fetchApprovedUsers();
-      fetchHoldBlockedUsers();
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { status: "Blocked" });
+        alert("User blocked successfully.");
+        fetchApprovedUsers();
+        fetchHoldBlockedUsers();
+      } catch (error) {
+        console.error("Error blocking user:", error);
+        alert("Error blocking user.");
+      }
     }
 
+    // Remove a user
     async function removeUser(userId) {
-      await deleteDoc(doc(db, "Users", userId));
-      fetchApprovedUsers();
-      fetchHoldBlockedUsers();
+      try {
+        await deleteDoc(doc(db, "Users", userId));
+        alert("User removed successfully.");
+        fetchApprovedUsers();
+      } catch (error) {
+        console.error("Error removing user:", error);
+        alert("Error removing user.");
+      }
     }
 
+    // Unblock or unhold a user
     async function unblockUser(userId) {
-      await updateDoc(doc(db, "Users", userId), { status: null });
-      fetchHoldBlockedUsers();
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { status: "" });
+        alert("User unblocked/unheld successfully.");
+        fetchHoldBlockedUsers();
+      } catch (error) {
+        console.error("Error unblocking/unholding user:", error);
+        alert("Error unblocking/unholding user.");
+      }
     }
 
+    // Logout function
     async function logout() {
-      await signOut(auth);
-      window.location.href = "index.html";
+      try {
+        await signOut(auth);
+        alert("Logged out successfully!");
+        window.location.href = "index.html";
+      } catch (error) {
+        console.error("Error during logout:", error);
+        alert("Error: " + error.message);
+      }
     }
 
     window.onload = () => {
@@ -314,6 +366,11 @@
       fetchHoldBlockedUsers();
     };
 
+    window.fetchOnlineUsers = fetchOnlineUsers;
+    window.fetchUserLogs = fetchUserLogs;
+    window.fetchApprovedUsers = fetchApprovedUsers;
+    window.fetchHoldBlockedUsers = fetchHoldBlockedUsers;
+    window.clearLogs = clearLogs;
     window.holdUser = holdUser;
     window.blockUser = blockUser;
     window.removeUser = removeUser;
