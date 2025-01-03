@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Main Page - DWS Management</title>
+  <title>Login - DWS Management</title>
   <style>
     * {
       margin: 0;
@@ -17,150 +17,176 @@
       color: #333;
       height: 100vh;
       display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      background-color: #4CAF50;
-      color: white;
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
     }
 
-    header h1 {
+    .container {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      width: 350px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 1rem;
       font-size: 1.5rem;
+      color: #4CAF50;
     }
 
-    nav {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-    }
-
-    nav a, .dropdown button {
-      text-decoration: none;
-      color: white;
-      font-weight: bold;
-      padding: 0.5rem 1rem;
+    .input-field {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ddd;
       border-radius: 5px;
-      background-color: #45a049;
-      border: none;
-      cursor: pointer;
-      transition: background-color 0.3s;
+      font-size: 1rem;
     }
 
-    nav a:hover, .dropdown button:hover {
-      background-color: #3e8e41;
-    }
-
-    .dropdown {
+    .password-container {
       position: relative;
     }
 
-    .dropdown-content {
-      display: none;
+    .toggle-password {
       position: absolute;
-      top: 100%;
-      right: 0;
-      background-color: white;
-      min-width: 150px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      z-index: 1;
-      border-radius: 5px;
-      overflow: hidden;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #888;
     }
 
-    .dropdown-content a {
-      display: block;
-      color: #333;
-      padding: 0.5rem 1rem;
-      text-decoration: none;
-      transition: background-color 0.3s;
-    }
-
-    .dropdown-content a:hover {
-      background-color: #f4f4f4;
-    }
-
-    .dropdown:hover .dropdown-content {
-      display: block;
-    }
-
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-    }
-
-    main h2 {
-      font-size: 1.8rem;
-      color: #4CAF50;
-      margin-bottom: 1rem;
-    }
-
-    .button-group {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      align-items: center;
-    }
-
-    .button-group a {
-      width: 200px;
-      text-align: center;
+    .button {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 1rem;
       background-color: #4CAF50;
       color: white;
-      padding: 0.75rem;
-      border-radius: 8px;
-      font-weight: bold;
-      text-decoration: none;
-      transition: background-color 0.3s;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
     }
 
-    .button-group a:hover {
+    .button:hover {
       background-color: #45a049;
+    }
+
+    .link {
+      display: block;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #4CAF50;
+      text-decoration: none;
+    }
+
+    .link:hover {
+      text-decoration: underline;
+    }
+
+    .google-signin-btn {
+      margin-top: 1rem;
+      background-color: #4285F4;
+    }
+
+    .google-signin-btn:hover {
+      background-color: #357ae8;
+    }
+
+    .settings {
+      display: inline-block;
+      margin-top: 1.5rem;
+      padding: 0.5rem 1rem;
+      background-color: #ddd;
+      border-radius: 5px;
+      text-decoration: none;
+      color: #333;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .settings:hover {
+      background-color: #ccc;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>DWS Management</h1>
-    <nav>
-      <a href="createDWS.html">Create DWS</a>
-      <a href="manageDWS.html">Manage DWS</a>
-      <div class="dropdown">
-        <button>Settings</button>
-        <div class="dropdown-content">
-          <a href="profile.html">User Profile</a>
-          <a href="#" onclick="logout()">Log Out</a>
-        </div>
-      </div>
-    </nav>
-  </header>
-  <main>
-    <h2>Welcome to DWS Management</h2>
-    <div class="button-group">
-      <a href="createDWS.html">Create DWS</a>
-      <a href="manageDWS.html">Manage DWS</a>
-      <a href="profile.html">User Profile</a>
-      <a href="#" onclick="logout()">Log Out</a>
+  <div class="container">
+    <h2>Login to DWS</h2>
+    <input type="text" id="emailOrUsername" class="input-field" placeholder="Email or Username" required />
+    <div class="password-container">
+      <input type="password" id="password" class="input-field" placeholder="Password" required />
+      <span id="togglePassword" class="toggle-password">🔓</span>
     </div>
-  </main>
+    <button class="button" onclick="login()">Login</button>
+    <a href="signup.html" class="link">Sign Up</a>
+    <a href="forget.html" class="link">Forgot Password?</a>
+    <button class="button google-signin-btn" onclick="googleLogin()">Sign in with Google</button>
+    <a href="#" class="settings">Settings</a>
+  </div>
 
-  <script>
-    // Log Out Functionality
-    function logout() {
-      alert("Logged out successfully!");
-      window.location.href = "index.html"; // Redirect to login page
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebaseapp.com",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Toggle Password Visibility
+    const togglePassword = document.getElementById("togglePassword");
+    const passwordField = document.getElementById("password");
+
+    togglePassword.addEventListener("click", () => {
+      const type = passwordField.type === "password" ? "text" : "password";
+      passwordField.type = type;
+      togglePassword.textContent = type === "password" ? "🔓" : "🔒";
+    });
+
+    // Login Function
+    async function login() {
+      const emailOrUsername = document.getElementById("emailOrUsername").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!emailOrUsername || !password) {
+        alert("Please enter both email/username and password.");
+        return;
+      }
+
+      try {
+        // Assuming email for now
+        const userCredential = await signInWithEmailAndPassword(auth, emailOrUsername, password);
+        alert("Login successful!");
+        window.location.href = "dashboard.html"; // Redirect to dashboard
+      } catch (error) {
+        console.error("Login error:", error);
+        alert("Error: " + error.message);
+      }
+    }
+
+    // Google Login Function
+    async function googleLogin() {
+      const provider = new GoogleAuthProvider();
+
+      try {
+        const result = await signInWithPopup(auth, provider);
+        alert("Google Sign-in successful!");
+        window.location.href = "dashboard.html"; // Redirect to dashboard
+      } catch (error) {
+        console.error("Google login error:", error);
+        alert("Error: " + error.message);
+      }
     }
   </script>
 </body>
