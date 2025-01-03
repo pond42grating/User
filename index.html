@@ -181,78 +181,102 @@
   }
 
   try {
-    let email = userInput; // Default to email input
-    let isApproved = false;
+    let email = null;
     let isAdmin = false;
-    let username = null;
+    let isApproved = false;
+    let userStatus = "Active"; // Default status as "Active"
 
-    // Check if the input is for admin credentials
+    // Check if input is for admin
     const adminDocRef = doc(db, "Admin", "Details");
     const adminSnap = await getDoc(adminDocRef);
 
     if (
       adminSnap.exists() &&
-      (adminSnap.data().username === userInput || adminSnap.data().id === userInput) &&
-      adminSnap.data().password === password
+      (adminSnap.data().username === userInput || adminSnap.data().id === userInput)
     ) {
+      isAdmin = true;
+      email = adminSnap.data().email;
+
+      // Proceed to Firebase Authentication for admin
+      const adminCredential = await signInWithEmailAndPassword(auth, email, password);
       alert("Welcome, Admin!");
-      window.location.href = "admin.html";
-      return; // Exit the function after successful admin login
-    }
-
-    // For regular users
-    // If the input is a username
-    if (!userInput.includes("@")) {
-      const userDocRef = doc(db, "Users", userInput);
-      const userSnap = await getDoc(userDocRef);
-
-      if (!userSnap.exists()) {
-        alert("No user found with that username.");
-        return;
-      }
-
-      const userData = userSnap.data();
-      email = userData.email; // Fetch email linked to the username
-      isApproved = userData.isApproved;
-      username = userData.username;
-    } else {
-      // Input is an email
-      const usersRef = collection(db, "Users");
-      const q = query(usersRef, where("email", "==", userInput));
-      const qSnap = await getDocs(q);
-
-      if (qSnap.empty) {
-        alert("No user found with that email.");
-        return;
-      }
-
-      // Assume the first matching document
-      const userData = qSnap.docs[0].data();
-      isApproved = userData.isApproved;
-      username = userData.username;
-    }
-
-    if (!isApproved) {
-      alert("Your account is pending admin approval.");
+      window.location.href = "admin.html"; // Redirect to admin dashboard
       return;
     }
 
-    // Firebase Auth Login
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+    // For regular users
+    if (!isAdmin) {
+      // Check if input is username
+      if (!userInput.includes("@")) {
+        const userDocRef = doc(db, "Users", userInput);
+        const userSnap = await getDoc(userDocRef);
 
-    // Log user login activity
-    const userDocRef = doc(db, "Users", username);
-    await setDoc(userDocRef, {
-      lastLogin: new Date().toISOString(),
-      loginLogs: arrayUnion({
-        activity: "Login",
-        timestamp: new Date().toISOString(),
-      }),
-    });
+        if (!userSnap.exists()) {
+          alert("No user found with that username.");
+          return;
+        }
 
-    alert("Login successful!");
-    window.location.href = "login.html"; // Redirect to user dashboard
+        // Get email and status linked to username
+        const userData = userSnap.data();
+        email = userData.email;
+        isApproved = userData.isApproved;
+        userStatus = userData.status || "Active"; // Default to "Active" if no status field
+      } else {
+        // Input is an email
+        const usersRef = collection(db, "Users");
+        const q = query(usersRef, where("email", "==", userInput));
+        const qSnap = await getDocs(q);
+
+        if (qSnap.empty) {
+          alert("No user found with that email.");
+          return;
+        }
+
+        // Get the first matching user's data
+        const userData = qSnap.docs[0].data();
+        email = userData.email;
+        isApproved = userData.isApproved;
+        userStatus = userData.status || ""; // Default to "Active" if no status field
+      }
+
+      // Check approval status
+      if (!isApproved) {
+        alert("Your account is pending admin approval.");
+        return;
+      }
+
+      // Check user status
+      if (userStatus === "Hold") {
+        alert("Your account is on hold. Please contact the admin.");
+        return;
+      }
+
+      if (userStatus === "Blocked") {
+        alert("Your account has been blocked. Please contact the admin.");
+        return;
+      }
+
+      // Authenticate the user via Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+      // Log user activity in Firestore
+      const userDocRef = doc(db, "Users", userCredential.user.uid);
+      await setDoc(
+        userDocRef,
+        {
+          isOnline: true,
+          lastLogin: new Date().toISOString(),
+          loginLogs: arrayUnion({
+            activity: "Login",
+            timestamp: new Date().toISOString(),
+          }),
+        },
+        { merge: true }
+      );
+
+      alert("Login successful!");
+      window.location.href = "dashboard.html"; // Redirect to user dashboard
+    }
   } catch (error) {
     console.error("Login error:", error);
     alert("Error: " + error.message);
