@@ -1,268 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard</title>
-  <style>
-    /* General Styles */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f0f8ff;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f7faff;
+        }
 
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #28a745;
-      padding: 10px;
-      color: white;
-    }
+        header {
+            background: #4caf50;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
 
-    .settings-dropdown {
-      position: relative;
-    }
+        header h1 {
+            margin: 0;
+        }
 
-    .settings-btn {
-      background: transparent;
-      border: none;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
+        .settings {
+            position: relative;
+        }
 
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      background: white;
-      border: 1px solid #ddd;
-      min-width: 120px;
-      z-index: 100;
-    }
+        #settingsDropdown {
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 5px;
+            list-style: none;
+            margin: 0;
+            display: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
 
-    .settings-btn:hover + .dropdown-content,
-    .dropdown-content:hover {
-      display: block;
-    }
+        #settingsDropdown li {
+            margin: 5px 0;
+            cursor: pointer;
+        }
 
-    .dropdown-content a {
-      text-decoration: none;
-      color: black;
-      display: block;
-      padding: 10px;
-    }
+        #settingsDropdown li a {
+            text-decoration: none;
+            color: black;
+        }
 
-    .section {
-      margin: 20px;
-      padding: 20px;
-      border: 1px solid #ccc;
-      background: #fff;
-      border-radius: 8px;
-    }
+        #settingsButton:hover + #settingsDropdown,
+        #settingsDropdown:hover {
+            display: block;
+        }
 
-    .section h2 {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
+        section {
+            margin: 20px;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+        }
 
-    .badge {
-      background: red;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 10px;
-      font-size: 14px;
-    }
-
-    button {
-      margin: 5px;
-      padding: 5px 10px;
-      background: #28a745;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-
-    button:hover {
-      background: #218838;
-    }
-  </style>
+        .badge {
+            background: red;
+            color: white;
+            border-radius: 50%;
+            padding: 5px 10px;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
 <body>
-  <div class="dashboard">
-    <header>
-      <h1>Admin Dashboard</h1>
-      <div class="settings-dropdown">
-        <button class="settings-btn">Settings</button>
-        <div class="dropdown-content">
-          <a href="adminprofile.html">Admin Profile</a>
-          <a href="#" id="logout">Log Out</a>
-        </div>
-      </div>
-    </header>
+    <div class="dashboard">
+        <header>
+            <h1>Admin Dashboard</h1>
+            <div class="settings">
+                <button id="settingsButton">Settings</button>
+                <ul id="settingsDropdown" class="hidden">
+                    <li><a href="adminprofile.html">Admin Profile</a></li>
+                    <li id="logoutButton">Logout</li>
+                </ul>
+            </div>
+        </header>
 
-    <!-- Sections -->
-    <section id="approvalRequests" class="section">
-      <h2>Approval Requests <span id="approvalBadge" class="badge">0</span></h2>
-      <div class="content">Loading...</div>
-    </section>
+        <main>
+            <section id="approvalRequests">
+                <h2>Approval Requests <span id="approvalBadge" class="badge">0</span></h2>
+                <div id="approvalList">Loading...</div>
+            </section>
 
-    <section id="onlineUsers" class="section">
-      <h2>Online Users <span id="onlineBadge" class="badge">0</span></h2>
-      <div class="content">Loading...</div>
-    </section>
+            <section id="onlineUsers">
+                <h2>Online Users <span id="onlineBadge" class="badge">0</span></h2>
+                <div id="onlineList">Loading...</div>
+            </section>
 
-    <section id="userLogs" class="section">
-      <h2>User Logs <span id="logsBadge" class="badge">0</span></h2>
-      <div class="content">Loading...</div>
-    </section>
+            <section id="userLogs">
+                <h2>User Logs <span id="logsBadge" class="badge">0</span></h2>
+                <div id="logsList">Loading...</div>
+            </section>
 
-    <section id="approvedUsers" class="section">
-      <h2>Approved Users <span id="approvedBadge" class="badge">0</span></h2>
-      <div class="content">Loading...</div>
-    </section>
+            <section id="approvedUsers">
+                <h2>Approved Users <span id="approvedBadge" class="badge">0</span></h2>
+                <div id="approvedList">Loading...</div>
+            </section>
 
-    <section id="holdBlockedUsers" class="section">
-      <h2>Hold/Blocked Users <span id="holdBlockedBadge" class="badge">0</span></h2>
-      <div class="content">Loading...</div>
-    </section>
-  </div>
+            <section id="holdBlockedUsers">
+                <h2>Hold/Blocked Users <span id="holdBadge" class="badge">0</span></h2>
+                <div id="holdList">Loading...</div>
+            </section>
+        </main>
+    </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js"></script>
-  <script>
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-      authDomain: "dws-management.firebaseapp.com",
-      projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
-      messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
-    };
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+            authDomain: "dws-management.firebaseapp.com",
+            projectId: "dws-management",
+            storageBucket: "dws-management.firebasestorage.app",
+            messagingSenderId: "23827231923",
+            appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+            measurementId: "G-L14GLJDYW7",
+        };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-    // Real-time loading functions
-    document.addEventListener("DOMContentLoaded", () => {
-      loadApprovalRequests();
-      loadOnlineUsers();
-      loadUserLogs();
-      loadApprovedUsers();
-      loadHoldBlockedUsers();
+        // Fetch and update Approval Requests
+        function fetchApprovalRequests() {
+            db.collection("Users").where("isApproved", "==", false).onSnapshot((snapshot) => {
+                const approvalList = document.getElementById("approvalList");
+                const approvalBadge = document.getElementById("approvalBadge");
+                approvalList.innerHTML = "";
+                let count = 0;
 
-      document.getElementById("logout").addEventListener("click", () => {
-        firebase.auth().signOut().then(() => {
-          window.location.href = "index.html";
-        });
-      });
-    });
+                snapshot.forEach((doc) => {
+                    count++;
+                    const user = doc.data();
+                    const div = document.createElement("div");
+                    div.innerHTML = `
+                        ${user.name} (${user.email})
+                        <button onclick="approveUser('${doc.id}')">Approve</button>
+                        <button onclick="rejectUser('${doc.id}')">Reject</button>
+                    `;
+                    approvalList.appendChild(div);
+                });
 
-    function loadApprovalRequests() {
-      db.collection("Users")
-        .where("isApproved", "==", false)
-        .onSnapshot((snapshot) => {
-          const badge = document.getElementById("approvalBadge");
-          const content = document.getElementById("approvalRequests").querySelector(".content");
-          badge.textContent = snapshot.size;
-          content.innerHTML = snapshot.size
-            ? snapshot.docs.map(doc => `
-              <div>${doc.data().username}
-                <button onclick="approveUser('${doc.id}')">Approve</button>
-                <button onclick="deleteUser('${doc.id}')">Reject</button>
-              </div>`).join("")
-            : "No approval requests found.";
-        });
-    }
+                approvalBadge.textContent = count;
+                if (count === 0) {
+                    approvalList.innerHTML = "No approval requests found.";
+                }
+            });
+        }
 
-    function loadOnlineUsers() {
-      db.collection("Users")
-        .where("isOnline", "==", true)
-        .onSnapshot((snapshot) => {
-          const badge = document.getElementById("onlineBadge");
-          const content = document.getElementById("onlineUsers").querySelector(".content");
-          badge.textContent = snapshot.size;
-          content.innerHTML = snapshot.size
-            ? snapshot.docs.map(doc => `
-              <div>${doc.data().username} - Online for ${getTimeDifference(doc.data().lastLogin)}</div>`).join("")
-            : "No users online.";
-        });
-    }
+        // Approve user
+        function approveUser(userId) {
+            db.collection("Users").doc(userId).update({ isApproved: true });
+        }
 
-    function loadUserLogs() {
-      db.collection("Logs")
-        .orderBy("timestamp", "desc")
-        .onSnapshot((snapshot) => {
-          const badge = document.getElementById("logsBadge");
-          const content = document.getElementById("userLogs").querySelector(".content");
-          badge.textContent = snapshot.size;
-          content.innerHTML = snapshot.size
-            ? snapshot.docs.map(doc => `<div>${doc.data().activity} at ${doc.data().timestamp}</div>`).join("")
-            : "No logs found.";
-        });
-    }
+        // Reject user
+        function rejectUser(userId) {
+            db.collection("Users").doc(userId).delete();
+        }
 
-    function loadApprovedUsers() {
-      db.collection("Users")
-        .where("isApproved", "==", true)
-        .onSnapshot((snapshot) => {
-          const badge = document.getElementById("approvedBadge");
-          const content = document.getElementById("approvedUsers").querySelector(".content");
-          badge.textContent = snapshot.size;
-          content.innerHTML = snapshot.size
-            ? snapshot.docs.map(doc => `
-              <div>${doc.data().username}
-                <button onclick="updateStatus('${doc.id}', 'Hold')">Hold</button>
-                <button onclick="updateStatus('${doc.id}', 'Block')">Block</button>
-                <button onclick="deleteUser('${doc.id}')">Remove</button>
-              </div>`).join("")
-            : "No approved users found.";
-        });
-    }
+        // Fetch and update Online Users
+        function fetchOnlineUsers() {
+            db.collection("Users").where("isOnline", "==", true).onSnapshot((snapshot) => {
+                const onlineList = document.getElementById("onlineList");
+                const onlineBadge = document.getElementById("onlineBadge");
+                onlineList.innerHTML = "";
+                let count = 0;
 
-    function loadHoldBlockedUsers() {
-      db.collection("Users")
-        .where("status", "in", ["Hold", "Blocked"])
-        .onSnapshot((snapshot) => {
-          const badge = document.getElementById("holdBlockedBadge");
-          const content = document.getElementById("holdBlockedUsers").querySelector(".content");
-          badge.textContent = snapshot.size;
-          content.innerHTML = snapshot.size
-            ? snapshot.docs.map(doc => `
-              <div>${doc.data().username} - ${doc.data().status}
-                <button onclick="updateStatus('${doc.id}', '')">Unblock</button>
-              </div>`).join("")
-            : "No hold/blocked users found.";
-        });
-    }
+                snapshot.forEach((doc) => {
+                    count++;
+                    const user = doc.data();
+                    const onlineTime = getTimeElapsed(user.lastLogin);
+                    const div = document.createElement("div");
+                    div.textContent = `${user.name} (${user.email}) - Online for ${onlineTime}`;
+                    onlineList.appendChild(div);
+                });
 
-    function approveUser(userId) {
-      db.collection("Users").doc(userId).update({ isApproved: true });
-    }
+                onlineBadge.textContent = count;
+                if (count === 0) {
+                    onlineList.innerHTML = "No users online.";
+                }
+            });
+        }
 
-    function updateStatus(userId, status) {
-      db.collection("Users").doc(userId).update({ status });
-    }
+        // Helper: Get time elapsed
+        function getTimeElapsed(timestamp) {
+            const loginTime = new Date(timestamp);
+            const currentTime = new Date();
+            const diff = Math.floor((currentTime - loginTime) / 1000); // in seconds
 
-    function deleteUser(userId) {
-      db.collection("Users").doc(userId).delete();
-    }
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            return `${hours} hours ${minutes} minutes`;
+        }
 
-    function getTimeDifference(lastLogin) {
-      const now = new Date();
-      const loginTime = new Date(lastLogin);
-      const diffInMs = now - loginTime;
-      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-      return `${diffInHours} hours ago`;
-    }
-  </script>
+        // Initialize
+        fetchApprovalRequests();
+        fetchOnlineUsers();
+    </script>
 </body>
 </html>
