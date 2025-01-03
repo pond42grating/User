@@ -23,9 +23,16 @@
       background-color: white;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
     }
     .hidden {
       display: none;
+    }
+    .user-options {
+      display: none;
+    }
+    .user-options.active {
+      display: block;
     }
     button {
       padding: 8px 12px;
@@ -46,13 +53,6 @@
       font-size: 12px;
       margin-left: 10px;
     }
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-    li {
-      margin-bottom: 10px;
-    }
   </style>
 </head>
 <body>
@@ -62,41 +62,32 @@
   
   <div class="section" id="approval-requests-section">
     <h2>Approval Requests <span id="approval-badge" class="badge">0</span></h2>
-    <ul id="approval-list">Loading...</ul>
+    <ul id="approval-list" class="hidden">Loading...</ul>
   </div>
   
   <div class="section" id="online-users-section">
     <h2>Online Users <span id="online-badge" class="badge">0</span></h2>
-    <ul id="online-list">Loading...</ul>
+    <ul id="online-list" class="hidden">Loading...</ul>
   </div>
   
   <div class="section" id="user-logs-section">
     <h2>User Logs <span id="logs-badge" class="badge">0</span></h2>
-    <ul id="log-list">Loading...</ul>
+    <ul id="log-list" class="hidden">Loading...</ul>
   </div>
   
   <div class="section" id="approved-users-section">
     <h2>Approved Users <span id="approved-badge" class="badge">0</span></h2>
-    <ul id="approved-list">Loading...</ul>
+    <ul id="approved-list" class="hidden">Loading...</ul>
   </div>
   
   <div class="section" id="hold-blocked-section">
     <h2>Hold/Blocked Users <span id="hold-badge" class="badge">0</span></h2>
-    <ul id="hold-blocked-list">Loading...</ul>
+    <ul id="hold-blocked-list" class="hidden">Loading...</ul>
   </div>
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      query,
-      where,
-      onSnapshot,
-      updateDoc,
-      deleteDoc,
-      doc,
-    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, onSnapshot, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
@@ -170,57 +161,37 @@
           html += `
             <li>
               ${data.username} (${data.email})
-              <button onclick="holdUser('${doc.id}')">Hold</button>
-              <button onclick="blockUser('${doc.id}')">Block</button>
-              <button onclick="removeUser('${doc.id}')">Remove</button>
+              <button onclick="toggleUserOptions('${doc.id}')">Toggle Options</button>
+              <div class="user-options" id="options-${doc.id}">
+                <button onclick="holdUser('${doc.id}')">Hold</button>
+                <button onclick="blockUser('${doc.id}')">Block</button>
+                <button onclick="removeUser('${doc.id}')">Remove</button>
+              </div>
             </li>`;
         });
         approvedList.innerHTML = html || "No approved users.";
         document.getElementById("approved-badge").textContent = snapshot.size;
       });
+    };
 
-      // Hold/Blocked Users
-      const holdBlockedQuery = query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"]));
-      onSnapshot(holdBlockedQuery, (snapshot) => {
-        let html = "";
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          html += `
-            <li>
-              ${data.username} (${data.email}) - ${data.status}
-              <button onclick="unblockUser('${doc.id}')">Unblock</button>
-            </li>`;
+    // Toggle Section
+    document.querySelectorAll('.section').forEach(section => {
+      section.addEventListener('click', (e) => {
+        const ul = section.querySelector('ul');
+        document.querySelectorAll('ul').forEach(otherUl => {
+          if (otherUl !== ul) otherUl.classList.add('hidden');
         });
-        holdBlockedList.innerHTML = html || "No hold/blocked users.";
-        document.getElementById("hold-badge").textContent = snapshot.size;
+        ul.classList.toggle('hidden');
       });
+    });
+
+    // Toggle User Options
+    window.toggleUserOptions = (id) => {
+      const optionsDiv = document.getElementById(`options-${id}`);
+      optionsDiv.classList.toggle("active");
     };
 
-    // Actions
-    window.holdUser = async (userId) => {
-      await updateDoc(doc(db, "Users", userId), { status: "Hold" });
-      alert("User held successfully.");
-    };
-
-    window.blockUser = async (userId) => {
-      await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
-      alert("User blocked successfully.");
-    };
-
-    window.removeUser = async (userId) => {
-      await deleteDoc(doc(db, "Users", userId));
-      alert("User removed successfully.");
-    };
-
-    window.unblockUser = async (userId) => {
-      await updateDoc(doc(db, "Users", userId), { status: "" });
-      alert("User unblocked successfully.");
-    };
-
-    // Initialize
-    window.onload = () => {
-      fetchAndRenderData();
-    };
+    fetchAndRenderData();
   </script>
 </body>
 </html>
