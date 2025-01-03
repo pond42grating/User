@@ -25,18 +25,6 @@
       justify-content: space-between;
       align-items: center;
     }
-    #settings {
-      background-color: white;
-      color: #4CAF50;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #settings:hover {
-      background-color: #45a049;
-      color: white;
-    }
     main {
       flex: 1;
       padding: 2rem;
@@ -74,6 +62,9 @@
       border-radius: 50%;
       font-size: 0.8rem;
     }
+    .active ul {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -82,25 +73,25 @@
     <button id="settings">Settings</button>
   </header>
   <main>
-    <section>
+    <section id="approval-section">
       <h2>Approval Requests <span class="badge" id="approval-count">0</span></h2>
-      <ul id="approval-list" class="hidden"></ul>
+      <ul id="approval-list"></ul>
     </section>
-    <section>
+    <section id="online-section">
       <h2>Online Users <span class="badge" id="online-count">0</span></h2>
-      <ul id="online-list" class="hidden"></ul>
+      <ul id="online-list"></ul>
     </section>
-    <section>
+    <section id="logs-section">
       <h2>User Logs <span class="badge" id="logs-count">0</span></h2>
-      <ul id="logs-list" class="hidden"></ul>
+      <ul id="logs-list"></ul>
     </section>
-    <section>
+    <section id="approved-section">
       <h2>Approved Users <span class="badge" id="approved-count">0</span></h2>
-      <ul id="approved-list" class="hidden"></ul>
+      <ul id="approved-list"></ul>
     </section>
-    <section>
+    <section id="hold-section">
       <h2>Hold/Blocked Users <span class="badge" id="hold-count">0</span></h2>
-      <ul id="hold-list" class="hidden"></ul>
+      <ul id="hold-list"></ul>
     </section>
   </main>
   <script type="module">
@@ -126,22 +117,22 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const toggleSection = (sectionId) => {
-      const targetSection = document.getElementById(sectionId);
-      const isHidden = targetSection.classList.contains("hidden");
+    const sections = document.querySelectorAll("section");
 
-      document.querySelectorAll("ul").forEach((ul) => ul.classList.add("hidden"));
-
-      if (isHidden) {
-        targetSection.classList.remove("hidden");
-      }
+    const toggleSection = (section) => {
+      sections.forEach((sec) => {
+        if (sec === section) {
+          sec.classList.toggle("active");
+        } else {
+          sec.classList.remove("active");
+        }
+      });
     };
 
     const addToggleListeners = () => {
-      const sections = document.querySelectorAll("section h2");
-      sections.forEach((header) => {
-        const sectionId = header.nextElementSibling.id;
-        header.addEventListener("click", () => toggleSection(sectionId));
+      sections.forEach((section) => {
+        const header = section.querySelector("h2");
+        header.addEventListener("click", () => toggleSection(section));
       });
     };
 
@@ -184,7 +175,7 @@
         badge.textContent = logs.length;
         list.innerHTML =
           logs.length > 0
-            ? logs.map((log) => `<li>${log.activity} - ${log.timestamp}</li>`).join("")
+            ? logs.map((log) => `<li>${log.activity} - ${new Date(log.timestamp).toLocaleString()}</li>`).join("")
             : "<li>No logs found.</li>";
       });
     };
