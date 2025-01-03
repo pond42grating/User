@@ -77,23 +77,11 @@
     section h2 {
       margin-bottom: 1rem;
       cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .badge {
-      background-color: red;
-      color: white;
-      border-radius: 50%;
-      padding: 0.3rem 0.6rem;
-      font-size: 0.8rem;
     }
 
     ul {
       list-style: none;
       padding: 0;
-      display: none; /* Collapsed by default */
     }
 
     li {
@@ -108,14 +96,18 @@
       flex-wrap: wrap;
     }
 
-    .action-buttons {
-      display: none;
-      flex-direction: column;
-      gap: 0.5rem;
+    .badge {
+      background-color: red;
+      color: white;
+      border-radius: 50%;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
     }
 
-    li.active .action-buttons {
-      display: flex;
+    #log-clear-options {
+      display: none;
+      margin-bottom: 1rem;
     }
 
     button {
@@ -145,34 +137,34 @@
   </header>
 
   <main>
-    <section id="approval-section">
-      <h2>Approval Requests <span id="approval-badge" class="badge">0</span></h2>
-      <ul id="approval-requests-list"></ul>
+    <section>
+      <h2 id="approval-requests-header">Approval Requests <span id="approval-requests-badge" class="badge">0</span></h2>
+      <ul id="approval-requests-list">Loading...</ul>
     </section>
 
-    <section id="online-section">
-      <h2>Online Users <span id="online-badge" class="badge">0</span></h2>
-      <ul id="online-users-list"></ul>
+    <section>
+      <h2 id="online-users-header">Online Users <span id="online-users-badge" class="badge">0</span></h2>
+      <ul id="online-users-list">Loading...</ul>
     </section>
 
-    <section id="logs-section">
-      <h2>User Logs <span id="logs-badge" class="badge">0</span></h2>
-      <ul id="logs-list"></ul>
-      <div>
-        <label>From: <input type="date" id="from-date"></label>
-        <label>To: <input type="date" id="to-date"></label>
-        <button onclick="clearLogsByRange()">Clear Logs</button>
+    <section>
+      <h2 id="user-logs-header">User Logs <span id="user-logs-badge" class="badge">0</span></h2>
+      <div id="log-clear-options">
+        From: <input type="date" id="from-date"> 
+        To: <input type="date" id="to-date"> 
+        <button onclick="clearLogs()">Clear Logs</button>
       </div>
+      <ul id="user-logs-list">Loading...</ul>
     </section>
 
-    <section id="approved-section">
-      <h2>Approved Users <span id="approved-badge" class="badge">0</span></h2>
-      <ul id="approved-users-list"></ul>
+    <section>
+      <h2 id="approved-users-header">Approved Users <span id="approved-users-badge" class="badge">0</span></h2>
+      <ul id="approved-users-list">Loading...</ul>
     </section>
 
-    <section id="hold-block-section">
-      <h2>Hold/Blocked Users <span id="hold-badge" class="badge">0</span></h2>
-      <ul id="hold-blocked-list"></ul>
+    <section>
+      <h2 id="hold-blocked-users-header">Hold/Blocked Users <span id="hold-blocked-users-badge" class="badge">0</span></h2>
+      <ul id="hold-blocked-users-list">Loading...</ul>
     </section>
   </main>
 
@@ -184,43 +176,95 @@
       doc,
       query,
       where,
+      onSnapshot,
       updateDoc,
       deleteDoc,
-      onSnapshot,
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebaseapp.com",
+      storageBucket: "dws-management.firebasestorage.app",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
+      measurementId: "G-L14GLJDYW7",
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Add Firebase logic and functions here for real-time operations
-
+    // Ensure authentication
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "index.html";
       }
     });
 
-    // Toggle Section
-    document.querySelectorAll("section h2").forEach(header => {
-      header.addEventListener("click", () => {
-        const ul = header.nextElementSibling;
-        ul.style.display = ul.style.display === "none" ? "block" : "none";
+    // Function to fetch data and update badges
+    function fetchAndUpdateBadge(sectionId, badgeId, queryFilter) {
+      const sectionList = document.getElementById(`${sectionId}-list`);
+      sectionList.innerHTML = "Loading...";
+      const badge = document.getElementById(`${badgeId}-badge`);
+      onSnapshot(query(collection(db, "Users"), queryFilter), (snapshot) => {
+        let html = "";
+        let count = 0;
+        snapshot.forEach((doc) => {
+          const user = doc.data();
+          html += `<li>${user.username} (${user.email})</li>`;
+          count++;
+        });
+        sectionList.innerHTML = html || `<li>No ${sectionId} found.</li>`;
+        badge.textContent = count;
       });
-    });
+    }
 
-    // More functions for managing users, logs, approvals, etc.
+    // Fetch data
+    fetchAndUpdateBadge("approval-requests", "approval-requests", where("isApproved", "==", false));
+    fetchAndUpdateBadge("online-users", "online-users", where("isOnline", "==", true));
+    fetchAndUpdateBadge("approved-users", "approved-users", where("isApproved", "==", true));
+    fetchAndUpdateBadge("hold-blocked-users", "hold-blocked-users", where("status", "in", ["Hold", "Blocked"]));
+
+    // Toggle logic
+    const sections = {
+      "approval-requests": false,
+      "online-users": false,
+      "user-logs": false,
+      "approved-users": false,
+      "hold-blocked-users": false,
+    };
+
+    function toggleSection(sectionId) {
+      for (let key in sections) {
+        sections[key] = false;
+        document.getElementById(`${key}-list`).style.display = "none";
+        if (key === "user-logs") {
+          document.getElementById("log-clear-options").style.display = "none";
+        }
+      }
+
+      sections[sectionId] = !sections[sectionId];
+      if (sections[sectionId]) {
+        document.getElementById(`${sectionId}-list`).style.display = "block";
+        if (sectionId === "user-logs") {
+          document.getElementById("log-clear-options").style.display = "flex";
+        }
+      }
+    }
+
+    document.getElementById("approval-requests-header").addEventListener("click", () => toggleSection("approval-requests"));
+    document.getElementById("online-users-header").addEventListener("click", () => toggleSection("online-users"));
+    document.getElementById("user-logs-header").addEventListener("click", () => toggleSection("user-logs"));
+    document.getElementById("approved-users-header").addEventListener("click", () => toggleSection("approved-users"));
+    document.getElementById("hold-blocked-users-header").addEventListener("click", () => toggleSection("hold-blocked-users"));
+
+    // Logout function
+    async function logout() {
+      await signOut(auth);
+      window.location.href = "index.html";
+    }
   </script>
 </body>
 </html>
