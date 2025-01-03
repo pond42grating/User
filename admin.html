@@ -187,13 +187,10 @@
     const auth = getAuth(app);
 
     onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    // User is not signed in, redirect to login page
-    window.location.href = "index.html";
-  } else {
-    console.log("User is authenticated:", user.email);
-  }
-});
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
 
     function fetchApprovalRequests() {
       const approvalRequestsList = document.getElementById("approval-requests-list");
