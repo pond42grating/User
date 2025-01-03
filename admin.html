@@ -163,13 +163,10 @@
     import {
       getFirestore,
       collection,
-      doc,
       onSnapshot,
-      arrayUnion,
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
@@ -177,68 +174,32 @@
       storageBucket: "dws-management.firebasestorage.app",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
+      measurementId: "G-L14GLJDYW7",
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Verify Auth
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "index.html";
       }
     });
 
-    // Fetch User Logs
-    function fetchUserLogs() {
-      const logsList = document.getElementById("logs-list");
-      const logsCountBadge = document.getElementById("logs-count");
-      logsList.innerHTML = "Loading...";
-
-      onSnapshot(collection(db, "Users"), (snapshot) => {
-        const logs = [];
-        snapshot.forEach((doc) => {
-          const userData = doc.data();
-          if (userData.loginLogs && Array.isArray(userData.loginLogs)) {
-            userData.loginLogs.forEach((log) => {
-              logs.push({
-                username: userData.username || doc.id,
-                activity: log.activity,
-                timestamp: log.timestamp,
-              });
-            });
-          }
-        });
-
-        // Sort logs by timestamp (descending order)
-        logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        // Update badge count
-        logsCountBadge.textContent = logs.length;
-
-        // Update logs list
-        if (logs.length > 0) {
-          logsList.innerHTML = logs
-            .map(
-              (log) =>
-                `<li>${log.activity} by ${log.username} at ${new Date(
-                  log.timestamp
-                ).toLocaleString()}</li>`
-            )
-            .join("");
-        } else {
-          logsList.innerHTML = "<li>No logs found.</li>";
-        }
+    const fetchData = (query, callback) => {
+      onSnapshot(query, (snapshot) => {
+        callback(snapshot);
       });
-    }
-
-    // Initialize on Load
-    window.onload = () => {
-      fetchUserLogs();
     };
+
+    const fetchSections = () => {
+      fetchData(collection(db, "Users"), (snapshot) => {
+        console.log(snapshot);
+      });
+    };
+
+    window.onload = fetchSections;
   </script>
 </body>
 </html>
