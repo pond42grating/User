@@ -12,9 +12,7 @@
       getDocs,
       doc,
       updateDoc,
-      deleteDoc,
-      query,
-      where
+      deleteDoc
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
@@ -23,7 +21,7 @@
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebaseapp.com",
+      storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7"
@@ -41,45 +39,26 @@
       }
     });
 
-    // Night mode toggle
-    function toggleTheme() {
-      document.body.classList.toggle("dark-mode");
-      localStorage.setItem("theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
-    }
-
-    window.onload = function () {
-      const storedTheme = localStorage.getItem("theme");
-      if (storedTheme === "dark") {
-        document.body.classList.add("dark-mode");
-      }
-    };
-
-    // Fetch users
+    // Fetch and display users
     async function fetchUsers() {
       const userList = document.getElementById("user-list");
-      userList.innerHTML = "Loading users...";
+      userList.innerHTML = "<li>Loading users...</li>"; // Display a loading message
       try {
         const querySnapshot = await getDocs(collection(db, "Users"));
         let usersHTML = "";
 
         querySnapshot.forEach((doc) => {
           const user = doc.data();
-          const statusBadge = user.status
-            ? `<span class="status-badge ${user.status.toLowerCase()}">${user.status}</span>`
-            : "";
-
           usersHTML += `
             <li>
               <div>
-                <strong>${user.username}</strong> (${user.email}) ${statusBadge}
+                <strong>${user.username}</strong> (${user.email})
+                ${user.status ? `<span class="status">${user.status}</span>` : ""}
               </div>
-              <div class="dropdown">
-                <button class="dropdown-btn">Actions</button>
-                <div class="dropdown-content">
-                  <button onclick="holdUser('${doc.id}')">Hold</button>
-                  <button onclick="blockUser('${doc.id}')">Block</button>
-                  <button onclick="removeUser('${doc.id}')">Remove</button>
-                </div>
+              <div class="actions">
+                <button onclick="holdUser('${doc.id}')">Hold</button>
+                <button onclick="blockUser('${doc.id}')">Block</button>
+                <button onclick="removeUser('${doc.id}')">Remove</button>
               </div>
             </li>
           `;
@@ -87,8 +66,8 @@
 
         userList.innerHTML = usersHTML || "<li>No users found.</li>";
       } catch (error) {
-        console.error("Error fetching users: ", error);
-        userList.innerHTML = "<li>Error fetching data.</li>";
+        console.error("Error fetching users:", error);
+        userList.innerHTML = "<li>Error loading users. Please check the console for details.</li>";
       }
     }
 
@@ -99,7 +78,7 @@
         alert("User put on hold.");
         fetchUsers();
       } catch (error) {
-        console.error("Error holding user: ", error);
+        console.error("Error holding user:", error);
       }
     }
 
@@ -110,7 +89,7 @@
         alert("User blocked successfully.");
         fetchUsers();
       } catch (error) {
-        console.error("Error blocking user: ", error);
+        console.error("Error blocking user:", error);
       }
     }
 
@@ -121,7 +100,7 @@
         alert("User removed successfully.");
         fetchUsers();
       } catch (error) {
-        console.error("Error removing user: ", error);
+        console.error("Error removing user:", error);
       }
     }
 
@@ -132,7 +111,7 @@
         alert("Logged out successfully!");
         window.location.href = "index.html";
       } catch (error) {
-        console.error("Error during logout: ", error);
+        console.error("Error during logout:", error);
         alert("Error: " + error.message);
       }
     }
@@ -142,22 +121,15 @@
     window.blockUser = blockUser;
     window.removeUser = removeUser;
     window.logout = logout;
-    window.toggleTheme = toggleTheme;
   </script>
 
   <style>
-    /* General styles */
     body {
       font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #a8edea, #fed6e3);
       margin: 0;
       padding: 0;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
       color: #333;
-    }
-
-    .dark-mode {
-      background: linear-gradient(135deg, #2a2a72, #009ffd);
-      color: white;
     }
 
     header {
@@ -203,12 +175,7 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .dropdown {
-      position: relative;
-      display: inline-block;
-    }
-
-    .dropdown-btn {
+    .actions button {
       background-color: #4CAF50;
       color: white;
       border: none;
@@ -217,45 +184,17 @@
       cursor: pointer;
     }
 
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: white;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      z-index: 1;
+    .actions button:hover {
+      background-color: #45a049;
     }
 
-    .dropdown:hover .dropdown-content {
-      display: block;
-    }
-
-    .dropdown-content button {
-      background: none;
-      border: none;
-      color: #4CAF50;
-      padding: 0.5rem 1rem;
-      text-align: left;
-      cursor: pointer;
-    }
-
-    .dropdown-content button:hover {
-      background: #f4f4f4;
-    }
-
-    .status-badge {
+    .status {
       padding: 0.2rem 0.5rem;
-      border-radius: 5px;
-      font-size: 0.8rem;
-      color: white;
-      margin-left: 0.5rem;
-    }
-
-    .status-badge.hold {
       background-color: orange;
-    }
-
-    .status-badge.blocked {
-      background-color: red;
+      color: white;
+      border-radius: 5px;
+      margin-left: 0.5rem;
+      font-size: 0.8rem;
     }
   </style>
 </head>
