@@ -29,7 +29,6 @@
       margin-bottom: 10px;
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      display: none;
     }
     .card h3 {
       margin-top: 0;
@@ -111,6 +110,13 @@
       const sectionContent = section.querySelector('.section-content');
       const currentDisplay = sectionContent.style.display;
 
+      // Hide all sections before showing the selected one
+      const allSections = document.querySelectorAll('.section-content');
+      allSections.forEach(content => {
+        content.style.display = 'none';
+      });
+
+      // Toggle the selected section
       if (currentDisplay === 'block') {
         sectionContent.style.display = 'none';
       } else {
@@ -121,12 +127,20 @@
     // Simulate fetching data from Firebase or any other source
     function simulateData() {
       setTimeout(() => {
+        // Initially hide all sections
+        const allSections = document.querySelectorAll('.section-content');
+        allSections.forEach(content => {
+          content.style.display = 'none';
+        });
+
+        // Show the sections
         document.getElementById('online-users').style.display = 'block';
         document.getElementById('approval-requests').style.display = 'block';
         document.getElementById('user-logs').style.display = 'block';
         document.getElementById('approved-users').style.display = 'block';
         document.getElementById('hold-blocked-users').style.display = 'block';
 
+        // Update the notification badges
         document.getElementById('approval-count').textContent = '5'; // Example count
         document.getElementById('online-count').textContent = '2'; // Example count
         document.getElementById('logs-count').textContent = '10'; // Example count
