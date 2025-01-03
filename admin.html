@@ -78,10 +78,9 @@
     }
 
     .button-container {
-      display: none;
-    }
-    .button-container.active {
-      display: block;
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
     }
   </style>
 </head>
@@ -116,7 +115,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -139,7 +138,7 @@
       }
     });
 
-    function initializeSections() {
+       function initializeSections() {
       const sections = document.querySelectorAll("main section ul");
       sections.forEach((section, index) => {
         section.style.display = index === 0 ? "block" : "none"; // Open only the first section
@@ -187,7 +186,7 @@
           const userDiv = document.createElement('div');
           userDiv.innerHTML = `
             <p>${user.username} (${user.email}) 
-              <div id="buttons-${user.username}" class="button-container">
+              <div class="button-container">
                 <button class="button" onclick="approveUser('${user.username}')">Approve</button>
                 <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
               </div>
@@ -212,8 +211,8 @@
     async function rejectUser(username) {
       const userRef = query(collection(db, "Users"), where("username", "==", username));
       const querySnapshot = await getDocs(userRef);
-      querySnapshot.forEach(async (doc) => {
-        await deleteDoc(doc.ref);
+      querySnapshot.forEach((doc) => {
+        doc.ref.delete();
       });
       alert(`User ${username} rejected.`);
       fetchApprovalRequests(); // Refresh the approval requests
