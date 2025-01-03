@@ -76,11 +76,17 @@
 
     section h2 {
       margin-bottom: 1rem;
+      cursor: pointer;
     }
 
     ul {
       list-style: none;
       padding: 0;
+      display: none; /* Hidden by default */
+    }
+
+    ul.active {
+      display: block; /* Show when active */
     }
 
     li {
@@ -117,6 +123,15 @@
     button:hover {
       background-color: #45a049;
     }
+
+    .badge {
+      background: red;
+      color: white;
+      padding: 0.2rem 0.6rem;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      margin-left: 10px;
+    }
   </style>
 </head>
 <body>
@@ -133,28 +148,38 @@
 
   <main>
     <section>
-      <h2>Approval Requests</h2>
-      <ul id="approval-requests-list">Loading...</ul>
+      <h2 onclick="toggleSection('approval-requests')">
+        Approval Requests <span class="badge" id="approval-count">0</span>
+      </h2>
+      <ul id="approval-requests-list" class="section-list">Loading...</ul>
     </section>
 
     <section>
-      <h2>Online Users</h2>
-      <ul id="online-users-list">Loading...</ul>
+      <h2 onclick="toggleSection('online-users')">
+        Online Users <span class="badge" id="online-count">0</span>
+      </h2>
+      <ul id="online-users-list" class="section-list">Loading...</ul>
     </section>
 
     <section>
-      <h2>User Logs</h2>
-      <ul id="logs-list">Loading...</ul>
+      <h2 onclick="toggleSection('user-logs')">
+        User Logs
+      </h2>
+      <ul id="logs-list" class="section-list">Loading...</ul>
     </section>
 
     <section>
-      <h2>Approved Users</h2>
-      <ul id="approved-users-list">Loading...</ul>
+      <h2 onclick="toggleSection('approved-users')">
+        Approved Users <span class="badge" id="approved-count">0</span>
+      </h2>
+      <ul id="approved-users-list" class="section-list">Loading...</ul>
     </section>
 
     <section>
-      <h2>Hold/Blocked Users</h2>
-      <ul id="hold-blocked-list">Loading...</ul>
+      <h2 onclick="toggleSection('hold-blocked-users')">
+        Hold/Blocked Users <span class="badge" id="hold-count">0</span>
+      </h2>
+      <ul id="hold-blocked-list" class="section-list">Loading...</ul>
     </section>
   </main>
 
@@ -165,10 +190,9 @@
       collection,
       query,
       where,
-      onSnapshot,
       updateDoc,
       deleteDoc,
-      doc,
+      onSnapshot,
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
@@ -179,30 +203,38 @@
       storageBucket: "dws-management.firebasestorage.app",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
+      measurementId: "G-L14GLJDYW7",
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    // Redirect if not authenticated
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "index.html";
       }
     });
 
+    function toggleSection(sectionId) {
+      const section = document.getElementById(`${sectionId}-list`);
+      section.classList.toggle("active");
+    }
+
     function fetchApprovalRequests() {
       const approvalRequestsList = document.getElementById("approval-requests-list");
+      const approvalCount = document.getElementById("approval-count");
       const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
       onSnapshot(approvalQuery, (snapshot) => {
         let html = "";
+        approvalCount.textContent = snapshot.size;
         snapshot.forEach((doc) => {
           const user = doc.data();
           html += `
             <li>
               ${user.username} (${user.email})
-              <div>
+              <div class="action-buttons">
                 <button onclick="approveUser('${doc.id}')">Approve</button>
                 <button onclick="rejectUser('${doc.id}')">Reject</button>
               </div>
@@ -214,23 +246,15 @@
 
     async function approveUser(userId) {
       await updateDoc(doc(db, "Users", userId), { isApproved: true });
-      alert("User approved successfully.");
+      alert("User approved!");
     }
 
     async function rejectUser(userId) {
       await deleteDoc(doc(db, "Users", userId));
-      alert("User rejected successfully.");
+      alert("User rejected!");
     }
 
-    // Other functions go here...
-
-    window.onload = () => {
-      fetchApprovalRequests();
-      // Add other fetch functions...
-    };
-
-    window.approveUser = approveUser;
-    window.rejectUser = rejectUser;
+    fetchApprovalRequests();
   </script>
 </body>
 </html>
