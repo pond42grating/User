@@ -191,12 +191,19 @@
     const adminSnap = await getDoc(adminDocRef);
 
     if (
-      adminSnap.exists() &&
-      (adminSnap.data().username === userInput || adminSnap.data().id === userInput) &&
-      adminSnap.data().password === password
-    ) {
-      alert("Welcome, Admin!");
-      window.location.href = "admin.html";
+          adminSnap.exists() &&
+          (adminSnap.data().username === userInput || adminSnap.data().id === userInput)
+        ) {
+          email = adminSnap.data().id;
+        }
+
+        // Sign-In with Auth
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        if (adminSnap.exists() && adminSnap.data().id === email) {
+          alert("Welcome Admin!");
+          window.location.href = "admin.html";
       return; // Exit the function after successful admin login
     }
 
