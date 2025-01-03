@@ -51,6 +51,7 @@
       min-width: 160px;
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
       border-radius: 5px;
+      z-index: 100;
     }
 
     .dropdown:hover .dropdown-content {
@@ -210,7 +211,6 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Redirect if not authenticated
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "index.html";
@@ -222,39 +222,26 @@
       section.classList.toggle("active");
     }
 
-    function fetchApprovalRequests() {
-      const approvalRequestsList = document.getElementById("approval-requests-list");
-      const approvalCount = document.getElementById("approval-count");
-      const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
-      onSnapshot(approvalQuery, (snapshot) => {
-        let html = "";
-        approvalCount.textContent = snapshot.size;
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          html += `
-            <li>
-              ${user.username} (${user.email})
-              <div class="action-buttons">
-                <button onclick="approveUser('${doc.id}')">Approve</button>
-                <button onclick="rejectUser('${doc.id}')">Reject</button>
-              </div>
-            </li>`;
-        });
-        approvalRequestsList.innerHTML = html || "<li>No approval requests found.</li>";
+    function fetchCounts() {
+      // Fetch counts dynamically and update badges
+      onSnapshot(query(collection(db, "Users"), where("isApproved", "==", false)), (snapshot) => {
+        document.getElementById("approval-count").textContent = snapshot.size;
+      });
+
+      onSnapshot(query(collection(db, "Users"), where("isOnline", "==", true)), (snapshot) => {
+        document.getElementById("online-count").textContent = snapshot.size;
+      });
+
+      onSnapshot(query(collection(db, "Users"), where("isApproved", "==", true)), (snapshot) => {
+        document.getElementById("approved-count").textContent = snapshot.size;
+      });
+
+      onSnapshot(query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"])), (snapshot) => {
+        document.getElementById("hold-count").textContent = snapshot.size;
       });
     }
 
-    async function approveUser(userId) {
-      await updateDoc(doc(db, "Users", userId), { isApproved: true });
-      alert("User approved!");
-    }
-
-    async function rejectUser(userId) {
-      await deleteDoc(doc(db, "Users", userId));
-      alert("User rejected!");
-    }
-
-    fetchApprovalRequests();
+    fetchCounts();
   </script>
 </body>
 </html>
