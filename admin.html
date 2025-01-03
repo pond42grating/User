@@ -4,6 +4,165 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - DWS Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      color: #333;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #4CAF50;
+      color: white;
+      padding: 1rem;
+    }
+
+    header h1 {
+      margin: 0;
+    }
+
+    .settings-dropdown {
+      position: relative;
+    }
+
+    .settings-button {
+      background-color: white;
+      color: #4CAF50;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .settings-button:hover {
+      background-color: #45a049;
+      color: white;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: white;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      min-width: 150px;
+      z-index: 1;
+    }
+
+    .dropdown-content a {
+      color: black;
+      padding: 10px;
+      text-decoration: none;
+      display: block;
+      text-align: left;
+      border-radius: 5px;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #f1f1f1;
+    }
+
+    .settings-dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    main {
+      padding: 1rem;
+      overflow-y: auto;
+      height: calc(100vh - 60px);
+    }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    section h2 {
+      margin-bottom: 1rem;
+    }
+
+    .user-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .user-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-options {
+      display: none;
+      flex-direction: column;
+      margin-top: 10px;
+    }
+
+    .user-options button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 0.5rem;
+      margin-bottom: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .user-options button:hover {
+      background-color: #45a049;
+    }
+
+    .notification-badge {
+      background-color: red;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      vertical-align: top;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin Dashboard</h1>
+    <div class="settings-dropdown">
+      <button class="settings-button">Settings</button>
+      <div class="dropdown-content">
+        <a href="adminprofile.html">Admin Profile</a>
+        <a href="#" onclick="enablePushNotifications()">Push Notifications</a>
+        <a href="#" onclick="logout()">Logout</a>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>Online Users</h2>
+      <ul class="user-list" id="online-users-list"></ul>
+    </section>
+    <section>
+      <h2>User Logs</h2>
+      <ul class="user-list" id="user-logs-list"></ul>
+    </section>
+    <section>
+      <h2>Approved Users</h2>
+      <ul class="user-list" id="approved-users-list"></ul>
+    </section>
+    <section>
+      <h2>Hold/Blocked Users</h2>
+      <ul class="user-list" id="hold-blocked-users-list"></ul>
+    </section>
+  </main>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import {
@@ -32,301 +191,142 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Push Notification Feature
-    function requestNotificationPermission() {
-      if ("Notification" in window) {
-        Notification.requestPermission().then((permission) => {
-          if (permission === "granted") {
-            alert("Push notifications enabled.");
-          }
-        });
-      }
-    }
-
-    function sendPushNotification(title, body) {
-      if ("Notification" in window && Notification.permission === "granted") {
-        new Notification(title, { body });
-      }
-    }
-
-    // Fetch Users
-    async function fetchUsers() {
-      const onlineUsersList = document.getElementById("online-users-list");
-      const logsContainer = document.getElementById("logs-container");
-      const allUsersList = document.getElementById("all-users-list");
-      const holdBlockedList = document.getElementById("hold-blocked-list");
-      const badge = document.getElementById("notification-badge");
-
-      onlineUsersList.innerHTML = "<li>Loading online users...</li>";
-      logsContainer.innerHTML = "";
-      allUsersList.innerHTML = "<li>Loading users...</li>";
-      holdBlockedList.innerHTML = "<li>Loading hold/blocked users...</li>";
-      badge.innerText = "0";
-
+    async function fetchOnlineUsers() {
+      const list = document.getElementById("online-users-list");
+      list.innerHTML = "Loading...";
       try {
-        const querySnapshot = await getDocs(collection(db, "Users"));
-        let onlineHTML = "";
-        let allUsersHTML = "";
-        let holdBlockedHTML = "";
-        let unapprovedCount = 0;
+        const users = await getDocs(collection(db, "Users"));
+        list.innerHTML = users.docs
+          .filter(doc => doc.data().isOnline)
+          .map(doc => `<li>${doc.data().username} (${doc.data().email})</li>`)
+          .join("") || "<li>No online users</li>";
+      } catch (error) {
+        console.error("Error fetching online users:", error);
+        list.innerHTML = "Error loading online users.";
+      }
+    }
 
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
+    async function fetchUserLogs() {
+      const list = document.getElementById("user-logs-list");
+      list.innerHTML = "Loading...";
+      try {
+        const users = await getDocs(collection(db, "Users"));
+        list.innerHTML = users.docs
+          .filter(doc => doc.data().loginLogs)
+          .map(doc => `<li>${doc.data().username}: ${doc.data().loginLogs.map(log => `<p>${log.activity} - ${log.timestamp}</p>`).join("")}</li>`)
+          .join("") || "<li>No user logs found</li>";
+      } catch (error) {
+        console.error("Error fetching user logs:", error);
+        list.innerHTML = "Error loading user logs.";
+      }
+    }
 
-          // Online Users Section
-          if (user.isOnline) {
-            onlineHTML += `<li>${user.username} (${user.email})</li>`;
-          }
-
-          // All Users Section
-          allUsersHTML += `
+    async function fetchApprovedUsers() {
+      const list = document.getElementById("approved-users-list");
+      list.innerHTML = "Loading...";
+      try {
+        const users = await getDocs(query(collection(db, "Users"), where("isApproved", "==", true)));
+        list.innerHTML = users.docs
+          .map(doc => `
             <li>
-              <div onclick="toggleUserActions('${doc.id}', '${user.username}')">
-                <strong>${user.username}</strong> (${user.email})
-                ${user.status ? `<span class="status">${user.status}</span>` : ""}
-              </div>
-              <div id="actions-${doc.id}" class="actions hidden">
+              ${doc.data().username} (${doc.data().email})
+              <button onclick="toggleOptions('${doc.id}')">Options</button>
+              <div id="options-${doc.id}" style="display:none;">
                 <button onclick="holdUser('${doc.id}')">Hold</button>
                 <button onclick="blockUser('${doc.id}')">Block</button>
                 <button onclick="removeUser('${doc.id}')">Remove</button>
               </div>
             </li>
-          `;
-
-          // Hold/Blocked Users Section
-          if (user.status === "Hold" || user.status === "Blocked") {
-            holdBlockedHTML += `
-              <li>
-                <strong>${user.username}</strong> (${user.email})
-                <span class="status">${user.status}</span>
-                <button onclick="${user.status === "Hold" ? `unholdUser('${doc.id}')` : `unblockUser('${doc.id}')`}">
-                  ${user.status === "Hold" ? "Unhold" : "Unblock"}
-                </button>
-              </li>
-            `;
-          }
-
-          // Count Unapproved Users
-          if (!user.isApproved) {
-            unapprovedCount++;
-          }
-        });
-
-        onlineUsersList.innerHTML = onlineHTML || "<li>No users online.</li>";
-        allUsersList.innerHTML = allUsersHTML || "<li>No users found.</li>";
-        holdBlockedList.innerHTML = holdBlockedHTML || "<li>No hold/blocked users found.</li>";
-        badge.innerText = unapprovedCount;
-
-        if (unapprovedCount > 0) {
-          sendPushNotification("New User Requests", `${unapprovedCount} users are awaiting approval.`);
-        }
+          `)
+          .join("") || "<li>No approved users</li>";
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching approved users:", error);
+        list.innerHTML = "Error loading approved users.";
       }
     }
 
-    function toggleUserActions(userId) {
-      const actions = document.getElementById(`actions-${userId}`);
-      actions.classList.toggle("hidden");
+    async function fetchHoldBlockedUsers() {
+      const list = document.getElementById("hold-blocked-users-list");
+      list.innerHTML = "Loading...";
+      try {
+        const users = await getDocs(query(collection(db, "Users"), where("status", "!=", null)));
+        list.innerHTML = users.docs
+          .map(doc => `
+            <li>
+              ${doc.data().username} (${doc.data().email}) - ${doc.data().status}
+              <button onclick="unblockUser('${doc.id}')">Unblock</button>
+              <button onclick="unholdUser('${doc.id}')">Unhold</button>
+            </li>
+          `)
+          .join("") || "<li>No hold/blocked users</li>";
+      } catch (error) {
+        console.error("Error fetching hold/blocked users:", error);
+        list.innerHTML = "Error loading hold/blocked users.";
+      }
     }
 
     async function holdUser(userId) {
-      try {
-        await updateDoc(doc(db, "Users", userId), { status: "Hold" });
-        alert("User held successfully.");
-        fetchUsers();
-      } catch (error) {
-        console.error("Error holding user:", error);
-      }
+      await updateDoc(doc(db, "Users", userId), { status: "Hold" });
+      alert("User put on hold");
+      fetchApprovedUsers();
+      fetchHoldBlockedUsers();
     }
 
     async function blockUser(userId) {
-      try {
-        await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
-        alert("User blocked successfully.");
-        fetchUsers();
-      } catch (error) {
-        console.error("Error blocking user:", error);
-      }
-    }
-
-    async function unholdUser(userId) {
-      try {
-        await updateDoc(doc(db, "Users", userId), { status: null });
-        alert("User unheld successfully.");
-        fetchUsers();
-      } catch (error) {
-        console.error("Error unholding user:", error);
-      }
-    }
-
-    async function unblockUser(userId) {
-      try {
-        await updateDoc(doc(db, "Users", userId), { status: null });
-        alert("User unblocked successfully.");
-        fetchUsers();
-      } catch (error) {
-        console.error("Error unblocking user:", error);
-      }
+      await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
+      alert("User blocked");
+      fetchApprovedUsers();
+      fetchHoldBlockedUsers();
     }
 
     async function removeUser(userId) {
-      try {
-        await deleteDoc(doc(db, "Users", userId));
-        alert("User removed successfully.");
-        fetchUsers();
-      } catch (error) {
-        console.error("Error removing user:", error);
-      }
+      await deleteDoc(doc(db, "Users", userId));
+      alert("User removed");
+      fetchApprovedUsers();
+    }
+
+    async function unblockUser(userId) {
+      await updateDoc(doc(db, "Users", userId), { status: null });
+      alert("User unblocked");
+      fetchHoldBlockedUsers();
+    }
+
+    async function unholdUser(userId) {
+      await updateDoc(doc(db, "Users", userId), { status: null });
+      alert("User unheld");
+      fetchHoldBlockedUsers();
     }
 
     async function logout() {
-      try {
-        await signOut(auth);
-        alert("Logged out successfully!");
-        window.location.href = "index.html";
-      } catch (error) {
-        console.error("Error during logout:", error);
-        alert("Error: " + error.message);
-      }
+      await signOut(auth);
+      alert("Logged out");
+      window.location.href = "index.html";
     }
 
-    window.onload = fetchUsers;
+    function enablePushNotifications() {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          alert("Push notifications enabled");
+        } else {
+          alert("Push notifications denied");
+        }
+      });
+    }
+
+    window.onload = () => {
+      fetchOnlineUsers();
+      fetchUserLogs();
+      fetchApprovedUsers();
+      fetchHoldBlockedUsers();
+    };
+
     window.holdUser = holdUser;
     window.blockUser = blockUser;
-    window.unholdUser = unholdUser;
-    window.unblockUser = unblockUser;
     window.removeUser = removeUser;
+    window.unblockUser = unblockUser;
+    window.unholdUser = unholdUser;
     window.logout = logout;
-    window.requestNotificationPermission = requestNotificationPermission;
+    window.enablePushNotifications = enablePushNotifications;
   </script>
-  
-  <style>
-    /* Styling (same as before with minor adjustments) */
-    body
-     {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(135deg, #a8edea, #fed6e3);
-      color: #333;
-    }
-
-    header {
-      background-color: #4CAF50;
-      color: white;
-      padding: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    #settings {
-      position: relative;
-    }
-
-    .dropdown {
-      display: none;
-      position: absolute;
-      background-color: white;
-      color: #333;
-      right: 0;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      width: 150px;
-    }
-
-    .dropdown button {
-      width: 100%;
-      text-align: left;
-      padding: 0.5rem;
-      border: none;
-      background: none;
-    }
-
-    .dropdown button:hover {
-      background: #f0f0f0;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    main {
-      padding: 2rem;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    li {
-      padding: 1rem;
-      background: white;
-      margin-bottom: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .actions {
-      display: none;
-      flex-direction: column;
-    }
-
-    .actions button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      padding: 0.5rem;
-      margin-top: 0.5rem;
-    }
-
-    .actions button:hover {
-      background-color: #45a049;
-    }
-
-    .status {
-      background-color: orange;
-      color: white;
-      padding: 0.2rem 0.5rem;
-      border-radius: 5px;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Admin Dashboard</h1>
-    <div id="settings">
-      <button onclick="document.querySelector('.dropdown').classList.toggle('hidden')">Settings</button>
-      <div class="dropdown hidden">
-        <button onclick="requestNotificationPermission()">Push Notifications</button>
-        <button onclick="window.location.href='adminprofile.html'">Admin Profile</button>
-        <button onclick="logout()">Log Out</button>
-      </div>
-    </div>
-    <span id="notification-badge" class="badge">0</span>
-  </header>
-  <main>
-    <section>
-      <h2>Online Users</h2>
-      <ul id="online-users-list"></ul>
-    </section>
-    <section>
-      <h2>User Logs</h2>
-      <div id="logs-container"></div>
-    </section>
-    <section>
-      <h2>All Users</h2>
-      <ul id="all-users-list"></ul>
-    </section>
-    <section>
-      <h2>Hold/Blocked Users</h2>
-      <ul id="hold-blocked-list"></ul>
-    </section>
-  </main>
 </body>
 </html>
