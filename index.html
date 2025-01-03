@@ -201,102 +201,120 @@
     });
 
     async function login() {
-      const userInput = document.getElementById("emailOrUsername").value.trim();
-      const password = document.getElementById("password").value.trim();
+  const userInput = document.getElementById("emailOrUsername").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-      if (!userInput || !password) {
-        alert("Please enter both email/username and password.");
+  if (!userInput || !password) {
+    alert("Please enter both email/username and password.");
+    return;
+  }
+
+  try {
+    let email = userInput;
+    let username = null;
+    let isApproved = false;
+    let isAdmin = false;
+
+    // Check for Admin Login
+    const adminDocRef = doc(db, "Admin", "Details");
+    const adminSnap = await getDoc(adminDocRef);
+
+    if (
+      adminSnap.exists() &&
+      (adminSnap.data().username === userInput || adminSnap.data().id === userInput)
+    ) {
+      email = adminSnap.data().id;
+      isAdmin = true;
+    } else if (!userInput.includes("@")) {
+      // Username Login Check
+      const userDocRef = doc(db, "Users", userInput);
+      const userSnap = await getDoc(userDocRef);
+
+      if (!userSnap.exists()) {
+        alert("No user found with that username.");
         return;
       }
 
-      try {
-        let email = userInput;
-        let isApproved = false;
-        let isAdmin = false;
-        let username = null;
+      const userData = userSnap.data();
+      email = userData.email;
+      username = userData.username;
+      isApproved = userData.isApproved;
 
-        // Admin Login Check
-        const adminDocRef = doc(db, "Admin", "Details");
-        const adminSnap = await getDoc(adminDocRef);
+      // Check User Status
+      if (userData.status === "Hold") {
+        alert("Your account is on hold by the admin. Please contact support.");
+        return;
+      }
 
-        if (
-          adminSnap.exists() &&
-          (adminSnap.data().username === userInput || adminSnap.data().id === userInput)
-        ) {
-          email = adminSnap.data().id;
-          isAdmin = true;
-        } else if (!userInput.includes("@")) {
-          // Username Login
-          const userDocRef = doc(db, "Users", userInput);
-          const userSnap = await getDoc(userDocRef);
+      if (userData.status === "Blocked") {
+        alert("Your account has been blocked by the admin. Please contact support.");
+        return;
+      }
+    } else {
+      // Email Login Check
+      const usersRef = collection(db, "Users");
+      const q = query(usersRef, where("email", "==", userInput));
+      const qSnap = await getDocs(q);
 
-          if (!userSnap.exists()) {
-            alert("No user found with that username.");
-            return;
-          }
+      if (qSnap.empty) {
+        alert("No user found with that email.");
+        return;
+      }
 
-          const userData = userSnap.data();
-          email = userData.email; // Fetch email linked to the username
-          isApproved = userData.isApproved;
-          username = userData.username;
-        } else {
-          // Email Login
-          const usersRef = collection(db, "Users");
-          const q = query(usersRef, where("email", "==", userInput));
-          const qSnap = await getDocs(q);
+      const userData = qSnap.docs[0].data();
+      email = userData.email;
+      username = userData.username;
+      isApproved = userData.isApproved;
 
-          if (qSnap.empty) {
-            alert("No user found with that email.");
-            return;
-          }
+      // Check User Status
+      if (userData.status === "Hold") {
+        alert("Your account is on hold by the admin. Please contact support.");
+        return;
+      }
 
-          const userData = qSnap.docs[0].data();
-          isApproved = userData.isApproved;
-          username = userData.username;
-        }
-        
-        if (userData.status === "Hold") {
-  alert("Your account is on hold by the admin. Please contact support.");
-  return;
-}
-
-if (userData.status === "Blocked") {
-  alert("Your account has been blocked by the admin. Please contact support.");
-  return;
-}
-
-        if (!isAdmin && !isApproved) {
-          alert("Your account is pending admin approval.");
-          return;
-        }
-
-        // Firebase Auth Login
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        if (isAdmin) {
-          alert("Welcome Admin!");
-          window.location.href = "admin.html";
-        } else {
-          // Log user login activity
-          const userDocRef = doc(db, "Users", username);
-          await setDoc(userDocRef, {
-            isOnline: true,
-            lastLogin: new Date().toISOString(),
-            loginLogs: arrayUnion({
-              activity: "Login",
-              timestamp: new Date().toISOString(),
-            }),
-          }, { merge: true });
-
-          alert("Login successful!");
-          window.location.href = "login.html";
-        }
-      } catch (error) {
-        console.error("Login error:", error);
-        alert("Error: " + error.message);
+      if (userData.status === "Blocked") {
+        alert("Your account has been blocked by the admin. Please contact support.");
+        return;
       }
     }
+
+    // Ensure User is Approved
+    if (!isAdmin && !isApproved) {
+      alert("Your account is pending admin approval.");
+      return;
+    }
+
+    // Firebase Auth Login
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    if (isAdmin) {
+      alert("Welcome Admin!");
+      window.location.href = "admin.html";
+    } else {
+      // Log User Login Activity
+      const userDocRef = doc(db, "Users", username);
+      await setDoc(
+        userDocRef,
+        {
+          isOnline: true,
+          lastLogin: new Date().toISOString(),
+          loginLogs: arrayUnion({
+            activity: "Login",
+            timestamp: new Date().toISOString(),
+          }),
+        },
+        { merge: true }
+      );
+
+      alert("Login successful!");
+      window.location.href = "login.html";
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    alert("Error: " + error.message);
+  }
+}
 
     async function googleLogin() {
       const provider = new GoogleAuthProvider();
