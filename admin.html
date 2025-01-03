@@ -93,10 +93,6 @@
     button:hover {
       background-color: #45a049;
     }
-
-    .hidden {
-      display: none !important;
-    }
   </style>
 </head>
 <body>
@@ -161,11 +157,11 @@
 
       allSections.forEach((s) => {
         if (s !== section) {
-          s.classList.add("hidden");
+          s.style.display = "none";
         }
       });
 
-      section.classList.toggle("hidden");
+      section.style.display = section.style.display === "block" ? "none" : "block";
     }
 
     function setupToggleListeners() {
@@ -194,7 +190,7 @@
             const user = doc.data();
             html += `<li>${user.username} (${user.email})</li>`;
           });
-          list.innerHTML = html || "<li>No approval-requests found.</li>";
+          list.innerHTML = html || "<li>No approval requests found.</li>";
           updateBadge(badge, snapshot.size);
         }
       );
@@ -218,10 +214,64 @@
       );
     }
 
-    // Fetch and initialize all sections
+    function fetchUserLogs() {
+      const list = document.getElementById("logs-list");
+      const badge = "logs-badge";
+
+      onSnapshot(collection(db, "Logs"), (snapshot) => {
+        let html = "";
+        snapshot.forEach((doc) => {
+          const log = doc.data();
+          html += `<li>${log.activity} - ${new Date(log.timestamp).toLocaleString()}</li>`;
+        });
+        list.innerHTML = html || "<li>No logs found.</li>";
+        updateBadge(badge, snapshot.size);
+      });
+    }
+
+    function fetchApprovedUsers() {
+      const list = document.getElementById("approved-users-list");
+      const badge = "approved-badge";
+
+      onSnapshot(
+        query(collection(db, "Users"), where("isApproved", "==", true)),
+        (snapshot) => {
+          let html = "";
+          snapshot.forEach((doc) => {
+            const user = doc.data();
+            html += `<li>${user.username} (${user.email})</li>`;
+          });
+          list.innerHTML = html || "<li>No approved users found.</li>";
+          updateBadge(badge, snapshot.size);
+        }
+      );
+    }
+
+    function fetchHoldBlockedUsers() {
+      const list = document.getElementById("hold-blocked-list");
+      const badge = "hold-blocked-badge";
+
+      onSnapshot(
+        query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"])),
+        (snapshot) => {
+          let html = "";
+          snapshot.forEach((doc) => {
+            const user = doc.data();
+            html += `<li>${user.username} (${user.email}) - ${user.status}</li>`;
+          });
+          list.innerHTML = html || "<li>No hold/blocked users found.</li>";
+          updateBadge(badge, snapshot.size);
+        }
+      );
+    }
+
+    // Initialize toggle listeners and fetch data
     setupToggleListeners();
     fetchApprovalRequests();
     fetchOnlineUsers();
+    fetchUserLogs();
+    fetchApprovedUsers();
+    fetchHoldBlockedUsers();
   </script>
 </body>
 </html>
