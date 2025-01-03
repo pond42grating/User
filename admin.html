@@ -242,15 +242,6 @@
       }
     }
 
-    function toggleDropdown(userId) {
-      const dropdown = document.getElementById(`actions-${userId}`);
-      if (dropdown.style.display === "flex") {
-        dropdown.style.display = "none";
-      } else {
-        dropdown.style.display = "flex";
-      }
-    }
-
     async function approveUser(userId) {
       try {
         const userDocRef = doc(db, "Users", userId);
@@ -272,26 +263,7 @@
       } catch (error) {
         console.error("Error rejecting user:", error);
         alert("Error rejecting user.");
-      }
-    }
-
-    async function fetchOnlineUsers() {
-      const onlineUsersList = document.getElementById("online-users-list");
-      onlineUsersList.innerHTML = "Loading...";
-      try {
-        const querySnapshot = await getDocs(
-          query(collection(db, "Users"), where("isOnline", "==", true))
-        );
-        let html = "";
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          html += `<li>${user.username} (${user.email})</li>`;
-        });
-        onlineUsersList.innerHTML = html || "<li>No users online.</li>";
-      } catch (error) {
-        console.error("Error fetching online users:", error);
-        onlineUsersList.innerHTML = "Error loading users.";
-      }
+        }
     }
 
     async function fetchUserLogs() {
