@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - DWS Management</title>
+  <title>Admin Dashboard</title>
   <style>
-    /* Basic styling for sections, badges, and loading messages */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #a8edea, #fed6e3);
@@ -19,7 +17,6 @@
       flex-direction: column;
       height: 100vh;
     }
-
     header {
       background-color: #4CAF50;
       color: white;
@@ -28,7 +25,6 @@
       justify-content: space-between;
       align-items: center;
     }
-
     #settings {
       background-color: white;
       color: #4CAF50;
@@ -37,36 +33,39 @@
       border-radius: 5px;
       cursor: pointer;
     }
-
+    #settings:hover {
+      background-color: #45a049;
+      color: white;
+    }
     main {
       flex: 1;
       padding: 2rem;
       overflow-y: auto;
     }
-
     section {
-      margin-bottom: 1rem;
+      margin-bottom: 2rem;
     }
-
     section h2 {
-      margin-bottom: 0.5rem;
+      cursor: pointer;
     }
-
     ul {
       list-style: none;
       padding: 0;
+      margin-top: 1rem;
+      display: none;
     }
-
     ul li {
       background: white;
       margin-bottom: 0.5rem;
       padding: 1rem;
       border-radius: 5px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
-
+    .hidden {
+      display: none;
+    }
     .badge {
-      background: red;
+      background-color: red;
       color: white;
       padding: 0.2rem 0.5rem;
       border-radius: 50%;
@@ -80,30 +79,28 @@
     <h1>Admin Dashboard</h1>
     <button id="settings">Settings</button>
   </header>
-
   <main>
     <section>
-      <h2>Approval Requests <span id="approval-count" class="badge">0</span></h2>
-      <ul id="approval-list">Loading...</ul>
+      <h2>Approval Requests <span class="badge" id="approval-count">0</span></h2>
+      <ul id="approval-list" class="hidden"></ul>
     </section>
     <section>
-      <h2>Online Users <span id="online-count" class="badge">0</span></h2>
-      <ul id="online-list">Loading...</ul>
+      <h2>Online Users <span class="badge" id="online-count">0</span></h2>
+      <ul id="online-list" class="hidden"></ul>
     </section>
     <section>
-      <h2>User Logs <span id="logs-count" class="badge">0</span></h2>
-      <ul id="logs-list">Loading...</ul>
+      <h2>User Logs <span class="badge" id="logs-count">0</span></h2>
+      <ul id="logs-list" class="hidden"></ul>
     </section>
     <section>
-      <h2>Approved Users <span id="approved-count" class="badge">0</span></h2>
-      <ul id="approved-list">Loading...</ul>
+      <h2>Approved Users <span class="badge" id="approved-count">0</span></h2>
+      <ul id="approved-list" class="hidden"></ul>
     </section>
     <section>
-      <h2>Hold/Blocked Users <span id="hold-count" class="badge">0</span></h2>
-      <ul id="hold-list">Loading...</ul>
+      <h2>Hold/Blocked Users <span class="badge" id="hold-count">0</span></h2>
+      <ul id="hold-list" class="hidden"></ul>
     </section>
   </main>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import {
@@ -127,7 +124,31 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Fetch data for sections
+    const toggleSection = (sectionId) => {
+      const allSections = document.querySelectorAll("section ul");
+      const targetSection = document.getElementById(sectionId);
+
+      allSections.forEach((section) => {
+        if (section !== targetSection) {
+          section.classList.add("hidden");
+        }
+      });
+
+      if (targetSection.classList.contains("hidden")) {
+        targetSection.classList.remove("hidden");
+      } else {
+        targetSection.classList.add("hidden");
+      }
+    };
+
+    const addToggleListeners = () => {
+      const sectionHeaders = document.querySelectorAll("section h2");
+      sectionHeaders.forEach((header) => {
+        const sectionId = header.nextElementSibling.id;
+        header.addEventListener("click", () => toggleSection(sectionId));
+      });
+    };
+
     const fetchApprovalRequests = () => {
       const list = document.getElementById("approval-list");
       const badge = document.getElementById("approval-count");
@@ -216,8 +237,8 @@
       });
     };
 
-    // Initialize all sections on load
     window.onload = () => {
+      addToggleListeners();
       fetchApprovalRequests();
       fetchOnlineUsers();
       fetchUserLogs();
