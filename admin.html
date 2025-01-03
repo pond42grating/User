@@ -10,6 +10,7 @@
       padding: 0;
       box-sizing: border-box;
     }
+
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #a8edea, #fed6e3);
@@ -17,6 +18,7 @@
       flex-direction: column;
       height: 100vh;
     }
+
     header {
       background-color: #4CAF50;
       color: white;
@@ -25,6 +27,7 @@
       justify-content: space-between;
       align-items: center;
     }
+
     #settings {
       background-color: white;
       color: #4CAF50;
@@ -33,34 +36,66 @@
       border-radius: 5px;
       cursor: pointer;
     }
+
     #settings:hover {
       background-color: #45a049;
       color: white;
     }
+
     main {
       flex: 1;
       padding: 2rem;
       overflow-y: auto;
     }
+
+    section {
+      margin-bottom: 1.5rem;
+    }
+
     section h2 {
-      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       cursor: pointer;
     }
+
+    section h2 .badge {
+      background-color: red;
+      color: white;
+      border-radius: 50%;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.8rem;
+    }
+
     ul {
       list-style: none;
       padding: 0;
       display: none;
     }
-    ul.active {
-      display: block;
+
+    li {
+      background: white;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
-    .badge {
-      background: red;
+
+    button {
+      background-color: #4CAF50;
       color: white;
-      padding: 0.2rem 0.5rem;
-      border-radius: 50%;
-      font-size: 0.9rem;
-      margin-left: 0.5rem;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
@@ -71,25 +106,29 @@
   </header>
 
   <main>
-    <section>
+    <section id="approval-section">
       <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
-      <ul id="approval-requests-list">Loading...</ul>
+      <ul id="approval-requests-list"></ul>
     </section>
-    <section>
+
+    <section id="online-section">
       <h2>Online Users <span class="badge" id="online-badge">0</span></h2>
-      <ul id="online-users-list">Loading...</ul>
+      <ul id="online-users-list"></ul>
     </section>
-    <section>
+
+    <section id="logs-section">
       <h2>User Logs <span class="badge" id="logs-badge">0</span></h2>
-      <ul id="logs-list">Loading...</ul>
+      <ul id="logs-list"></ul>
     </section>
-    <section>
+
+    <section id="approved-section">
       <h2>Approved Users <span class="badge" id="approved-badge">0</span></h2>
-      <ul id="approved-users-list">Loading...</ul>
+      <ul id="approved-users-list"></ul>
     </section>
-    <section>
+
+    <section id="hold-blocked-section">
       <h2>Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span></h2>
-      <ul id="hold-blocked-list">Loading...</ul>
+      <ul id="hold-blocked-list"></ul>
     </section>
   </main>
 
@@ -102,13 +141,12 @@
       where,
       onSnapshot,
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
+      storageBucket: "dws-management.firebaseapp.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7",
@@ -116,46 +154,74 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app);
-
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "index.html";
-      }
-    });
-
-    function initializeSections() {
-      const sections = document.querySelectorAll("main section ul");
-      sections.forEach((section, index) => {
-        section.style.display = index === 0 ? "block" : "none"; // Open only the first section
-      });
-    }
 
     function toggleSection(sectionId) {
-      const sections = document.querySelectorAll("main section ul");
-      sections.forEach((section) => {
-        if (section.id === sectionId) {
-          section.style.display = section.style.display === "none" ? "block" : "none";
-        } else {
-          section.style.display = "none";
+      const section = document.querySelector(`#${sectionId} ul`);
+      const allSections = document.querySelectorAll("ul");
+
+      allSections.forEach((s) => {
+        if (s !== section) {
+          s.classList.add("hidden");
         }
+      });
+
+      section.classList.toggle("hidden");
+    }
+
+    function setupToggleListeners() {
+      document.querySelectorAll("section h2").forEach((header) => {
+        header.addEventListener("click", () => {
+          const sectionId = header.parentElement.id;
+          toggleSection(sectionId);
+        });
       });
     }
 
-    document.querySelectorAll("main section h2").forEach((title) => {
-      const ulId = title.nextElementSibling.id;
-      title.addEventListener("click", () => toggleSection(ulId));
-    });
-
-    window.onload = () => {
-      initializeSections();
-    };
-
-    async function logout() {
-      await signOut(auth);
-      alert("Logged out successfully!");
-      window.location.href = "index.html";
+    function updateBadge(id, count) {
+      const badge = document.getElementById(id);
+      badge.textContent = count;
     }
+
+    function fetchApprovalRequests() {
+      const list = document.getElementById("approval-requests-list");
+      const badge = "approval-badge";
+
+      onSnapshot(
+        query(collection(db, "Users"), where("isApproved", "==", false)),
+        (snapshot) => {
+          let html = "";
+          snapshot.forEach((doc) => {
+            const user = doc.data();
+            html += `<li>${user.username} (${user.email})</li>`;
+          });
+          list.innerHTML = html || "<li>No approval-requests found.</li>";
+          updateBadge(badge, snapshot.size);
+        }
+      );
+    }
+
+    function fetchOnlineUsers() {
+      const list = document.getElementById("online-users-list");
+      const badge = "online-badge";
+
+      onSnapshot(
+        query(collection(db, "Users"), where("isOnline", "==", true)),
+        (snapshot) => {
+          let html = "";
+          snapshot.forEach((doc) => {
+            const user = doc.data();
+            html += `<li>${user.username} (${user.email})</li>`;
+          });
+          list.innerHTML = html || "<li>No online users found.</li>";
+          updateBadge(badge, snapshot.size);
+        }
+      );
+    }
+
+    // Fetch and initialize all sections
+    setupToggleListeners();
+    fetchApprovalRequests();
+    fetchOnlineUsers();
   </script>
 </body>
 </html>
