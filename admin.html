@@ -5,35 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - DWS Management</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #a8edea, #fed6e3);
-      margin: 0;
-      padding: 0;
-      color: #333;
       display: flex;
       flex-direction: column;
       height: 100vh;
     }
 
     header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       background-color: #4CAF50;
       color: white;
       padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     header h1 {
       margin: 0;
     }
 
-    .settings-dropdown {
-      position: relative;
-    }
-
-    .settings-button {
+    #settings {
       background-color: white;
       color: #4CAF50;
       border: none;
@@ -42,7 +41,7 @@
       cursor: pointer;
     }
 
-    .settings-button:hover {
+    #settings:hover {
       background-color: #45a049;
       color: white;
     }
@@ -50,27 +49,25 @@
     .dropdown-content {
       display: none;
       position: absolute;
-      background-color: white;
-      border-radius: 5px;
+      background-color: #f9f9f9;
+      min-width: 160px;
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-      right: 0;
       z-index: 1;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
     }
 
     .dropdown-content a {
       color: black;
-      padding: 10px;
+      padding: 12px 16px;
       text-decoration: none;
       display: block;
-      border-radius: 5px;
     }
 
     .dropdown-content a:hover {
-           background-color: #f1f1f1;
-    }
-
-    .settings-dropdown:hover .dropdown-content {
-      display: block;
+      background-color: #ddd;
     }
 
     main {
@@ -103,14 +100,6 @@
       align-items: center;
     }
 
-    .badge {
-      background-color: red;
-      color: white;
-      padding: 0.2rem 0.5rem;
-      border-radius: 50%;
-      font-size: 0.8rem;
-    }
-
     .action-buttons {
       display: flex;
       gap: 0.5rem;
@@ -133,10 +122,9 @@
 <body>
   <header>
     <h1>Admin Dashboard</h1>
-    <div class="settings-dropdown">
-      <button class="settings-button">Settings</button>
+    <div class="dropdown">
+      <button id="settings">Settings</button>
       <div class="dropdown-content">
-        <a href="#" onclick="togglePushNotifications()">Push Notifications</a>
         <a href="adminprofile.html">Admin Profile</a>
         <a href="#" onclick="logout()">Log Out</a>
       </div>
@@ -167,7 +155,16 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      doc,
+      updateDoc,
+      deleteDoc,
+      query,
+      where,
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -184,7 +181,6 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Redirect to login if not authenticated
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "index.html";
@@ -194,67 +190,93 @@
     async function fetchOnlineUsers() {
       const onlineUsersList = document.getElementById("online-users-list");
       onlineUsersList.innerHTML = "Loading...";
-      const querySnapshot = await getDocs(query(collection(db, "Users"), where("isOnline", "==", true)));
-      let html = "";
-      querySnapshot.forEach((doc) => {
-        const user = doc.data();
-        html += `<li>${user.username} (${user.email})</li>`;
-      });
-      onlineUsersList.innerHTML = html || "<li>No users online.</li>";
+      try {
+        const querySnapshot = await getDocs(
+          query(collection(db, "Users"), where("isOnline", "==", true))
+        );
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          html += `<li>${user.username} (${user.email})</li>`;
+        });
+        onlineUsersList.innerHTML = html || "<li>No users online.</li>";
+      } catch (error) {
+        console.error("Error fetching online users:", error);
+        onlineUsersList.innerHTML = "Error loading users.";
+      }
     }
 
     async function fetchUserLogs() {
       const logsList = document.getElementById("logs-list");
       logsList.innerHTML = "Loading...";
-      const querySnapshot = await getDocs(collection(db, "Users"));
-      let html = "";
-      querySnapshot.forEach((doc) => {
-        const user = doc.data();
-        if (user.loginLogs) {
-          html += `<li>${user.username}<ul>`;
-          user.loginLogs.forEach((log) => {
-            html += `<li>${log.activity} at ${new Date(log.timestamp).toLocaleString()}</li>`;
-          });
-          html += "</ul></li>";
-        }
-      });
-      logsList.innerHTML = html || "<li>No user logs found.</li>";
+      try {
+        const querySnapshot = await getDocs(collection(db, "Users"));
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          if (user.loginLogs) {
+            html += `<li>${user.username}<ul>`;
+            user.loginLogs.forEach((log) => {
+              html += `<li>${log.activity} at ${new Date(
+                log.timestamp
+              ).toLocaleString()}</li>`;
+            });
+            html += "</ul></li>";
+          }
+        });
+        logsList.innerHTML = html || "<li>No user logs found.</li>";
+      } catch (error) {
+        console.error("Error fetching user logs:", error);
+        logsList.innerHTML = "Error loading logs.";
+      }
     }
 
     async function fetchApprovedUsers() {
       const approvedUsersList = document.getElementById("approved-users-list");
       approvedUsersList.innerHTML = "Loading...";
-      const querySnapshot = await getDocs(query(collection(db, "Users"), where("isApproved", "==", true)));
-      let html = "";
-      querySnapshot.forEach((doc) => {
-        const user = doc.data();
-        html += `
-          <li>${user.username} (${user.email})
-            <div class="action-buttons">
-              <button onclick="holdUser('${doc.id}')">Hold</button>
-              <button onclick="blockUser('${doc.id}')">Block</button>
-              <button onclick="removeUser('${doc.id}')">Remove</button>
-            </div>
-          </li>`;
-      });
-      approvedUsersList.innerHTML = html || "<li>No approved users found.</li>";
+      try {
+        const querySnapshot = await getDocs(
+          query(collection(db, "Users"), where("isApproved", "==", true))
+        );
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          html += `
+            <li>${user.username} (${user.email})
+              <div class="action-buttons">
+                <button onclick="holdUser('${doc.id}')">Hold</button>
+                <button onclick="blockUser('${doc.id}')">Block</button>
+                <button onclick="removeUser('${doc.id}')">Remove</button>
+              </div>
+            </li>`;
+        });
+        approvedUsersList.innerHTML = html || "<li>No approved users found.</li>";
+      } catch (error) {
+        console.error("Error fetching approved users:", error);
+        approvedUsersList.innerHTML = "Error loading users.";
+      }
     }
 
     async function fetchHoldBlockedUsers() {
       const holdBlockedList = document.getElementById("hold-blocked-list");
       holdBlockedList.innerHTML = "Loading...";
-      const querySnapshot = await getDocs(
-        query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"]))
-      );
-      let html = "";
-      querySnapshot.forEach((doc) => {
-        const user = doc.data();
-        html += `
-          <li>${user.username} (${user.email}) - ${user.status}
-            <button onclick="unblockUser('${doc.id}')">Unblock/Unhold</button>
-          </li>`;
-      });
-      holdBlockedList.innerHTML = html || "<li>No hold/blocked users found.</li>";
+      try {
+        const querySnapshot = await getDocs(
+          query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"]))
+        );
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          html += `
+            <li>${user.username} (${user.email}) - ${user.status}
+              <button onclick="unblockUser('${doc.id}')">Unblock/Unhold</button>
+            </li>`;
+        });
+        holdBlockedList.innerHTML = html || "<li>No hold/blocked users found.</li>";
+      } catch (error) {
+        console.error("Error fetching hold/blocked users:", error);
+        holdBlockedList.innerHTML = "Error loading users.";
+      }
     }
 
     async function holdUser(userId) {
@@ -272,15 +294,12 @@
     async function removeUser(userId) {
       await deleteDoc(doc(db, "Users", userId));
       fetchApprovedUsers();
+      fetchHoldBlockedUsers();
     }
 
     async function unblockUser(userId) {
       await updateDoc(doc(db, "Users", userId), { status: null });
       fetchHoldBlockedUsers();
-    }
-
-    function togglePushNotifications() {
-      alert("Push notifications are now enabled.");
     }
 
     async function logout() {
