@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - DWS Management</title>
   <style>
+    /* General Styling */
     * {
       margin: 0;
       padding: 0;
@@ -26,11 +27,6 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: relative;
-    }
-
-    header h1 {
-      margin: 0;
     }
 
     #settings {
@@ -55,33 +51,28 @@
       background-color: white;
       min-width: 160px;
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-      z-index: 1;
       border-radius: 5px;
-    }
-
-    .dropdown-content a {
-      color: #333;
-      padding: 12px 16px;
-      text-decoration: none;
-      display: block;
-    }
-
-    .dropdown-content a:hover {
-      background-color: #ddd;
     }
 
     .dropdown:hover .dropdown-content {
       display: block;
     }
 
+    .dropdown-content a {
+      padding: 12px;
+      text-decoration: none;
+      display: block;
+      color: black;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #ddd;
+    }
+
     main {
       flex: 1;
       padding: 2rem;
       overflow-y: auto;
-    }
-
-    section {
-      margin-bottom: 2rem;
     }
 
     section h2 {
@@ -95,8 +86,8 @@
 
     li {
       background: white;
-      padding: 1rem;
       margin-bottom: 1rem;
+      padding: 1rem;
       border-radius: 5px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       display: flex;
@@ -105,21 +96,10 @@
       flex-wrap: wrap;
     }
 
-    .dropdown-btn {
-      cursor: pointer;
-      font-weight: bold;
-      text-decoration: underline;
-    }
-
-    .dropdown-btn:hover {
-      color: #4CAF50;
-    }
-
     .action-buttons {
       display: none;
       flex-direction: column;
       gap: 0.5rem;
-      margin-top: 0.5rem;
     }
 
     li.active .action-buttons {
@@ -156,16 +136,6 @@
     <section>
       <h2>Approval Requests</h2>
       <ul id="approval-requests-list">Loading...</ul>
-    </section>
-
-    <section>
-      <h2>Online Users</h2>
-      <ul id="online-users-list">Loading...</ul>
-    </section>
-
-    <section>
-      <h2>User Logs</h2>
-      <ul id="logs-list">Loading...</ul>
     </section>
 
     <section>
@@ -223,14 +193,12 @@
         let html = "";
         querySnapshot.forEach((doc) => {
           const user = doc.data();
-          const userId = doc.id;
-
           html += `
             <li>
               ${user.username} (${user.email})
               <div>
-                <button onclick="approveUser('${userId}')">Approve</button>
-                <button onclick="rejectUser('${userId}')">Reject</button>
+                <button onclick="approveUser('${doc.id}')">Approve</button>
+                <button onclick="rejectUser('${doc.id}')">Reject</button>
               </div>
             </li>`;
         });
@@ -243,8 +211,7 @@
 
     async function approveUser(userId) {
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { isApproved: true });
+        await updateDoc(doc(db, "Users", userId), { isApproved: true });
         alert("User approved successfully.");
         fetchApprovalRequests();
       } catch (error) {
@@ -255,59 +222,12 @@
 
     async function rejectUser(userId) {
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await deleteDoc(userDocRef);
+        await deleteDoc(doc(db, "Users", userId));
         alert("User rejected successfully.");
         fetchApprovalRequests();
       } catch (error) {
         console.error("Error rejecting user:", error);
         alert("Error rejecting user.");
-      }
-    }
-
-    async function fetchOnlineUsers() {
-      const onlineUsersList = document.getElementById("online-users-list");
-      onlineUsersList.innerHTML = "Loading...";
-      try {
-        const querySnapshot = await getDocs(
-          query(collection(db, "Users"), where("isOnline", "==", true))
-        );
-        let html = "";
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          html += `<li>${user.username} (${user.email})</li>`;
-        });
-        onlineUsersList.innerHTML = html || "<li>No users online.</li>";
-      } catch (error) {
-        console.error("Error fetching online users:", error);
-        onlineUsersList.innerHTML = "Error loading users.";
-      }
-    }
-
-    async function fetchUserLogs() {
-      const logsList = document.getElementById("logs-list");
-      logsList.innerHTML = "Loading...";
-      try {
-        const querySnapshot = await getDocs(collection(db, "Users"));
-        let html = "";
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          if (user.loginLogs) {
-            html += `
-              <li>
-                ${user.username}
-                <button onclick="clearLogs('${doc.id}')">Clear Logs</button>
-                <ul>`;
-            user.loginLogs.forEach((log) => {
-              html += `<li>${log.activity} at ${new Date(log.timestamp).toLocaleString()}</li>`;
-            });
-            html += "</ul></li>";
-          }
-        });
-        logsList.innerHTML = html || "<li>No user logs found.</li>";
-      } catch (error) {
-        console.error("Error fetching user logs:", error);
-        logsList.innerHTML = "Error loading logs.";
       }
     }
 
@@ -321,15 +241,13 @@
         let html = "";
         querySnapshot.forEach((doc) => {
           const user = doc.data();
-          const userId = doc.id;
-
           html += `
             <li>
               ${user.username} (${user.email})
-              <div>
-                <button onclick="holdUser('${userId}')">Hold</button>
-                <button onclick="blockUser('${userId}')">Block</button>
-                <button onclick="removeUser('${userId}')">Remove</button>
+              <div class="action-buttons">
+                <button onclick="holdUser('${doc.id}')">Hold</button>
+                <button onclick="blockUser('${doc.id}')">Block</button>
+                <button onclick="removeUser('${doc.id}')">Remove</button>
               </div>
             </li>`;
         });
@@ -342,8 +260,7 @@
 
     async function holdUser(userId) {
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { status: "Hold" });
+        await updateDoc(doc(db, "Users", userId), { status: "Hold" });
         alert("User held successfully.");
         fetchApprovedUsers();
       } catch (error) {
@@ -354,107 +271,12 @@
 
     async function blockUser(userId) {
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { status: "Blocked" });
+        await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
         alert("User blocked successfully.");
         fetchApprovedUsers();
       } catch (error) {
         console.error("Error blocking user:", error);
         alert("Error blocking user.");
-      }
-    }
-
-    async function removeUser(userId) {
-      try {
-        await deleteDoc(doc(db, "Users", userId));
-        alert("User removed successfully.");
-        fetchApprovedUsers();
-      } catch (error) {
-        console.error("Error removing user:", error);
-        alert("Error removing user.");
-      }
-    }
-
-    async function fetchHoldBlockedUsers() {
-      const holdBlockedList = document.getElementById("hold-blocked-list");
-      holdBlockedList.innerHTML = "Loading...";
-      try {
-        const querySnapshot = await getDocs(
-          query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"]))
-        );
-        let html = "";
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          html += `
-            <li>${user.username} (${user.email}) - ${user.status}
-              <button onclick="unblockUser('${doc.id}')">Unblock/Unhold</button>
-            </li>`;
-        });
-        holdBlockedList.innerHTML = html || "<li>No hold/blocked users found.</li>";
-      } catch (error) {
-        console.error("Error fetching hold/blocked users:", error);
-        holdBlockedList.innerHTML = "Error loading users.";
-      }
-    }
-
-    async function clearLogs(userId) {
-      try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { loginLogs: [] });
-        alert("User logs cleared successfully.");
-        fetchUserLogs();
-      } catch (error) {
-        console.error("Error clearing logs:", error);
-        alert("Error clearing logs.");
-      }
-    }
-
-    async function holdUser(userId) {
-      try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { status: "Hold" });
-        alert("User held successfully.");
-        fetchApprovedUsers();
-        fetchHoldBlockedUsers();
-      } catch (error) {
-        console.error("Error holding user:", error);
-        alert("Error holding user.");
-      }
-    }
-
-    async function blockUser(userId) {
-      try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { status: "Blocked" });
-        alert("User blocked successfully.");
-        fetchApprovedUsers();
-        fetchHoldBlockedUsers();
-      } catch (error) {
-        console.error("Error blocking user:", error);
-        alert("Error blocking user.");
-      }
-    }
-
-    async function removeUser(userId) {
-      try {
-        await deleteDoc(doc(db, "Users", userId));
-        alert("User removed successfully.");
-        fetchApprovedUsers();
-      } catch (error) {
-        console.error("Error removing user:", error);
-        alert("Error removing user.");
-      }
-    }
-
-    async function unblockUser(userId) {
-      try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { status: "" });
-        alert("User unblocked/unheld successfully.");
-        fetchHoldBlockedUsers();
-      } catch (error) {
-        console.error("Error unblocking/unholding user:", error);
-        alert("Error unblocking/unholding user.");
       }
     }
 
@@ -471,17 +293,13 @@
 
     window.onload = () => {
       fetchApprovalRequests();
-      fetchOnlineUsers();
-      fetchUserLogs();
       fetchApprovedUsers();
-      fetchHoldBlockedUsers();
     };
 
-    window.clearLogs = clearLogs;
+    window.approveUser = approveUser;
+    window.rejectUser = rejectUser;
     window.holdUser = holdUser;
     window.blockUser = blockUser;
-    window.removeUser = removeUser;
-    window.unblockUser = unblockUser;
     window.logout = logout;
   </script>
 </body>
