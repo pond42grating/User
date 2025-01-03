@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - DWS Management</title>
   <style>
+    /* Your existing styles remain unchanged */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
+
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #a8edea, #fed6e3);
@@ -17,6 +19,7 @@
       flex-direction: column;
       height: 100vh;
     }
+
     header {
       background-color: #4CAF50;
       color: white;
@@ -25,6 +28,7 @@
       justify-content: space-between;
       align-items: center;
     }
+
     #settings {
       background-color: white;
       color: #4CAF50;
@@ -33,63 +37,133 @@
       border-radius: 5px;
       cursor: pointer;
     }
+
     #settings:hover {
       background-color: #45a049;
       color: white;
     }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background-color: white;
+      min-width: 160px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .dropdown-content a {
+      padding: 12px;
+      text-decoration: none;
+      display: block;
+      color: black;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #ddd;
+    }
+
     main {
       flex: 1;
       padding: 2rem;
       overflow-y: auto;
     }
+
     section h2 {
       margin-bottom: 1rem;
     }
+
     ul {
       list-style: none;
       padding: 0;
     }
+
     li {
       background: white;
       margin-bottom: 1rem;
       padding: 1rem;
       border-radius: 5px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
     }
-    .badge {
-      background-color: red;
+
+    .action-buttons {
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    li.active .action-buttons {
+      display: flex;
+    }
+
+    button {
+      background-color: #4CAF50;
       color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .badge {
+      background: red;
+      color: white;
+      padding: 0.2rem 0.5rem;
       border-radius: 50%;
-      padding: 0.2rem 0.6rem;
-      margin-left: 0.5rem;
       font-size: 0.8rem;
+      margin-left: 0.5rem;
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Admin Dashboard</h1>
-    <button id="settings">Settings</button>
+    <div class="dropdown">
+      <button id="settings">Settings</button>
+      <div class="dropdown-content">
+        <a href="adminprofile.html">Admin Profile</a>
+        <a href="#" onclick="logout()">Log Out</a>
+      </div>
+    </div>
   </header>
+
   <main>
     <section>
       <h2>Approval Requests <span id="approval-count" class="badge">0</span></h2>
       <ul id="approval-requests-list">Loading...</ul>
     </section>
+
     <section>
       <h2>Online Users <span id="online-count" class="badge">0</span></h2>
       <ul id="online-users-list">Loading...</ul>
     </section>
+
     <section>
       <h2>User Logs <span id="logs-count" class="badge">0</span></h2>
       <ul id="logs-list">Loading...</ul>
     </section>
+
     <section>
       <h2>Approved Users <span id="approved-count" class="badge">0</span></h2>
       <ul id="approved-users-list">Loading...</ul>
     </section>
+
     <section>
-      <h2>Hold/Blocked Users <span id="blocked-count" class="badge">0</span></h2>
+      <h2>Hold/Blocked Users <span id="hold-blocked-count" class="badge">0</span></h2>
       <ul id="hold-blocked-list">Loading...</ul>
     </section>
   </main>
@@ -100,32 +174,39 @@
       getFirestore,
       collection,
       doc,
-      query,
-      where,
       onSnapshot,
-      arrayUnion,
+      updateDoc,
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-      authDomain: "dws-management.firebaseapp.com",
-      projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
-      messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7",
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID",
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
+    // Verify Auth
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    // Fetch User Logs (Updated Function)
     function fetchUserLogs() {
       const logsList = document.getElementById("logs-list");
+      const logsCountBadge = document.getElementById("logs-count");
       logsList.innerHTML = "Loading...";
-      const logs = [];
 
       onSnapshot(collection(db, "Users"), (snapshot) => {
-        logs.length = 0; 
+        const logs = [];
         snapshot.forEach((doc) => {
           const userData = doc.data();
           if (userData.loginLogs && Array.isArray(userData.loginLogs)) {
@@ -139,8 +220,13 @@
           }
         });
 
+        // Sort logs by timestamp (descending order)
         logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
+        // Update badge count
+        logsCountBadge.textContent = logs.length;
+
+        // Update logs list
         if (logs.length > 0) {
           logsList.innerHTML = logs
             .map(
@@ -156,6 +242,7 @@
       });
     }
 
+    // Initialize on Load
     window.onload = () => {
       fetchUserLogs();
     };
