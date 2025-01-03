@@ -108,7 +108,7 @@
     <div class="card" id="approval-requests">
       <h3 class="toggle-section" onclick="toggleSection('approval-requests')">Approval Requests <span id="approval-count" class="badge">0</span></h3>
       <div class="section-content">
-        <p>No approval requests found.</p>
+        <div id="approval-list"></div>
       </div>
     </div>
 
@@ -142,7 +142,27 @@
     </div>
   </div>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
+
   <script>
+    // Your Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
+    };
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+    const auth = firebase.auth(app);
+
     function toggleSection(sectionId) {
       const section = document.getElementById(sectionId);
       const sectionContent = section.querySelector('.section-content');
@@ -162,42 +182,53 @@
       }
     }
 
-    // Simulate fetching data from Firebase or any other source
-    function simulateData() {
-      setTimeout(() => {
-        // Initially hide all sections
-        const allSections = document.querySelectorAll('.section-content');
-        allSections.forEach(content => {
-          content.style.display = 'none';
+    // Fetch approval requests from Firestore and display them
+    function fetchApprovalRequests() {
+      const approvalList = document.getElementById('approval-list');
+      const approvalCount = document.getElementById('approval-count');
+      approvalList.innerHTML = ''; // Clear previous content
+
+      // Get documents where `isApproved` is false
+      db.collection("Users").where("isApproved", "==", false).get().then(querySnapshot => {
+        const users = querySnapshot.docs.map(doc => doc.data());
+        approvalCount.textContent = users.length;
+
+        users.forEach(user => {
+          const userDiv = document.createElement('div');
+          userDiv.innerHTML = `
+            <p>${user.username} (${user.email}) 
+              <button class="button" onclick="approveUser('${user.username}')">Approve</button>
+              <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
+            </p>`;
+          approvalList.appendChild(userDiv);
         });
-
-        // Show the sections
-        document.getElementById('online-users').style.display = 'block';
-        document.getElementById('approval-requests').style.display = 'block';
-        document.getElementById('user-logs').style.display = 'block';
-        document.getElementById('approved-users').style.display = 'block';
-        document.getElementById('hold-blocked-users').style.display = 'block';
-
-        // Update the notification badges
-        document.getElementById('approval-count').textContent = '5'; // Example count
-        document.getElementById('online-count').textContent = '2'; // Example count
-        document.getElementById('logs-count').textContent = '10'; // Example count
-        document.getElementById('approved-count').textContent = '3'; // Example count
-        document.getElementById('blocked-count').textContent = '1'; // Example count
-      }, 1000); // Simulating data fetch delay
+      });
     }
 
-    // Function to clear logs
-    function clearLogs() {
-      alert("Logs cleared");
+    // Approve user function
+    function approveUser(username) {
+      db.collection("Users").where("username", "==", username).get().then(querySnapshot => {
+        querySnapshot.forEach(doc => {
+          doc.ref.update({ isApproved: true });
+        });
+        alert(`User ${username} approved.`);
+      });
     }
 
-    // Function to handle logout
-    function logout() {
-      alert("Logging out...");
+    // Reject user function
+    function rejectUser(username) {
+      db.collection("Users").where("username", "==", username).get().then(querySnapshot => {
+        querySnapshot.forEach(doc => {
+          doc.ref.delete();
+        });
+        alert(`User ${username} rejected.`);
+      });
     }
 
-    window.onload = simulateData;
+    // Simulate data fetching on page load
+    window.onload = () => {
+      fetchApprovalRequests();
+    };
   </script>
 </body>
 </html>
