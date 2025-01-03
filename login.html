@@ -1,1 +1,137 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Main Page - DWS Management</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      color: #333;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+    }
+
+    nav {
+      display: flex;
+      gap: 1rem;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+
+    nav a:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-weight: bold;
+      border-radius: 5px;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: white;
+      min-width: 150px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .dropdown-content a {
+      display: block;
+      color: #333;
+      padding: 0.5rem 1rem;
+      text-decoration: none;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #f4f4f4;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    main h2 {
+      font-size: 1.8rem;
+      color: #4CAF50;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DWS Management</h1>
+    <nav>
+      <a href="createDWS.html">Create DWS</a>
+      <a href="manageDWS.html">Manage DWS</a>
+      <div class="dropdown">
+        <button>Settings</button>
+        <div class="dropdown-content">
+          <a href="profile.html">User Profile</a>
+          <a href="#" onclick="logout()">Log Out</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+  <main>
+    <h2>Welcome to DWS Management</h2>
+  </main>
+
+  <script>
+    // Log Out Functionality
+    function logout() {
+      alert("Logged out successfully!");
+      window.location.href = "index.html"; // Redirect to login page
+    }
+  </script>
+</body>
+</html>
