@@ -33,6 +33,12 @@
       border-radius: 5px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
+    section ul {
+      display: none;
+    }
+    section.active ul {
+      display: block;
+    }
     ul {
       list-style: none;
       padding: 0;
@@ -46,6 +52,9 @@
       justify-content: space-between;
       align-items: center;
     }
+    h2 {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -54,31 +63,31 @@
   </header>
 
   <main>
-    <section>
+    <section id="approval-section">
       <h2>
         Approval Requests <span id="approval-badge" class="badge">0</span>
       </h2>
       <ul id="approval-requests-list">Loading...</ul>
     </section>
-    <section>
+    <section id="online-section">
       <h2>
         Online Users <span id="online-badge" class="badge">0</span>
       </h2>
       <ul id="online-users-list">Loading...</ul>
     </section>
-    <section>
+    <section id="logs-section">
       <h2>
         User Logs <span id="logs-badge" class="badge">0</span>
       </h2>
       <ul id="logs-list">Loading...</ul>
     </section>
-    <section>
+    <section id="approved-section">
       <h2>
         Approved Users <span id="approved-badge" class="badge">0</span>
       </h2>
       <ul id="approved-users-list">Loading...</ul>
     </section>
-    <section>
+    <section id="hold-section">
       <h2>
         Hold/Blocked Users <span id="hold-badge" class="badge">0</span>
       </h2>
@@ -107,6 +116,17 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    function addToggleFunctionality() {
+      const sections = document.querySelectorAll("section");
+      sections.forEach((section) => {
+        const header = section.querySelector("h2");
+        header.addEventListener("click", () => {
+          sections.forEach((sec) => sec.classList.remove("active"));
+          section.classList.toggle("active");
+        });
+      });
+    }
 
     function fetchApprovalRequests() {
       const list = document.getElementById("approval-requests-list");
@@ -197,6 +217,7 @@
     }
 
     window.onload = () => {
+      addToggleFunctionality();
       fetchApprovalRequests();
       fetchOnlineUsers();
       fetchUserLogs();
