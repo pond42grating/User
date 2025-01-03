@@ -218,6 +218,30 @@
       }
     }
 
+    async function approveUser(userId) {
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { isApproved: true });
+        alert("User approved successfully.");
+        fetchApprovalRequests();
+      } catch (error) {
+        console.error("Error approving user:", error);
+        alert("Error approving user.");
+      }
+    }
+
+    async function rejectUser(userId) {
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await deleteDoc(userDocRef);
+        alert("User rejected successfully.");
+        fetchApprovalRequests();
+      } catch (error) {
+        console.error("Error rejecting user:", error);
+        alert("Error rejecting user.");
+      }
+    }
+
     async function fetchOnlineUsers() {
       const onlineUsersList = document.getElementById("online-users-list");
       onlineUsersList.innerHTML = "Loading...";
@@ -254,7 +278,7 @@
             user.loginLogs.forEach((log) => {
               html += `<li>${log.activity} at ${new Date(log.timestamp).toLocaleString()}</li>`;
             });
-            html += "</ul></li>`;
+            html += "</ul></li>";
           }
         });
         logsList.innerHTML = html || "<li>No user logs found.</li>";
@@ -307,6 +331,7 @@
         await updateDoc(doc(db, "Users", userId), { status: "Hold" });
         alert("User held successfully.");
         fetchApprovedUsers();
+        fetchHoldBlockedUsers();
       } catch (error) {
         console.error("Error holding user:", error);
         alert("Error holding user.");
@@ -318,6 +343,7 @@
         await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
         alert("User blocked successfully.");
         fetchApprovedUsers();
+        fetchHoldBlockedUsers();
       } catch (error) {
         console.error("Error blocking user:", error);
         alert("Error blocking user.");
