@@ -47,6 +47,9 @@
     }
     section h2 {
       cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     ul {
       list-style: none;
@@ -70,7 +73,6 @@
       padding: 0.2rem 0.5rem;
       border-radius: 50%;
       font-size: 0.8rem;
-      margin-left: 0.5rem;
     }
   </style>
 </head>
@@ -125,25 +127,19 @@
     const db = getFirestore(app);
 
     const toggleSection = (sectionId) => {
-      const allSections = document.querySelectorAll("section ul");
       const targetSection = document.getElementById(sectionId);
+      const isHidden = targetSection.classList.contains("hidden");
 
-      allSections.forEach((section) => {
-        if (section !== targetSection) {
-          section.classList.add("hidden");
-        }
-      });
+      document.querySelectorAll("ul").forEach((ul) => ul.classList.add("hidden"));
 
-      if (targetSection.classList.contains("hidden")) {
+      if (isHidden) {
         targetSection.classList.remove("hidden");
-      } else {
-        targetSection.classList.add("hidden");
       }
     };
 
     const addToggleListeners = () => {
-      const sectionHeaders = document.querySelectorAll("section h2");
-      sectionHeaders.forEach((header) => {
+      const sections = document.querySelectorAll("section h2");
+      sections.forEach((header) => {
         const sectionId = header.nextElementSibling.id;
         header.addEventListener("click", () => toggleSection(sectionId));
       });
@@ -152,88 +148,70 @@
     const fetchApprovalRequests = () => {
       const list = document.getElementById("approval-list");
       const badge = document.getElementById("approval-count");
-      list.innerHTML = "Loading...";
       const q = query(collection(db, "Users"), where("isApproved", "==", false));
       onSnapshot(q, (snapshot) => {
-        let items = "";
         badge.textContent = snapshot.size;
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          items += `<li>${user.username} (${user.email})</li>`;
-        });
-        list.innerHTML = items || "<li>No approval requests found.</li>";
+        list.innerHTML =
+          snapshot.size > 0
+            ? snapshot.docs.map((doc) => `<li>${doc.data().username}</li>`).join("")
+            : "<li>No approval requests found.</li>";
       });
     };
 
     const fetchOnlineUsers = () => {
       const list = document.getElementById("online-list");
       const badge = document.getElementById("online-count");
-      list.innerHTML = "Loading...";
       const q = query(collection(db, "Users"), where("isOnline", "==", true));
       onSnapshot(q, (snapshot) => {
-        let items = "";
         badge.textContent = snapshot.size;
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          items += `<li>${user.username} (${user.email})</li>`;
-        });
-        list.innerHTML = items || "<li>No online users found.</li>";
+        list.innerHTML =
+          snapshot.size > 0
+            ? snapshot.docs.map((doc) => `<li>${doc.data().username}</li>`).join("")
+            : "<li>No online users found.</li>";
       });
     };
 
     const fetchUserLogs = () => {
       const list = document.getElementById("logs-list");
       const badge = document.getElementById("logs-count");
-      list.innerHTML = "Loading...";
       const q = collection(db, "Users");
       onSnapshot(q, (snapshot) => {
-        let items = "";
-        let count = 0;
+        let logs = [];
         snapshot.forEach((doc) => {
-          const user = doc.data();
-          if (user.loginLogs) {
-            user.loginLogs.forEach((log) => {
-              items += `<li>Login by ${user.username} at ${new Date(
-                log.timestamp
-              ).toLocaleString()}</li>`;
-              count++;
-            });
-          }
+          const data = doc.data();
+          if (data.loginLogs) logs.push(...data.loginLogs);
         });
-        badge.textContent = count;
-        list.innerHTML = items || "<li>No logs found.</li>";
+        badge.textContent = logs.length;
+        list.innerHTML =
+          logs.length > 0
+            ? logs.map((log) => `<li>${log.activity} - ${log.timestamp}</li>`).join("")
+            : "<li>No logs found.</li>";
       });
     };
 
     const fetchApprovedUsers = () => {
       const list = document.getElementById("approved-list");
       const badge = document.getElementById("approved-count");
-      list.innerHTML = "Loading...";
       const q = query(collection(db, "Users"), where("isApproved", "==", true));
       onSnapshot(q, (snapshot) => {
-        let items = "";
         badge.textContent = snapshot.size;
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          items += `<li>${user.username} (${user.email})</li>`;
-        });
-        list.innerHTML = items || "<li>No approved users found.</li>";
+        list.innerHTML =
+          snapshot.size > 0
+            ? snapshot.docs.map((doc) => `<li>${doc.data().username}</li>`).join("")
+            : "<li>No approved users found.</li>";
       });
     };
 
     const fetchHoldBlockedUsers = () => {
       const list = document.getElementById("hold-list");
       const badge = document.getElementById("hold-count");
-      list.innerHTML = "Loading...";
       const q = query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"]));
       onSnapshot(q, (snapshot) => {
-        let items = "";
         badge.textContent = snapshot.size;
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          items += `<li>${user.username} (${user.email}) - ${user.status}</li>`;
-        });
-        list.innerHTML = items || "<li>No hold/blocked users found.</li>";
+        list.innerHTML =
+          snapshot.size > 0
+            ? snapshot.docs.map((doc) => `<li>${doc.data().username}</li>`).join("")
+            : "<li>No hold/blocked users found.</li>";
       });
     };
 
