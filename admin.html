@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - DWS Management</title>
   <style>
-    /* General Styling */
     * {
       margin: 0;
       padding: 0;
@@ -139,6 +138,16 @@
     </section>
 
     <section>
+      <h2>Online Users</h2>
+      <ul id="online-users-list">Loading...</ul>
+    </section>
+
+    <section>
+      <h2>User Logs</h2>
+      <ul id="logs-list">Loading...</ul>
+    </section>
+
+    <section>
       <h2>Approved Users</h2>
       <ul id="approved-users-list">Loading...</ul>
     </section>
@@ -209,25 +218,60 @@
       }
     }
 
-    async function approveUser(userId) {
+    async function fetchOnlineUsers() {
+      const onlineUsersList = document.getElementById("online-users-list");
+      onlineUsersList.innerHTML = "Loading...";
       try {
-        await updateDoc(doc(db, "Users", userId), { isApproved: true });
-        alert("User approved successfully.");
-        fetchApprovalRequests();
+        const querySnapshot = await getDocs(
+          query(collection(db, "Users"), where("isOnline", "==", true))
+        );
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          html += `<li>${user.username} (${user.email})</li>`;
+        });
+        onlineUsersList.innerHTML = html || "<li>No users online.</li>";
       } catch (error) {
-        console.error("Error approving user:", error);
-        alert("Error approving user.");
+        console.error("Error fetching online users:", error);
+        onlineUsersList.innerHTML = "Error loading users.";
       }
     }
 
-    async function rejectUser(userId) {
+    async function fetchUserLogs() {
+      const logsList = document.getElementById("logs-list");
+      logsList.innerHTML = "Loading...";
       try {
-        await deleteDoc(doc(db, "Users", userId));
-        alert("User rejected successfully.");
-        fetchApprovalRequests();
+        const querySnapshot = await getDocs(collection(db, "Users"));
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          if (user.loginLogs) {
+            html += `
+              <li>
+                ${user.username}
+                <button onclick="clearLogs('${doc.id}')">Clear Logs</button>
+                <ul>`;
+            user.loginLogs.forEach((log) => {
+              html += `<li>${log.activity} at ${new Date(log.timestamp).toLocaleString()}</li>`;
+            });
+            html += "</ul></li>`;
+          }
+        });
+        logsList.innerHTML = html || "<li>No user logs found.</li>";
       } catch (error) {
-        console.error("Error rejecting user:", error);
-        alert("Error rejecting user.");
+        console.error("Error fetching user logs:", error);
+        logsList.innerHTML = "Error loading logs.";
+      }
+    }
+
+    async function clearLogs(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { loginLogs: [] });
+        alert("User logs cleared successfully.");
+        fetchUserLogs();
+      } catch (error) {
+        console.error("Error clearing logs:", error);
+        alert("Error clearing logs.");
       }
     }
 
@@ -280,6 +324,39 @@
       }
     }
 
+    async function fetchHoldBlockedUsers() {
+      const holdBlockedList = document.getElementById("hold-blocked-list");
+      holdBlockedList.innerHTML = "Loading...";
+      try {
+        const querySnapshot = await getDocs(
+          query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"]))
+        );
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          html += `
+            <li>${user.username} (${user.email}) - ${user.status}
+              <button onclick="unblockUser('${doc.id}')">Unblock</button>
+            </li>`;
+        });
+        holdBlockedList.innerHTML = html || "<li>No hold/blocked users found.</li>";
+      } catch (error) {
+        console.error("Error fetching hold/blocked users:", error);
+        holdBlockedList.innerHTML = "Error loading users.";
+      }
+    }
+
+    async function unblockUser(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { status: "" });
+        alert("User unblocked successfully.");
+        fetchHoldBlockedUsers();
+      } catch (error) {
+        console.error("Error unblocking user:", error);
+        alert("Error unblocking user.");
+      }
+    }
+
     async function logout() {
       try {
         await signOut(auth);
@@ -293,13 +370,16 @@
 
     window.onload = () => {
       fetchApprovalRequests();
+      fetchOnlineUsers();
+      fetchUserLogs();
       fetchApprovedUsers();
+      fetchHoldBlockedUsers();
     };
 
-    window.approveUser = approveUser;
-    window.rejectUser = rejectUser;
+    window.clearLogs = clearLogs;
     window.holdUser = holdUser;
     window.blockUser = blockUser;
+    window.unblockUser = unblockUser;
     window.logout = logout;
   </script>
 </body>
