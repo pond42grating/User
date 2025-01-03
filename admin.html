@@ -5,366 +5,228 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    /* Combined CSS */
     body {
       font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #a8edea, #fed6e3);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
+      margin: 0;
+      padding: 0;
+      background-color: #f7f9fc;
     }
-
     header {
-      background-color: #4CAF50;
-      color: white;
-      padding: 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background-color: #28a745;
+      color: white;
+      padding: 15px;
     }
-
-    .dropdown {
+    .settings {
       position: relative;
     }
-
-    .dropdown-content {
+    .settings .dropdown {
       display: none;
       position: absolute;
-      right: 0;
       background-color: white;
-      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
-      border-radius: 5px;
-      z-index: 1;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      right: 0;
     }
-
-    .dropdown-content a {
-      padding: 12px;
-      text-decoration: none;
-      display: block;
-      color: black;
+    .settings button {
+      cursor: pointer;
+      background-color: transparent;
+      border: none;
+      color: white;
+      font-size: 16px;
     }
-
-    .dropdown-content a:hover {
-      background-color: #ddd;
-    }
-
-    .dropdown:hover .dropdown-content {
+    .settings:hover .dropdown {
       display: block;
     }
-
     main {
-      flex: 1;
-      padding: 2rem;
-      overflow-y: auto;
+      padding: 20px;
     }
-
-    section h2 {
-      margin-bottom: 1rem;
+    section {
+      background-color: white;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
     }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    li {
-      background: white;
-      margin-bottom: 1rem;
-      padding: 1rem;
-      border-radius: 5px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    h2 {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
-    .action-buttons {
-      display: none;
-      flex-direction: column;
-      gap: 0.5rem;
+    .list {
+      margin-top: 10px;
     }
-
-    li.active .action-buttons {
-      display: flex;
-    }
-
     button {
-      background-color: #4CAF50;
-      color: white;
+      margin: 5px;
+      padding: 5px 10px;
       border: none;
-      padding: 0.5rem 1rem;
       border-radius: 5px;
       cursor: pointer;
     }
-
     button:hover {
-      background-color: #45a049;
+      background-color: #ddd;
+    }
+    .date-filters input, .date-filters button {
+      margin: 5px;
+      padding: 5px;
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Admin Dashboard</h1>
-    <div class="dropdown">
-      <button>Settings</button>
-      <div class="dropdown-content">
-        <a href="adminprofile.html">Admin Profile</a>
-        <a href="#" onclick="logout()">Log Out</a>
+    <div class="settings">
+      <button id="settingsButton">Settings</button>
+      <div class="dropdown">
+        <button id="adminProfile">Admin Profile</button>
+        <button id="logoutButton">Logout</button>
       </div>
     </div>
   </header>
-
   <main>
-    <section>
-      <h2>Approval Requests</h2>
-      <ul id="approval-requests-list">Loading...</ul>
+    <section id="approvalRequests">
+      <h2>Approval Requests <span id="approvalCount">0</span></h2>
+      <div id="approvalList" class="list">Loading...</div>
     </section>
-
-    <section>
-      <h2>Online Users</h2>
-      <ul id="online-users-list">Loading...</ul>
+    <section id="onlineUsers">
+      <h2>Online Users <span id="onlineCount">0</span></h2>
+      <div id="onlineList" class="list">Loading...</div>
     </section>
-
-    <section>
-      <h2>User Logs</h2>
-      <ul id="logs-list">Loading...</ul>
+    <section id="userLogs">
+      <h2>User Logs <span id="logCount">0</span></h2>
+      <div id="logsList" class="list">Loading...</div>
+      <div class="date-filters">
+        <input type="date" id="fromDate">
+        <input type="date" id="toDate">
+        <button id="clearLogs">Clear Logs</button>
+      </div>
     </section>
-
-    <section>
-      <h2>Approved Users</h2>
-      <ul id="approved-users-list">Loading...</ul>
+    <section id="approvedUsers">
+      <h2>Approved Users <span id="approvedCount">0</span></h2>
+      <div id="approvedList" class="list">Loading...</div>
     </section>
-
-    <section>
-      <h2>Hold/Blocked Users</h2>
-      <ul id="hold-blocked-list">Loading...</ul>
+    <section id="holdBlockedUsers">
+      <h2>Hold/Blocked Users <span id="holdBlockedCount">0</span></h2>
+      <div id="holdBlockedList" class="list">Loading...</div>
     </section>
   </main>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      doc,
-      query,
-      where,
-      updateDoc,
-      deleteDoc,
-      onSnapshot,
-    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+  <!-- Firebase App -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
 
+  <script>
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebaseapp.com",
+      storageBucket: "dws-management.firebasestorage.app",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
+      measurementId: "G-L14GLJDYW7",
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
 
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "index.html";
-      }
+    // Logout functionality
+    document.getElementById("logoutButton").addEventListener("click", async () => {
+      await auth.signOut();
+      window.location.href = "index.html";
     });
 
-    function fetchApprovalRequests() {
-      const approvalRequestsList = document.getElementById("approval-requests-list");
-      approvalRequestsList.innerHTML = "Loading...";
-      const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
-      onSnapshot(approvalQuery, (snapshot) => {
-        let html = "";
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          html += `
-            <li>
-              ${user.username} (${user.email})
-              <div>
-                <button onclick="approveUser('${doc.id}')">Approve</button>
-                <button onclick="rejectUser('${doc.id}')">Reject</button>
-              </div>
-            </li>`;
-        });
-        approvalRequestsList.innerHTML = html || "<li>No approval requests found.</li>";
-      });
-    }
-
-    function fetchOnlineUsers() {
-      const onlineUsersList = document.getElementById("online-users-list");
-      onlineUsersList.innerHTML = "Loading...";
-      const onlineQuery = query(collection(db, "Users"), where("isOnline", "==", true));
-      onSnapshot(onlineQuery, (snapshot) => {
-        let html = "";
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          html += `<li>${user.username} (${user.email})</li>`;
-        });
-        onlineUsersList.innerHTML = html || "<li>No online users found.</li>";
-      });
-    }
-
-    function fetchApprovedUsers() {
-      const approvedUsersList = document.getElementById("approved-users-list");
-      approvedUsersList.innerHTML = "Loading...";
-      const approvedQuery = query(collection(db, "Users"), where("isApproved", "==", true));
-      onSnapshot(approvedQuery, (snapshot) => {
-        let html = "";
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          html += `
-            <li>
-              ${user.username} (${user.email})
-              <div>
-                <button onclick="blockUser('${doc.id}')">Block</button>
-                <button onclick="holdUser('${doc.id}')">Hold</button>
-                <button onclick="removeUser('${doc.id}')">Remove</button>
-              </div>
-            </li>`;
-        });
-        approvedUsersList.innerHTML = html || "<li>No approved users found.</li>";
-      });
-    }
-
-    function fetchHoldBlockedUsers() {
-      const holdBlockedList = document.getElementById("hold-blocked-list");
-      holdBlockedList.innerHTML = "Loading...";
-      const holdBlockedQuery = query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"]));
-      onSnapshot(holdBlockedQuery, (snapshot) => {
-        let html = "";
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          html += `
-            <li>${user.username} (${user.email}) - ${user.status}
-              <div>
-                <button onclick="unblockUser('${doc.id}')">Unblock</button>
-              </div>
-            </li>`;
-        });
-        holdBlockedList.innerHTML = html || "<li>No hold/blocked users found.</li>";
-      });
-    }
-
-    function fetchUserLogs() {
-      const logsList = document.getElementById("logs-list");
-      logsList.innerHTML = "Loading...";
-      const logsQuery = collection(db, "Users");
-      onSnapshot(logsQuery, (snapshot) => {
-        let html = "";
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          if (user.loginLogs) {
-            html += `
-              <li>
-                ${user.username}
-                <ul>`;
-            user.loginLogs.forEach((log) => {
-              html += `<li>${log.activity} at ${new Date(log.timestamp).toLocaleString()}</li>`;
-            });
-            html += "</ul></li>";
-          }
-        });
-        logsList.innerHTML = html || "<li>No logs found.</li>";
-      });
+    // Load approval requests
+    async function loadApprovalRequests() {
+      const approvalList = document.getElementById("approvalList");
+      approvalList.innerHTML = "Loading...";
+      const querySnapshot = await db.collection("Users").where("isApproved", "==", false).get();
+      approvalList.innerHTML = querySnapshot.empty
+        ? "No approval requests found."
+        : querySnapshot.docs.map(
+            (doc) =>
+              `<div>${doc.data().name} (${doc.data().email})
+              <button onclick="approveUser('${doc.id}')">Approve</button>
+              <button onclick="rejectUser('${doc.id}')">Reject</button></div>`
+          ).join("");
     }
 
     async function approveUser(userId) {
-      try {
-        await updateDoc(doc(db, "Users", userId), { isApproved: true });
-        alert("User approved successfully.");
-      } catch (error) {
-        console.error("Error approving user:", error);
-        alert("Error approving user.");
-      }
+      await db.collection("Users").doc(userId).update({ isApproved: true });
+      loadApprovalRequests();
     }
 
     async function rejectUser(userId) {
-      try {
-        await deleteDoc(doc(db, "Users", userId));
-        alert("User rejected successfully.");
-      } catch (error) {
-        console.error("Error rejecting user:", error);
-        alert("Error rejecting user.");
-      }
+      await db.collection("Users").doc(userId).delete();
+      loadApprovalRequests();
     }
 
-    async function blockUser(userId) {
-      try {
-        await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
-        alert("User blocked successfully.");
-      } catch (error) {
-        console.error("Error blocking user:", error);
-        alert("Error blocking user.");
-      }
+    // Load online users
+    async function loadOnlineUsers() {
+      const onlineList = document.getElementById("onlineList");
+      onlineList.innerHTML = "Loading...";
+      const querySnapshot = await db.collection("Users").where("isOnline", "==", true).get();
+      onlineList.innerHTML = querySnapshot.empty
+        ? "No online users."
+        : querySnapshot.docs.map(
+            (doc) =>
+              `<div>${doc.data().name} (${doc.data().email}) - Online for ${formatOnlineTime(doc.data().lastLogin)}</div>`
+          ).join("");
     }
 
-    async function holdUser(userId) {
-      try {
-        await updateDoc(doc(db, "Users", userId), { status: "Hold" });
-        alert("User held successfully.");
-      } catch (error) {
-        console.error("Error holding user:", error);
-        alert("Error holding user.");
-      }
+    function formatOnlineTime(lastLogin) {
+      const now = new Date();
+      const loginTime = new Date(lastLogin);
+      const diff = Math.floor((now - loginTime) / (1000 * 60 * 60));
+      return `${diff} hour(s)`;
     }
 
-    async function removeUser(userId) {
-      try {
-        await deleteDoc(doc(db, "Users", userId));
-        alert("User removed successfully.");
-      } catch (error) {
-        console.error("Error removing user:", error);
-        alert("Error removing user.");
-      }
+    // Load logs
+    async function loadUserLogs() {
+      const logsList = document.getElementById("logsList");
+      logsList.innerHTML = "Loading...";
+      const querySnapshot = await db.collection("Logs").get();
+      logsList.innerHTML = querySnapshot.empty
+        ? "No logs found."
+        : querySnapshot.docs.map(
+            (doc) => `<div>${doc.data().activity} at ${new Date(doc.data().timestamp).toLocaleString()}</div>`
+          ).join("");
+    }
+
+    // Load hold/blocked users
+    async function loadHoldBlockedUsers() {
+      const holdBlockedList = document.getElementById("holdBlockedList");
+      holdBlockedList.innerHTML = "Loading...";
+      const querySnapshot = await db.collection("Users").where("status", "in", ["Hold", "Blocked"]).get();
+      holdBlockedList.innerHTML = querySnapshot.empty
+        ? "No hold/blocked users found."
+        : querySnapshot.docs.map(
+            (doc) =>
+              `<div>${doc.data().name} (${doc.data().email}) - ${doc.data().status}
+              <button onclick="unblockUser('${doc.id}')">Unblock</button>
+              <button onclick="removeUser('${doc.id}')">Remove</button></div>`
+          ).join("");
     }
 
     async function unblockUser(userId) {
-      try {
-        await updateDoc(doc(db, "Users", userId), { status: "" });
-        alert("User unblocked/unheld successfully.");
-      } catch (error) {
-        console.error("Error unblocking/unholding user:", error);
-        alert("Error unblocking user.");
-      }
+      await db.collection("Users").doc(userId).update({ status: "" });
+      loadHoldBlockedUsers();
     }
 
-    async function logout() {
-      try {
-        await signOut(auth);
-        alert("Logged out successfully!");
-        window.location.href = "index.html";
-      } catch (error) {
-        console.error("Error during logout:", error);
-        alert("Error: " + error.message);
-      }
+    async function removeUser(userId) {
+      await db.collection("Users").doc(userId).delete();
+      loadHoldBlockedUsers();
     }
 
-    window.onload = () => {
-      fetchApprovalRequests();
-      fetchOnlineUsers();
-      fetchApprovedUsers();
-      fetchHoldBlockedUsers();
-      fetchUserLogs();
-    };
-
-    window.approveUser = approveUser;
-    window.rejectUser = rejectUser;
-    window.blockUser = blockUser;
-    window.holdUser = holdUser;
-    window.removeUser = removeUser;
-    window.unblockUser = unblockUser;
-    window.logout = logout;
+    // Initialize
+    loadApprovalRequests();
+    loadOnlineUsers();
+    loadUserLogs();
+    loadHoldBlockedUsers();
   </script>
 </body>
 </html>
