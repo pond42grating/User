@@ -183,11 +183,11 @@
       if (users.length === 0) {
         approvalList.innerHTML = "<p>No approval requests found.</p>";
       } else {
-        users.forEach(user => {
+                users.forEach(user => {
           const userDiv = document.createElement('div');
           userDiv.innerHTML = `
             <p>${user.username} (${user.email}) 
-              <button class="button" onclick="toggleButtons('${user.username}')">Toggle</button>
+              <button class="button" onclick="toggleButtons('${user.username}')">Click to Approve/Reject</button>
               <div id="buttons-${user.username}" class="button-container">
                 <button class="button" onclick="approveUser('${user.username}')">Approve</button>
                 <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
