@@ -304,15 +304,15 @@
       approvedUsersList.innerHTML = "Loading...";
       try {
         const querySnapshot = await getDocs(
-          query(collection(db, "Users"), where("isApproved", "==", true))
+          collection(db, "Users")
         );
         let html = "";
         querySnapshot.forEach((doc) => {
           const user = doc.data();
           html += `
-            <li>
+            <li id="user-${doc.id}">
               ${user.username} (${user.email})
-              <div class="action-buttons">
+              <div id="action-buttons-${doc.id}" class="action-buttons">
                 <button onclick="holdUser('${doc.id}')">Hold</button>
                 <button onclick="blockUser('${doc.id}')">Block</button>
                 <button onclick="removeUser('${doc.id}')">Remove</button>
@@ -320,10 +320,22 @@
             </li>`;
         });
         approvedUsersList.innerHTML = html || "<li>No approved users found.</li>";
+
+        // Add toggle functionality
+        querySnapshot.forEach((doc) => {
+          const userElement = document.getElementById(`user-${doc.id}`);
+          userElement.addEventListener("click", () => toggleDropdown(doc.id));
+        });
       } catch (error) {
         console.error("Error fetching approved users:", error);
         approvedUsersList.innerHTML = "Error loading users.";
       }
+    }
+
+    function toggleDropdown(userId) {
+      const actionButtons = document.getElementById(`action-buttons-${userId}`);
+      actionButtons.style.display =
+        actionButtons.style.display === "flex" ? "none" : "flex";
     }
 
     async function holdUser(userId) {
@@ -331,7 +343,6 @@
         await updateDoc(doc(db, "Users", userId), { status: "Hold" });
         alert("User held successfully.");
         fetchApprovedUsers();
-        fetchHoldBlockedUsers();
       } catch (error) {
         console.error("Error holding user:", error);
         alert("Error holding user.");
@@ -343,10 +354,20 @@
         await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
         alert("User blocked successfully.");
         fetchApprovedUsers();
-        fetchHoldBlockedUsers();
       } catch (error) {
         console.error("Error blocking user:", error);
         alert("Error blocking user.");
+      }
+    }
+
+    async function removeUser(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { isRemoved: true });
+        alert("User removed successfully.");
+        fetchApprovedUsers();
+      } catch (error) {
+        console.error("Error removing user:", error);
+        alert("Error removing user.");
       }
     }
 
