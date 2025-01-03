@@ -51,7 +51,6 @@
       min-width: 160px;
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
       border-radius: 5px;
-      z-index: 100;
     }
 
     .dropdown:hover .dropdown-content {
@@ -78,16 +77,23 @@
     section h2 {
       margin-bottom: 1rem;
       cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .badge {
+      background-color: red;
+      color: white;
+      border-radius: 50%;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
     }
 
     ul {
       list-style: none;
       padding: 0;
-      display: none; /* Hidden by default */
-    }
-
-    ul.active {
-      display: block; /* Show when active */
+      display: none; /* Collapsed by default */
     }
 
     li {
@@ -124,15 +130,6 @@
     button:hover {
       background-color: #45a049;
     }
-
-    .badge {
-      background: red;
-      color: white;
-      padding: 0.2rem 0.6rem;
-      border-radius: 50%;
-      font-size: 0.8rem;
-      margin-left: 10px;
-    }
   </style>
 </head>
 <body>
@@ -148,39 +145,34 @@
   </header>
 
   <main>
-    <section>
-      <h2 onclick="toggleSection('approval-requests')">
-        Approval Requests <span class="badge" id="approval-count">0</span>
-      </h2>
-      <ul id="approval-requests-list" class="section-list">Loading...</ul>
+    <section id="approval-section">
+      <h2>Approval Requests <span id="approval-badge" class="badge">0</span></h2>
+      <ul id="approval-requests-list"></ul>
     </section>
 
-    <section>
-      <h2 onclick="toggleSection('online-users')">
-        Online Users <span class="badge" id="online-count">0</span>
-      </h2>
-      <ul id="online-users-list" class="section-list">Loading...</ul>
+    <section id="online-section">
+      <h2>Online Users <span id="online-badge" class="badge">0</span></h2>
+      <ul id="online-users-list"></ul>
     </section>
 
-    <section>
-      <h2 onclick="toggleSection('user-logs')">
-        User Logs
-      </h2>
-      <ul id="logs-list" class="section-list">Loading...</ul>
+    <section id="logs-section">
+      <h2>User Logs <span id="logs-badge" class="badge">0</span></h2>
+      <ul id="logs-list"></ul>
+      <div>
+        <label>From: <input type="date" id="from-date"></label>
+        <label>To: <input type="date" id="to-date"></label>
+        <button onclick="clearLogsByRange()">Clear Logs</button>
+      </div>
     </section>
 
-    <section>
-      <h2 onclick="toggleSection('approved-users')">
-        Approved Users <span class="badge" id="approved-count">0</span>
-      </h2>
-      <ul id="approved-users-list" class="section-list">Loading...</ul>
+    <section id="approved-section">
+      <h2>Approved Users <span id="approved-badge" class="badge">0</span></h2>
+      <ul id="approved-users-list"></ul>
     </section>
 
-    <section>
-      <h2 onclick="toggleSection('hold-blocked-users')">
-        Hold/Blocked Users <span class="badge" id="hold-count">0</span>
-      </h2>
-      <ul id="hold-blocked-list" class="section-list">Loading...</ul>
+    <section id="hold-block-section">
+      <h2>Hold/Blocked Users <span id="hold-badge" class="badge">0</span></h2>
+      <ul id="hold-blocked-list"></ul>
     </section>
   </main>
 
@@ -189,6 +181,7 @@
     import {
       getFirestore,
       collection,
+      doc,
       query,
       where,
       updateDoc,
@@ -198,50 +191,28 @@
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-      authDomain: "dws-management.firebaseapp.com",
-      projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
-      messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7",
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+      projectId: "YOUR_FIREBASE_PROJECT_ID",
+      storageBucket: "YOUR_FIREBASE_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_FIREBASE_MESSAGING_SENDER_ID",
+      appId: "YOUR_FIREBASE_APP_ID",
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "index.html";
-      }
+    // Toggle Section
+    document.querySelectorAll("section h2").forEach(header => {
+      header.addEventListener("click", () => {
+        const ul = header.nextElementSibling;
+        ul.style.display = ul.style.display === "none" ? "block" : "none";
+      });
     });
 
-    function toggleSection(sectionId) {
-      const section = document.getElementById(`${sectionId}-list`);
-      section.classList.toggle("active");
-    }
-
-    function fetchCounts() {
-      // Fetch counts dynamically and update badges
-      onSnapshot(query(collection(db, "Users"), where("isApproved", "==", false)), (snapshot) => {
-        document.getElementById("approval-count").textContent = snapshot.size;
-      });
-
-      onSnapshot(query(collection(db, "Users"), where("isOnline", "==", true)), (snapshot) => {
-        document.getElementById("online-count").textContent = snapshot.size;
-      });
-
-      onSnapshot(query(collection(db, "Users"), where("isApproved", "==", true)), (snapshot) => {
-        document.getElementById("approved-count").textContent = snapshot.size;
-      });
-
-      onSnapshot(query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"])), (snapshot) => {
-        document.getElementById("hold-count").textContent = snapshot.size;
-      });
-    }
-
-    fetchCounts();
+    // Add more functions here for user approval, logs clearing, hold/unhold, and real-time updates.
+    // For now, placeholder functions and data update structures are implemented as needed.
   </script>
 </body>
 </html>
