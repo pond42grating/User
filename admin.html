@@ -215,18 +215,20 @@
     }
 
     // Real-time listener for approved users
-    function fetchApprovedUsers() {
+    async function fetchApprovedUsers() {
       const approvedUsersList = document.getElementById("approved-users-list");
       approvedUsersList.innerHTML = "Loading...";
-      const approvedQuery = query(collection(db, "Users"), where("isApproved", "==", true));
-      onSnapshot(approvedQuery, (snapshot) => {
+      try {
+        const querySnapshot = await getDocs(
+          collection(db, "Users")
+        );
         let html = "";
-        snapshot.forEach((doc) => {
+        querySnapshot.forEach((doc) => {
           const user = doc.data();
           html += `
             <li id="user-${doc.id}">
               ${user.username} (${user.email})
-              <div class="action-buttons" id="action-buttons-${doc.id}">
+              <div id="action-buttons-${doc.id}" class="action-buttons">
                 <button onclick="holdUser('${doc.id}')">Hold</button>
                 <button onclick="blockUser('${doc.id}')">Block</button>
                 <button onclick="removeUser('${doc.id}')">Remove</button>
@@ -234,7 +236,55 @@
             </li>`;
         });
         approvedUsersList.innerHTML = html || "<li>No approved users found.</li>";
-      });
+
+        // Add toggle functionality
+        querySnapshot.forEach((doc) => {
+          const userElement = document.getElementById(`user-${doc.id}`);
+          userElement.addEventListener("click", () => toggleDropdown(doc.id));
+        });
+      } catch (error) {
+        console.error("Error fetching approved users:", error);
+        approvedUsersList.innerHTML = "Error loading users.";
+      }
+    }
+
+    function toggleDropdown(userId) {
+      const actionButtons = document.getElementById(`action-buttons-${userId}`);
+      actionButtons.style.display =
+        actionButtons.style.display === "flex" ? "none" : "flex";
+    }
+
+    async function holdUser(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { status: "Hold" });
+        alert("User held successfully.");
+        fetchApprovedUsers();
+      } catch (error) {
+        console.error("Error holding user:", error);
+        alert("Error holding user.");
+      }
+    }
+
+    async function blockUser(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
+        alert("User blocked successfully.");
+        fetchApprovedUsers();
+      } catch (error) {
+        console.error("Error blocking user:", error);
+        alert("Error blocking user.");
+      }
+    }
+
+    async function removeUser(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { isRemoved: true });
+        alert("User removed successfully.");
+        fetchApprovedUsers();
+      } catch (error) {
+        console.error("Error removing user:", error);
+        alert("Error removing user.");
+        }
     }
 
     // Real-time listener for blocked/held users
@@ -317,33 +367,12 @@
       }
     }
 
-    // Hold user
-    async function holdUser(userId) {
-      try {
-        await updateDoc(doc(db, "Users", userId), { status: "Hold" });
-        alert("User held successfully.");
-      } catch (error) {
-        console.error("Error holding user:", error);
-        alert("Error holding user.");
-      }
-    }
-
-    // Block user
-    async function blockUser(userId) {
-      try {
-        await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
-        alert("User blocked successfully.");
-      } catch (error) {
-        console.error("Error blocking user:", error);
-        alert("Error blocking user.");
-      }
-    }
 
     // Unblock user
     async function unblockUser(userId) {
       try {
         await updateDoc(doc(db, "Users", userId), { status: "" });
-        alert("User unblocked successfully.");
+        alert("User unhold/unblocked successfully.");
       } catch (error) {
         console.error("Error unblocking user:", error);
         alert("Error unblocking user.");
