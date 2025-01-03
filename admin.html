@@ -10,7 +10,6 @@
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #a8edea, #fed6e3);
@@ -18,7 +17,6 @@
       flex-direction: column;
       height: 100vh;
     }
-
     header {
       background-color: #4CAF50;
       color: white;
@@ -27,7 +25,6 @@
       justify-content: space-between;
       align-items: center;
     }
-
     #settings {
       background-color: white;
       color: #4CAF50;
@@ -36,43 +33,22 @@
       border-radius: 5px;
       cursor: pointer;
     }
-
     #settings:hover {
       background-color: #45a049;
       color: white;
     }
-
     main {
       flex: 1;
       padding: 2rem;
       overflow-y: auto;
     }
-
-    section {
-      margin-bottom: 1.5rem;
-    }
-
     section h2 {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
+      margin-bottom: 1rem;
     }
-
-    section h2 .badge {
-      background-color: red;
-      color: white;
-      border-radius: 50%;
-      padding: 0.2rem 0.6rem;
-      font-size: 0.8rem;
-    }
-
     ul {
       list-style: none;
       padding: 0;
-      display: none;
     }
-
     li {
       background: white;
       margin-bottom: 1rem;
@@ -80,18 +56,13 @@
       border-radius: 5px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
-
-    button {
-      background-color: #4CAF50;
+    .badge {
+      background-color: red;
       color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #45a049;
+      border-radius: 50%;
+      padding: 0.2rem 0.6rem;
+      margin-left: 0.5rem;
+      font-size: 0.8rem;
     }
   </style>
 </head>
@@ -100,31 +71,26 @@
     <h1>Admin Dashboard</h1>
     <button id="settings">Settings</button>
   </header>
-
   <main>
-    <section id="approval-section">
-      <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
-      <ul id="approval-requests-list"></ul>
+    <section>
+      <h2>Approval Requests <span id="approval-count" class="badge">0</span></h2>
+      <ul id="approval-requests-list">Loading...</ul>
     </section>
-
-    <section id="online-section">
-      <h2>Online Users <span class="badge" id="online-badge">0</span></h2>
-      <ul id="online-users-list"></ul>
+    <section>
+      <h2>Online Users <span id="online-count" class="badge">0</span></h2>
+      <ul id="online-users-list">Loading...</ul>
     </section>
-
-    <section id="logs-section">
-      <h2>User Logs <span class="badge" id="logs-badge">0</span></h2>
-      <ul id="logs-list"></ul>
+    <section>
+      <h2>User Logs <span id="logs-count" class="badge">0</span></h2>
+      <ul id="logs-list">Loading...</ul>
     </section>
-
-    <section id="approved-section">
-      <h2>Approved Users <span class="badge" id="approved-badge">0</span></h2>
-      <ul id="approved-users-list"></ul>
+    <section>
+      <h2>Approved Users <span id="approved-count" class="badge">0</span></h2>
+      <ul id="approved-users-list">Loading...</ul>
     </section>
-
-    <section id="hold-blocked-section">
-      <h2>Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span></h2>
-      <ul id="hold-blocked-list"></ul>
+    <section>
+      <h2>Hold/Blocked Users <span id="blocked-count" class="badge">0</span></h2>
+      <ul id="hold-blocked-list">Loading...</ul>
     </section>
   </main>
 
@@ -133,16 +99,18 @@
     import {
       getFirestore,
       collection,
+      doc,
       query,
       where,
       onSnapshot,
+      arrayUnion,
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebaseapp.com",
+      storageBucket: "dws-management.firebasestorage.app",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7",
@@ -151,127 +119,46 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    function toggleSection(sectionId) {
-      const section = document.querySelector(`#${sectionId} ul`);
-      const allSections = document.querySelectorAll("ul");
-
-      allSections.forEach((s) => {
-        if (s !== section) {
-          s.style.display = "none";
-        }
-      });
-
-      section.style.display = section.style.display === "block" ? "none" : "block";
-    }
-
-    function setupToggleListeners() {
-      document.querySelectorAll("section h2").forEach((header) => {
-        header.addEventListener("click", () => {
-          const sectionId = header.parentElement.id;
-          toggleSection(sectionId);
-        });
-      });
-    }
-
-    function updateBadge(id, count) {
-      const badge = document.getElementById(id);
-      badge.textContent = count;
-    }
-
-    function fetchApprovalRequests() {
-      const list = document.getElementById("approval-requests-list");
-      const badge = "approval-badge";
-
-      onSnapshot(
-        query(collection(db, "Users"), where("isApproved", "==", false)),
-        (snapshot) => {
-          let html = "";
-          snapshot.forEach((doc) => {
-            const user = doc.data();
-            html += `<li>${user.username} (${user.email})</li>`;
-          });
-          list.innerHTML = html || "<li>No approval requests found.</li>";
-          updateBadge(badge, snapshot.size);
-        }
-      );
-    }
-
-    function fetchOnlineUsers() {
-      const list = document.getElementById("online-users-list");
-      const badge = "online-badge";
-
-      onSnapshot(
-        query(collection(db, "Users"), where("isOnline", "==", true)),
-        (snapshot) => {
-          let html = "";
-          snapshot.forEach((doc) => {
-            const user = doc.data();
-            html += `<li>${user.username} (${user.email})</li>`;
-          });
-          list.innerHTML = html || "<li>No online users found.</li>";
-          updateBadge(badge, snapshot.size);
-        }
-      );
-    }
-
     function fetchUserLogs() {
-      const list = document.getElementById("logs-list");
-      const badge = "logs-badge";
+      const logsList = document.getElementById("logs-list");
+      logsList.innerHTML = "Loading...";
+      const logs = [];
 
-      onSnapshot(collection(db, "Logs"), (snapshot) => {
-        let html = "";
+      onSnapshot(collection(db, "Users"), (snapshot) => {
+        logs.length = 0; 
         snapshot.forEach((doc) => {
-          const log = doc.data();
-          html += `<li>${log.activity} - ${new Date(log.timestamp).toLocaleString()}</li>`;
+          const userData = doc.data();
+          if (userData.loginLogs && Array.isArray(userData.loginLogs)) {
+            userData.loginLogs.forEach((log) => {
+              logs.push({
+                username: userData.username || doc.id,
+                activity: log.activity,
+                timestamp: log.timestamp,
+              });
+            });
+          }
         });
-        list.innerHTML = html || "<li>No logs found.</li>";
-        updateBadge(badge, snapshot.size);
+
+        logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        if (logs.length > 0) {
+          logsList.innerHTML = logs
+            .map(
+              (log) =>
+                `<li>${log.activity} by ${log.username} at ${new Date(
+                  log.timestamp
+                ).toLocaleString()}</li>`
+            )
+            .join("");
+        } else {
+          logsList.innerHTML = "<li>No logs found.</li>";
+        }
       });
     }
 
-    function fetchApprovedUsers() {
-      const list = document.getElementById("approved-users-list");
-      const badge = "approved-badge";
-
-      onSnapshot(
-        query(collection(db, "Users"), where("isApproved", "==", true)),
-        (snapshot) => {
-          let html = "";
-          snapshot.forEach((doc) => {
-            const user = doc.data();
-            html += `<li>${user.username} (${user.email})</li>`;
-          });
-          list.innerHTML = html || "<li>No approved users found.</li>";
-          updateBadge(badge, snapshot.size);
-        }
-      );
-    }
-
-    function fetchHoldBlockedUsers() {
-      const list = document.getElementById("hold-blocked-list");
-      const badge = "hold-blocked-badge";
-
-      onSnapshot(
-        query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"])),
-        (snapshot) => {
-          let html = "";
-          snapshot.forEach((doc) => {
-            const user = doc.data();
-            html += `<li>${user.username} (${user.email}) - ${user.status}</li>`;
-          });
-          list.innerHTML = html || "<li>No hold/blocked users found.</li>";
-          updateBadge(badge, snapshot.size);
-        }
-      );
-    }
-
-    // Initialize toggle listeners and fetch data
-    setupToggleListeners();
-    fetchApprovalRequests();
-    fetchOnlineUsers();
-    fetchUserLogs();
-    fetchApprovedUsers();
-    fetchHoldBlockedUsers();
+    window.onload = () => {
+      fetchUserLogs();
+    };
   </script>
 </body>
 </html>
