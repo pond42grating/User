@@ -3,152 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard</title>
+  <title>Admin Dashboard - DWS Management</title>
   <style>
-    /* Add styles for your dashboard here */
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f3f6f9;
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
-    .header {
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
       background-color: #4CAF50;
       color: white;
-      padding: 15px;
-      text-align: center;
-      position: relative;
-      z-index: 2;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .card {
+    #settings {
       background-color: white;
-      padding: 20px;
-      margin-bottom: 10px;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .card h3 {
-      margin-top: 0;
-    }
-    .button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px 15px;
-      margin: 5px;
+      color: #4CAF50;
       border: none;
+      padding: 0.5rem 1rem;
       border-radius: 5px;
       cursor: pointer;
     }
-    .button:hover {
+    #settings:hover {
       background-color: #45a049;
-    }
-    .badge {
-      background-color: red;
       color: white;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 12px;
-      margin-left: 5px;
     }
-    .toggle-section {
+    main {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    section h2 {
+      margin-bottom: 1rem;
       cursor: pointer;
     }
-    .section-content {
-      margin-top: 10px;
-    }
-
-    /* Dropdown Styles */
-    .dropdown {
-      position: absolute;
-      top: 10px;
-      right: 20px;
-      z-index: 3;
-    }
-    .dropdown-content {
+    ul {
+      list-style: none;
+      padding: 0;
       display: none;
-      position: absolute;
-      background-color: white;
-      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
-      z-index: 1;
     }
-    .dropdown-content a {
-      color: black;
-      padding: 12px 16px;
-      text-decoration: none;
+    ul.active {
       display: block;
     }
-    .dropdown-content a:hover {
-      background-color: #ddd;
-    }
-    .dropdown:hover .dropdown-content {
-      display: block;
+    .badge {
+      background: red;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 50%;
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
     }
   </style>
 </head>
 <body>
-
-  <div class="header">
+  <header>
     <h1>Admin Dashboard</h1>
-    <!-- Dropdown Menu for Settings -->
-    <div class="dropdown">
-      <button class="button">Settings</button>
-      <div class="dropdown-content">
-        <a href="adminprofile.html">Admin Profile</a>
-        <a href="#" onclick="logout()">Logout</a>
-      </div>
-    </div>
-  </div>
+    <button id="settings">Settings</button>
+  </header>
 
-  <div class="container">
-    <div class="card" id="approval-requests">
-      <h3 class="toggle-section" onclick="toggleSection('approval-requests')">Approval Requests <span id="approval-count" class="badge">0</span></h3>
-      <div class="section-content">
-        <div id="approval-list"></div>
-      </div>
-    </div>
+  <main>
+    <section>
+      <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
+      <ul id="approval-requests-list">Loading...</ul>
+    </section>
+    <section>
+      <h2>Online Users <span class="badge" id="online-badge">0</span></h2>
+      <ul id="online-users-list">Loading...</ul>
+    </section>
+    <section>
+      <h2>User Logs <span class="badge" id="logs-badge">0</span></h2>
+      <ul id="logs-list">Loading...</ul>
+    </section>
+    <section>
+      <h2>Approved Users <span class="badge" id="approved-badge">0</span></h2>
+      <ul id="approved-users-list">Loading...</ul>
+    </section>
+    <section>
+      <h2>Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span></h2>
+      <ul id="hold-blocked-list">Loading...</ul>
+    </section>
+  </main>
 
-    <div class="card" id="online-users">
-      <h3 class="toggle-section" onclick="toggleSection('online-users')">Online Users <span id="online-count" class="badge">0</span></h3>
-      <div class="section-content">
-        <p>Loading...</p>
-      </div>
-    </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      where,
+      onSnapshot,
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-    <div class="card" id="user-logs">
-      <h3 class="toggle-section" onclick="toggleSection('user-logs')">User Logs <span id="logs-count" class="badge">0</span></h3>
-      <div class="section-content">
-        <p>Loading...</p>
-        <button class="button" onclick="clearLogs()">Clear Logs</button>
-      </div>
-    </div>
-
-    <div class="card" id="approved-users">
-      <h3 class="toggle-section" onclick="toggleSection('approved-users')">Approved Users <span id="approved-count" class="badge">0</span></h3>
-      <div class="section-content">
-        <p>Loading...</p>
-      </div>
-    </div>
-
-    <div class="card" id="hold-blocked-users">
-      <h3 class="toggle-section" onclick="toggleSection('hold-blocked-users')">Hold/Blocked Users <span id="blocked-count" class="badge">0</span></h3>
-      <div class="section-content">
-        <p>No hold/blocked users found.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
-
-  <script>
-    // Your Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
@@ -156,79 +111,51 @@
       storageBucket: "dws-management.firebasestorage.app",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
+      measurementId: "G-L14GLJDYW7",
     };
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
-    const auth = firebase.auth(app);
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    function initializeSections() {
+      const sections = document.querySelectorAll("main section ul");
+      sections.forEach((section, index) => {
+        section.style.display = index === 0 ? "block" : "none"; // Open only the first section
+      });
+    }
 
     function toggleSection(sectionId) {
-      const section = document.getElementById(sectionId);
-      const sectionContent = section.querySelector('.section-content');
-      const currentDisplay = sectionContent.style.display;
-
-      // Hide all sections before showing the selected one
-      const allSections = document.querySelectorAll('.section-content');
-      allSections.forEach(content => {
-        content.style.display = 'none';
-      });
-
-      // Toggle the selected section
-      if (currentDisplay === 'block') {
-        sectionContent.style.display = 'none';
-      } else {
-        sectionContent.style.display = 'block';
-      }
-    }
-
-    // Fetch approval requests from Firestore and display them
-    function fetchApprovalRequests() {
-      const approvalList = document.getElementById('approval-list');
-      const approvalCount = document.getElementById('approval-count');
-      approvalList.innerHTML = ''; // Clear previous content
-
-      // Get documents where `isApproved` is false
-      db.collection("Users").where("isApproved", "==", false).get().then(querySnapshot => {
-        const users = querySnapshot.docs.map(doc => doc.data());
-        approvalCount.textContent = users.length;
-
-        users.forEach(user => {
-          const userDiv = document.createElement('div');
-          userDiv.innerHTML = `
-            <p>${user.username} (${user.email}) 
-              <button class="button" onclick="approveUser('${user.username}')">Approve</button>
-              <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
-            </p>`;
-          approvalList.appendChild(userDiv);
-        });
+      const sections = document.querySelectorAll("main section ul");
+      sections.forEach((section) => {
+        if (section.id === sectionId) {
+          section.style.display = section.style.display === "none" ? "block" : "none";
+        } else {
+          section.style.display = "none";
+        }
       });
     }
 
-    // Approve user function
-    function approveUser(username) {
-      db.collection("Users").where("username", "==", username).get().then(querySnapshot => {
-        querySnapshot.forEach(doc => {
-          doc.ref.update({ isApproved: true });
-        });
-        alert(`User ${username} approved.`);
-      });
-    }
+    document.querySelectorAll("main section h2").forEach((title) => {
+      const ulId = title.nextElementSibling.id;
+      title.addEventListener("click", () => toggleSection(ulId));
+    });
 
-    // Reject user function
-    function rejectUser(username) {
-      db.collection("Users").where("username", "==", username).get().then(querySnapshot => {
-        querySnapshot.forEach(doc => {
-          doc.ref.delete();
-        });
-        alert(`User ${username} rejected.`);
-      });
-    }
-
-    // Simulate data fetching on page load
     window.onload = () => {
-      fetchApprovalRequests();
+      initializeSections();
     };
+
+    async function logout() {
+      await signOut(auth);
+      alert("Logged out successfully!");
+      window.location.href = "index.html";
+    }
   </script>
 </body>
 </html>
