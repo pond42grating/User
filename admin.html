@@ -15,8 +15,9 @@
       deleteDoc,
       query,
       where,
+      onSnapshot
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
@@ -25,7 +26,7 @@
       storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7",
+      measurementId: "G-L14GLJDYW7"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -33,7 +34,7 @@
     const auth = getAuth(app);
 
     // Redirect to login if admin is not logged in
-    auth.onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (!user) {
         alert("You need to log in!");
         window.location.href = "index.html";
@@ -42,8 +43,9 @@
 
     // Fetch user logs
     async function fetchUserLogs() {
-      const logsList = document.getElementById("logs-list");
-      logsList.innerHTML = "Loading user logs...";
+      const logsContainer = document.getElementById("logs-list");
+      logsContainer.innerHTML = "Loading user logs...";
+
       try {
         const querySnapshot = await getDocs(collection(db, "Users"));
         let logsHTML = "";
@@ -51,39 +53,40 @@
         querySnapshot.forEach((doc) => {
           const user = doc.data();
           if (user.loginLogs && user.loginLogs.length > 0) {
-            logsHTML += `
-              <li>
-                <strong>${user.username}</strong>
-                <button onclick="deleteUserLogs('${doc.id}')">Clear Logs</button>
-                ${user.loginLogs
-                  .map(
-                    (log) =>
-                      `<p>${log.activity} - ${new Date(
-                        log.timestamp
-                      ).toLocaleString()}</p>`
-                  )
-                  .join("")}
-              </li>
-            `;
+            logsHTML += `<h3>${user.username}</h3>`;
+            user.loginLogs.forEach((log) => {
+              logsHTML += `<p>${log.activity} - ${new Date(log.timestamp).toLocaleString()}</p>`;
+            });
           }
         });
 
-        logsList.innerHTML = logsHTML || "<li>No logs found.</li>";
+        logsContainer.innerHTML = logsHTML || "No user logs found.";
       } catch (error) {
         console.error("Error fetching user logs: ", error);
-        logsList.innerHTML = "<li>Error loading logs.</li>";
+        logsContainer.innerHTML = "Error loading logs.";
       }
     }
 
-    // Delete user logs
-    async function deleteUserLogs(userId) {
+    // Fetch online users
+    async function fetchOnlineUsers() {
+      const onlineContainer = document.getElementById("online-users-list");
+      onlineContainer.innerHTML = "Loading online users...";
+
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { loginLogs: [] });
-        alert("Logs cleared successfully.");
-        fetchUserLogs();
+        const querySnapshot = await getDocs(collection(db, "Users"));
+        let onlineUsersHTML = "";
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          if (user.isOnline === true) {
+            onlineUsersHTML += `<p>${user.username} (${user.email})</p>`;
+          }
+        });
+
+        onlineContainer.innerHTML = onlineUsersHTML || "No users online.";
       } catch (error) {
-        console.error("Error clearing logs: ", error);
+        console.error("Error fetching online users: ", error);
+        onlineContainer.innerHTML = "Error loading online users.";
       }
     }
 
@@ -91,136 +94,176 @@
     async function fetchApprovedUsers() {
       const approvedUsersList = document.getElementById("approved-users-list");
       approvedUsersList.innerHTML = "Loading approved users...";
+
       try {
-        const querySnapshot = await getDocs(
-          query(collection(db, "Users"), where("isApproved", "==", true))
-        );
+        const querySnapshot = await getDocs(query(collection(db, "Users"), where("isApproved", "==", true)));
         let approvedHTML = "";
 
         querySnapshot.forEach((doc) => {
           const user = doc.data();
           approvedHTML += `
-            <li onclick="showUserDetails('${doc.id}')">
+            <li>
               <strong>${user.username}</strong> (${user.email})
+              <button onclick="holdUser('${doc.id}')">Hold</button>
+              <button onclick="blockUser('${doc.id}')">Block</button>
+              <button onclick="removeUser('${doc.id}')">Remove</button>
             </li>
           `;
         });
 
-        approvedUsersList.innerHTML =
-          approvedHTML || "<li>No approved users found.</li>";
+        approvedUsersList.innerHTML = approvedHTML || "<li>No approved users found.</li>";
       } catch (error) {
         console.error("Error fetching approved users: ", error);
-        approvedUsersList.innerHTML = "<li>Error loading users.</li>";
+        approvedUsersList.innerHTML = "Error loading approved users.";
       }
     }
 
-    // Show user details for action
-    async function showUserDetails(userId) {
-      const userDocRef = doc(db, "Users", userId);
-      try {
-        const userSnap = await getDoc(userDocRef);
-        if (userSnap.exists()) {
-          const user = userSnap.data();
-          const userDetails = document.getElementById("user-details");
-          userDetails.innerHTML = `
-            <h3>${user.username}</h3>
-            <p>Email: ${user.email}</p>
-            <button onclick="holdUser('${userId}')">Hold</button>
-            <button onclick="blockUser('${userId}')">Block</button>
-            <button onclick="removeUser('${userId}')">Remove</button>
-          `;
-        }
-      } catch (error) {
-        console.error("Error fetching user details:", error);
-      }
-    }
-
-    // Hold user
+    // Hold a user
     async function holdUser(userId) {
       try {
-        await updateDoc(doc(db, "Users", userId), { status: "Hold" });
-        alert("User held successfully.");
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { status: "Hold" });
+        alert("User successfully held.");
         fetchApprovedUsers();
       } catch (error) {
         console.error("Error holding user: ", error);
       }
     }
 
-    // Block user
+    // Block a user
     async function blockUser(userId) {
       try {
-        await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
-        alert("User blocked successfully.");
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { status: "Blocked" });
+        alert("User successfully blocked.");
         fetchApprovedUsers();
       } catch (error) {
         console.error("Error blocking user: ", error);
       }
     }
 
-    // Remove user
+    // Remove a user
     async function removeUser(userId) {
       try {
-        await deleteDoc(doc(db, "Users", userId));
-        alert("User removed successfully.");
+        const userDocRef = doc(db, "Users", userId);
+        await deleteDoc(userDocRef);
+        alert("User successfully removed.");
         fetchApprovedUsers();
       } catch (error) {
         console.error("Error removing user: ", error);
       }
     }
 
+    // Search users
+    async function searchUsers() {
+      const searchInput = document.getElementById("search").value.trim().toLowerCase();
+      const searchResults = document.getElementById("search-results");
+      searchResults.innerHTML = "Searching...";
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "Users"));
+        let resultsHTML = "";
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          if (
+            user.username.toLowerCase().includes(searchInput) ||
+            user.email.toLowerCase().includes(searchInput)
+          ) {
+            resultsHTML += `<li><strong>${user.username}</strong> (${user.email})</li>`;
+          }
+        });
+
+        searchResults.innerHTML = resultsHTML || "<li>No results found.</li>";
+      } catch (error) {
+        console.error("Error searching users: ", error);
+        searchResults.innerHTML = "Error searching users.";
+      }
+    }
+
+    // Delete old logs
+    async function deleteOldLogs() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "Users"));
+
+        querySnapshot.forEach(async (docSnap) => {
+          const user = docSnap.data();
+          const userDocRef = doc(db, "Users", docSnap.id);
+
+          if (user.loginLogs && user.loginLogs.length > 5) {
+            const updatedLogs = user.loginLogs.slice(-5); // Keep last 5 logs
+            await updateDoc(userDocRef, { loginLogs: updatedLogs });
+          }
+        });
+
+        alert("Old logs cleaned up successfully.");
+        fetchUserLogs();
+      } catch (error) {
+        console.error("Error deleting old logs: ", error);
+      }
+    }
+
     // Logout function
     async function logout() {
-  try {
-    console.log("Signing out...");
-    await signOut(auth);
-    console.log("Redirecting to login...");
-    window.location.href = "index.html";
-  } catch (error) {
-    console.error("Logout error:", error);
-    alert("Error during logout: " + error.message);
-  }
-}
-}
+      try {
+        await signOut(auth);
+        alert("Logged out successfully!");
+        window.location.href = "index.html";
+      } catch (error) {
+        console.error("Error during logout: ", error);
+        alert("Error: " + error.message);
+      }
+    }
 
-    // On load
     window.onload = () => {
       fetchUserLogs();
+      fetchOnlineUsers();
       fetchApprovedUsers();
     };
 
     window.fetchUserLogs = fetchUserLogs;
+    window.fetchOnlineUsers = fetchOnlineUsers;
     window.fetchApprovedUsers = fetchApprovedUsers;
-    window.deleteUserLogs = deleteUserLogs;
-    window.showUserDetails = showUserDetails;
     window.holdUser = holdUser;
     window.blockUser = blockUser;
     window.removeUser = removeUser;
+    window.searchUsers = searchUsers;
     window.logout = logout;
+    window.deleteOldLogs = deleteOldLogs;
   </script>
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #a8edea, #fed6e3);
       margin: 0;
       padding: 0;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
     }
 
     header {
-      background-color: #4CAF50;
+      background: #4CAF50;
       color: white;
       padding: 1rem;
       display: flex;
       justify-content: space-between;
+      align-items: center;
     }
 
     main {
-      padding: 1rem;
-      overflow-y: auto;
       flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      margin-bottom: 1rem;
     }
 
     ul {
@@ -229,24 +272,37 @@
     }
 
     li {
-      padding: 1rem;
-      margin: 0.5rem 0;
+      margin-bottom: 1rem;
       background: white;
+      padding: 1rem;
       border-radius: 5px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
       cursor: pointer;
     }
 
-    li:hover {
-      background: #f4f4f4;
+    button:hover {
+      background: #45a049;
     }
 
-    #user-details {
-      margin-top: 2rem;
-      padding: 1rem;
-      background: white;
+    .search-container {
+      margin-bottom: 1rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.5rem;
       border-radius: 5px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid #ddd;
     }
   </style>
 </head>
@@ -257,14 +313,25 @@
   </header>
   <main>
     <section>
-      <h2>Approved Users</h2>
-      <ul id="approved-users-list"></ul>
+      <h2>Search Users</h2>
+      <div class="search-container">
+        <input type="text" id="search" placeholder="Search users by username or email..." oninput="searchUsers()">
+        <ul id="search-results"></ul>
+      </div>
+    </section>
+    <section>
+      <h2>Online Users</h2>
+      <ul id="online-users-list"></ul>
     </section>
     <section>
       <h2>User Logs</h2>
+      <button onclick="deleteOldLogs()">Delete Old Logs</button>
       <ul id="logs-list"></ul>
     </section>
-    <div id="user-details"></div>
+    <section>
+      <h2>Approved Users</h2>
+      <ul id="approved-users-list"></ul>
+    </section>
   </main>
 </body>
 </html>
