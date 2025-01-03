@@ -13,13 +13,11 @@
       doc,
       updateDoc,
       deleteDoc,
-      onSnapshot,
       query,
       where
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, signOut, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
@@ -39,7 +37,7 @@
       if ("Notification" in window) {
         Notification.requestPermission().then((permission) => {
           if (permission === "granted") {
-            console.log("Notifications enabled");
+            alert("Push notifications enabled.");
           }
         });
       }
@@ -51,32 +49,36 @@
       }
     }
 
-    // Fetch and Display Users
+    // Fetch Users
     async function fetchUsers() {
       const onlineUsersList = document.getElementById("online-users-list");
       const logsContainer = document.getElementById("logs-container");
       const allUsersList = document.getElementById("all-users-list");
+      const holdBlockedList = document.getElementById("hold-blocked-list");
       const badge = document.getElementById("notification-badge");
 
       onlineUsersList.innerHTML = "<li>Loading online users...</li>";
       logsContainer.innerHTML = "";
       allUsersList.innerHTML = "<li>Loading users...</li>";
+      holdBlockedList.innerHTML = "<li>Loading hold/blocked users...</li>";
       badge.innerText = "0";
 
       try {
         const querySnapshot = await getDocs(collection(db, "Users"));
         let onlineHTML = "";
         let allUsersHTML = "";
+        let holdBlockedHTML = "";
         let unapprovedCount = 0;
 
         querySnapshot.forEach((doc) => {
           const user = doc.data();
+
+          // Online Users Section
           if (user.isOnline) {
             onlineHTML += `<li>${user.username} (${user.email})</li>`;
           }
-          if (!user.isApproved) {
-            unapprovedCount++;
-          }
+
+          // All Users Section
           allUsersHTML += `
             <li>
               <div onclick="toggleUserActions('${doc.id}', '${user.username}')">
@@ -90,10 +92,29 @@
               </div>
             </li>
           `;
+
+          // Hold/Blocked Users Section
+          if (user.status === "Hold" || user.status === "Blocked") {
+            holdBlockedHTML += `
+              <li>
+                <strong>${user.username}</strong> (${user.email})
+                <span class="status">${user.status}</span>
+                <button onclick="${user.status === "Hold" ? `unholdUser('${doc.id}')` : `unblockUser('${doc.id}')`}">
+                  ${user.status === "Hold" ? "Unhold" : "Unblock"}
+                </button>
+              </li>
+            `;
+          }
+
+          // Count Unapproved Users
+          if (!user.isApproved) {
+            unapprovedCount++;
+          }
         });
 
         onlineUsersList.innerHTML = onlineHTML || "<li>No users online.</li>";
         allUsersList.innerHTML = allUsersHTML || "<li>No users found.</li>";
+        holdBlockedList.innerHTML = holdBlockedHTML || "<li>No hold/blocked users found.</li>";
         badge.innerText = unapprovedCount;
 
         if (unapprovedCount > 0) {
@@ -104,7 +125,7 @@
       }
     }
 
-    function toggleUserActions(userId, username) {
+    function toggleUserActions(userId) {
       const actions = document.getElementById(`actions-${userId}`);
       actions.classList.toggle("hidden");
     }
@@ -126,6 +147,26 @@
         fetchUsers();
       } catch (error) {
         console.error("Error blocking user:", error);
+      }
+    }
+
+    async function unholdUser(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { status: null });
+        alert("User unheld successfully.");
+        fetchUsers();
+      } catch (error) {
+        console.error("Error unholding user:", error);
+      }
+    }
+
+    async function unblockUser(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { status: null });
+        alert("User unblocked successfully.");
+        fetchUsers();
+      } catch (error) {
+        console.error("Error unblocking user:", error);
       }
     }
 
@@ -153,14 +194,13 @@
     window.onload = fetchUsers;
     window.holdUser = holdUser;
     window.blockUser = blockUser;
+    window.unholdUser = unholdUser;
+    window.unblockUser = unblockUser;
     window.removeUser = removeUser;
     window.logout = logout;
-    window.toggleUserActions = toggleUserActions;
     window.requestNotificationPermission = requestNotificationPermission;
   </script>
-
-  <style>
-    body {
+  body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
@@ -251,6 +291,8 @@
       padding: 0.2rem 0.5rem;
       border-radius: 5px;
     }
+  <style>
+    /* Styling (same as before with minor adjustments) */
   </style>
 </head>
 <body>
@@ -259,8 +301,8 @@
     <div id="settings">
       <button onclick="document.querySelector('.dropdown').classList.toggle('hidden')">Settings</button>
       <div class="dropdown hidden">
-        <button onclick="alert('Admin settings coming soon!')">Change Credentials</button>
-        <button onclick="requestNotificationPermission()">Enable Notifications</button>
+        <button onclick="requestNotificationPermission()">Push Notifications</button>
+        <button onclick="window.location.href='adminprofile.html'">Admin Profile</button>
         <button onclick="logout()">Log Out</button>
       </div>
     </div>
@@ -278,6 +320,10 @@
     <section>
       <h2>All Users</h2>
       <ul id="all-users-list"></ul>
+    </section>
+    <section>
+      <h2>Hold/Blocked Users</h2>
+      <ul id="hold-blocked-list"></ul>
     </section>
   </main>
 </body>
