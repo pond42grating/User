@@ -62,6 +62,27 @@
       font-size: 0.9rem;
       margin-left: 0.5rem;
     }
+
+    .button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background-color: #45a049;
+    }
+
+    .button-container {
+      display: none;
+    }
+    .button-container.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -95,7 +116,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, query, where, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -166,12 +187,21 @@
           const userDiv = document.createElement('div');
           userDiv.innerHTML = `
             <p>${user.username} (${user.email}) 
-              <button class="button" onclick="approveUser('${user.username}')">Approve</button>
-              <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
+              <button class="button" onclick="toggleButtons('${user.username}')">Toggle</button>
+              <div id="buttons-${user.username}" class="button-container">
+                <button class="button" onclick="approveUser('${user.username}')">Approve</button>
+                <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
+              </div>
             </p>`;
           approvalList.appendChild(userDiv);
         });
       }
+    }
+
+    // Toggle Approve/Reject buttons
+    function toggleButtons(username) {
+      const buttonContainer = document.getElementById(`buttons-${username}`);
+      buttonContainer.classList.toggle('active');
     }
 
     // Approve user function
