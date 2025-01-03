@@ -5,120 +5,158 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
   <style>
-    /* Combined CSS */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #f7f9fc;
+      background-color: #f3f4f6;
     }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+
+    .header {
       background-color: #28a745;
       color: white;
       padding: 15px;
-    }
-    .settings {
-      position: relative;
-    }
-    .settings .dropdown {
-      display: none;
-      position: absolute;
-      background-color: white;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      right: 0;
-    }
-    .settings button {
-      cursor: pointer;
-      background-color: transparent;
-      border: none;
-      color: white;
-      font-size: 16px;
-    }
-    .settings:hover .dropdown {
-      display: block;
-    }
-    main {
-      padding: 20px;
-    }
-    section {
-      background-color: white;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 20px;
-    }
-    h2 {
+      text-align: center;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .list {
-      margin-top: 10px;
+
+    .header .settings {
+      margin-right: 20px;
+      position: relative;
     }
-    button {
-      margin: 5px;
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: white;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .dropdown a {
+      display: block;
+      padding: 10px;
+      color: black;
+      text-decoration: none;
+    }
+
+    .dropdown a:hover {
+      background-color: #f3f4f6;
+    }
+
+    .section {
+      margin: 20px;
+      background-color: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .section h2 {
+      margin: 0;
+      margin-bottom: 10px;
+      font-size: 1.5rem;
+    }
+
+    .badge {
+      background-color: red;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 50%;
+      font-size: 0.9rem;
+      margin-left: 5px;
+    }
+
+    .actions button {
+      margin-right: 10px;
       padding: 5px 10px;
       border: none;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #ddd;
+
+    .approve {
+      background-color: #28a745;
+      color: white;
     }
-    .date-filters input, .date-filters button {
-      margin: 5px;
-      padding: 5px;
+
+    .reject {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .block {
+      background-color: #ffc107;
+      color: white;
+    }
+
+    .hold {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .remove {
+      background-color: #dc3545;
+      color: white;
     }
   </style>
 </head>
 <body>
-  <header>
+  <div class="header">
     <h1>Admin Dashboard</h1>
     <div class="settings">
-      <button id="settingsButton">Settings</button>
-      <div class="dropdown">
-        <button id="adminProfile">Admin Profile</button>
-        <button id="logoutButton">Logout</button>
+      <button onclick="toggleDropdown()">Settings</button>
+      <div class="dropdown" id="dropdown">
+        <a href="adminprofile.html">Admin Profile</a>
+        <a href="#" onclick="logout()">Logout</a>
       </div>
     </div>
-  </header>
-  <main>
-    <section id="approvalRequests">
-      <h2>Approval Requests <span id="approvalCount">0</span></h2>
-      <div id="approvalList" class="list">Loading...</div>
-    </section>
-    <section id="onlineUsers">
-      <h2>Online Users <span id="onlineCount">0</span></h2>
-      <div id="onlineList" class="list">Loading...</div>
-    </section>
-    <section id="userLogs">
-      <h2>User Logs <span id="logCount">0</span></h2>
-      <div id="logsList" class="list">Loading...</div>
-      <div class="date-filters">
-        <input type="date" id="fromDate">
-        <input type="date" id="toDate">
-        <button id="clearLogs">Clear Logs</button>
-      </div>
-    </section>
-    <section id="approvedUsers">
-      <h2>Approved Users <span id="approvedCount">0</span></h2>
-      <div id="approvedList" class="list">Loading...</div>
-    </section>
-    <section id="holdBlockedUsers">
-      <h2>Hold/Blocked Users <span id="holdBlockedCount">0</span></h2>
-      <div id="holdBlockedList" class="list">Loading...</div>
-    </section>
-  </main>
+  </div>
 
-  <!-- Firebase App -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+  <div class="section" id="approval-requests">
+    <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
+    <div id="approval-list">Loading...</div>
+  </div>
 
-  <script>
-    // Firebase Config
+  <div class="section" id="online-users">
+    <h2>Online Users <span class="badge" id="online-badge">0</span></h2>
+    <div id="online-list">Loading...</div>
+  </div>
+
+  <div class="section" id="user-logs">
+    <h2>User Logs <span class="badge" id="logs-badge">0</span></h2>
+    <div id="logs-list">Loading...</div>
+    <button onclick="clearLogs()">Clear Logs</button>
+  </div>
+
+  <div class="section" id="approved-users">
+    <h2>Approved Users <span class="badge" id="approved-badge">0</span></h2>
+    <div id="approved-list">Loading...</div>
+  </div>
+
+  <div class="section" id="hold-blocked-users">
+    <h2>Hold/Blocked Users <span class="badge" id="hold-badge">0</span></h2>
+    <div id="hold-list">Loading...</div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      onSnapshot,
+      doc,
+      updateDoc,
+      deleteDoc,
+      setDoc,
+    } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
@@ -129,104 +167,145 @@
       measurementId: "G-L14GLJDYW7",
     };
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    // Logout functionality
-    document.getElementById("logoutButton").addEventListener("click", async () => {
-      await auth.signOut();
-      window.location.href = "index.html";
-    });
-
-    // Load approval requests
-    async function loadApprovalRequests() {
-      const approvalList = document.getElementById("approvalList");
-      approvalList.innerHTML = "Loading...";
-      const querySnapshot = await db.collection("Users").where("isApproved", "==", false).get();
-      approvalList.innerHTML = querySnapshot.empty
-        ? "No approval requests found."
-        : querySnapshot.docs.map(
-            (doc) =>
-              `<div>${doc.data().name} (${doc.data().email})
-              <button onclick="approveUser('${doc.id}')">Approve</button>
-              <button onclick="rejectUser('${doc.id}')">Reject</button></div>`
-          ).join("");
+    async function fetchApprovalRequests() {
+      const ref = collection(db, "approvalRequests");
+      onSnapshot(ref, (snapshot) => {
+        const requests = snapshot.docs.map((doc) => doc.data());
+        document.getElementById("approval-badge").innerText = requests.length;
+        const list = requests
+          .map(
+            (req) =>
+              `<div>${req.name} (${req.email})
+              <button onclick="approveUser('${req.id}')">Approve</button>
+              <button onclick="rejectUser('${req.id}')">Reject</button>
+              </div>`
+          )
+          .join("");
+        document.getElementById("approval-list").innerHTML = list || "No approval requests found.";
+      });
     }
 
-    async function approveUser(userId) {
-      await db.collection("Users").doc(userId).update({ isApproved: true });
-      loadApprovalRequests();
+    async function approveUser(id) {
+      await updateDoc(doc(db, "approvalRequests", id), { isApproved: true });
+      alert("User Approved!");
     }
 
-    async function rejectUser(userId) {
-      await db.collection("Users").doc(userId).delete();
-      loadApprovalRequests();
+    async function rejectUser(id) {
+      await deleteDoc(doc(db, "approvalRequests", id));
+      alert("User Rejected!");
     }
 
-    // Load online users
-    async function loadOnlineUsers() {
-      const onlineList = document.getElementById("onlineList");
-      onlineList.innerHTML = "Loading...";
-      const querySnapshot = await db.collection("Users").where("isOnline", "==", true).get();
-      onlineList.innerHTML = querySnapshot.empty
-        ? "No online users."
-        : querySnapshot.docs.map(
-            (doc) =>
-              `<div>${doc.data().name} (${doc.data().email}) - Online for ${formatOnlineTime(doc.data().lastLogin)}</div>`
-          ).join("");
+    async function fetchOnlineUsers() {
+      const ref = collection(db, "Users");
+      onSnapshot(ref, (snapshot) => {
+        const users = snapshot.docs
+          .filter((doc) => doc.data().isOnline)
+          .map((doc) => doc.data());
+        document.getElementById("online-badge").innerText = users.length;
+        const list = users
+          .map(
+            (user) =>
+              `<div>${user.name} (${user.email}) - Online for ${Math.floor(
+                (new Date() - new Date(user.lastLogin)) / 1000 / 60
+              )} mins</div>`
+          )
+          .join("");
+        document.getElementById("online-list").innerHTML = list || "No users online.";
+      });
     }
 
-    function formatOnlineTime(lastLogin) {
-      const now = new Date();
-      const loginTime = new Date(lastLogin);
-      const diff = Math.floor((now - loginTime) / (1000 * 60 * 60));
-      return `${diff} hour(s)`;
+    async function fetchApprovedUsers() {
+      const ref = collection(db, "Users");
+      onSnapshot(ref, (snapshot) => {
+        const users = snapshot.docs
+          .filter((doc) => doc.data().isApproved && !doc.data().status)
+          .map((doc) => doc.data());
+        document.getElementById("approved-badge").innerText = users.length;
+        const list = users
+          .map(
+            (user) =>
+              `<div>${user.name} (${user.email})
+              <button onclick="blockUser('${user.id}')">Block</button>
+              <button onclick="holdUser('${user.id}')">Hold</button>
+              <button onclick="removeUser('${user.id}')">Remove</button>
+              </div>`
+          )
+          .join("");
+        document.getElementById("approved-list").innerHTML = list || "No approved users found.";
+      });
     }
 
-    // Load logs
-    async function loadUserLogs() {
-      const logsList = document.getElementById("logsList");
-      logsList.innerHTML = "Loading...";
-      const querySnapshot = await db.collection("Logs").get();
-      logsList.innerHTML = querySnapshot.empty
-        ? "No logs found."
-        : querySnapshot.docs.map(
-            (doc) => `<div>${doc.data().activity} at ${new Date(doc.data().timestamp).toLocaleString()}</div>`
-          ).join("");
+    async function fetchHoldBlockedUsers() {
+      const ref = collection(db, "Users");
+      onSnapshot(ref, (snapshot) => {
+        const users = snapshot.docs
+          .filter((doc) => doc.data().status)
+          .map((doc) => doc.data());
+        document.getElementById("hold-badge").innerText = users.length;
+        const list = users
+          .map(
+            (user) =>
+              `<div>${user.name} (${user.email}) - ${user.status}
+              <button onclick="unholdUser('${user.id}')">Unhold</button>
+              <button onclick="unblockUser('${user.id}')">Unblock</button>
+              <button onclick="removeUser('${user.id}')">Remove</button>
+              </div>`
+          )
+          .join("");
+        document.getElementById("hold-list").innerHTML = list || "No hold/blocked users found.";
+      });
     }
 
-    // Load hold/blocked users
-    async function loadHoldBlockedUsers() {
-      const holdBlockedList = document.getElementById("holdBlockedList");
-      holdBlockedList.innerHTML = "Loading...";
-      const querySnapshot = await db.collection("Users").where("status", "in", ["Hold", "Blocked"]).get();
-      holdBlockedList.innerHTML = querySnapshot.empty
-        ? "No hold/blocked users found."
-        : querySnapshot.docs.map(
-            (doc) =>
-              `<div>${doc.data().name} (${doc.data().email}) - ${doc.data().status}
-              <button onclick="unblockUser('${doc.id}')">Unblock</button>
-              <button onclick="removeUser('${doc.id}')">Remove</button></div>`
-          ).join("");
+    async function blockUser(id) {
+      await updateDoc(doc(db, "Users", id), { status: "Blocked" });
+      alert("User Blocked!");
     }
 
-    async function unblockUser(userId) {
-      await db.collection("Users").doc(userId).update({ status: "" });
-      loadHoldBlockedUsers();
+    async function holdUser(id) {
+      await updateDoc(doc(db, "Users", id), { status: "Hold" });
+            alert("User Put on Hold!");
     }
 
-    async function removeUser(userId) {
-      await db.collection("Users").doc(userId).delete();
-      loadHoldBlockedUsers();
+    async function unblockUser(id) {
+      await updateDoc(doc(db, "Users", id), { status: "" });
+      alert("User Unblocked!");
     }
 
-    // Initialize
-    loadApprovalRequests();
-    loadOnlineUsers();
-    loadUserLogs();
-    loadHoldBlockedUsers();
+    async function unholdUser(id) {
+      await updateDoc(doc(db, "Users", id), { status: "" });
+      alert("User Removed from Hold!");
+    }
+
+    async function removeUser(id) {
+      await deleteDoc(doc(db, "Users", id));
+      alert("User Removed!");
+    }
+
+    async function clearLogs() {
+      const ref = collection(db, "logs");
+      const snapshot = await getDocs(ref);
+      snapshot.forEach((doc) => deleteDoc(doc.ref));
+      alert("Logs Cleared!");
+    }
+
+    function toggleDropdown() {
+      const dropdown = document.getElementById("dropdown");
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    }
+
+    function logout() {
+      alert("You have logged out!");
+      // Implement logout functionality (for example, redirect to login page)
+    }
+
+    // Initialize data fetches
+    fetchApprovalRequests();
+    fetchOnlineUsers();
+    fetchApprovedUsers();
+    fetchHoldBlockedUsers();
   </script>
 </body>
 </html>
