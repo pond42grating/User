@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - DWS Management</title>
+  <title>Admin Dashboard</title>
   <style>
     * {
       margin: 0;
@@ -149,12 +149,73 @@
 
     window.onload = () => {
       initializeSections();
+      fetchApprovalRequests();
     };
 
-    async function logout() {
-      await signOut(auth);
-      alert("Logged out successfully!");
-      window.location.href = "index.html";
+    // Approval Request function
+    async function fetchApprovalRequests() {
+      const approvalList = document.getElementById('approval-requests-list');
+      const approvalBadge = document.getElementById('approval-badge');
+      approvalList.innerHTML = ''; // Clear previous content
+
+      // Get documents where `isApproved` is false
+      const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
+      const querySnapshot = await getDocs(approvalQuery);
+      const users = querySnapshot.docs.map(doc => doc.data());
+
+      approvalBadge.textContent = users.length; // Update the approval badge count
+
+      if (users.length === 0) {
+        approvalList.innerHTML = "<p>No approval requests found.</p>";
+      } else {
+        users.forEach(user => {
+          const userDiv = document.createElement('div');
+          userDiv.innerHTML = `
+            <p>${user.username} (${user.email}) 
+              <button class="button" onclick="approveUser('${user.username}')">Approve</button>
+              <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
+            </p>`;
+          approvalList.appendChild(userDiv);
+        });
+      }
+    }
+
+    // Approve user function
+    async function approveUser(username) {
+      const userRef = query(collection(db, "Users"), where("username", "==", username));
+      const querySnapshot = await getDocs(userRef);
+      querySnapshot.forEach((doc) => {
+        doc.ref.update({ isApproved: true });
+      });
+      alert(`User ${username} approved.`);
+      fetchApprovalRequests(); // Refresh the approval requests
+    }
+
+    // Reject user function
+    async function rejectUser(username) {
+      const userRef = query(collection(db, "Users"), where("username", "==", username));
+      const querySnapshot = await getDocs(userRef);
+      querySnapshot.forEach((doc) => {
+        doc.ref.delete();
+      });
+      alert(`User ${username} rejected.`);
+      fetchApprovalRequests(); // Refresh the approval requests
+    }
+
+    // Function to clear logs
+    function clearLogs() {
+      alert("Logs cleared");
+    }
+
+    // Function to handle logout
+    function logout() {
+      signOut(auth).then(() => {
+        alert("Logged out successfully!");
+        window.location.href = "index.html";
+      }).catch(error => {
+        console.error("Error during logout: ", error);
+        alert("Error: " + error.message);
+      });
     }
   </script>
 </body>
