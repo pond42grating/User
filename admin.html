@@ -12,11 +12,14 @@
       getDocs,
       doc,
       updateDoc,
-      deleteDoc
+      deleteDoc,
+      onSnapshot,
+      query,
+      where
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getAuth, signOut, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-    // Firebase configuration
+    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
@@ -31,31 +34,56 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Redirect to index.html if not logged in
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        alert("You need to log in!");
-        window.location.href = "index.html";
+    // Push Notification Feature
+    function requestNotificationPermission() {
+      if ("Notification" in window) {
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            console.log("Notifications enabled");
+          }
+        });
       }
-    });
+    }
 
-    // Fetch and display users
+    function sendPushNotification(title, body) {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body });
+      }
+    }
+
+    // Fetch and Display Users
     async function fetchUsers() {
-      const userList = document.getElementById("user-list");
-      userList.innerHTML = "<li>Loading users...</li>"; // Display a loading message
+      const onlineUsersList = document.getElementById("online-users-list");
+      const logsContainer = document.getElementById("logs-container");
+      const allUsersList = document.getElementById("all-users-list");
+      const badge = document.getElementById("notification-badge");
+
+      onlineUsersList.innerHTML = "<li>Loading online users...</li>";
+      logsContainer.innerHTML = "";
+      allUsersList.innerHTML = "<li>Loading users...</li>";
+      badge.innerText = "0";
+
       try {
         const querySnapshot = await getDocs(collection(db, "Users"));
-        let usersHTML = "";
+        let onlineHTML = "";
+        let allUsersHTML = "";
+        let unapprovedCount = 0;
 
         querySnapshot.forEach((doc) => {
           const user = doc.data();
-          usersHTML += `
+          if (user.isOnline) {
+            onlineHTML += `<li>${user.username} (${user.email})</li>`;
+          }
+          if (!user.isApproved) {
+            unapprovedCount++;
+          }
+          allUsersHTML += `
             <li>
-              <div>
+              <div onclick="toggleUserActions('${doc.id}', '${user.username}')">
                 <strong>${user.username}</strong> (${user.email})
                 ${user.status ? `<span class="status">${user.status}</span>` : ""}
               </div>
-              <div class="actions">
+              <div id="actions-${doc.id}" class="actions hidden">
                 <button onclick="holdUser('${doc.id}')">Hold</button>
                 <button onclick="blockUser('${doc.id}')">Block</button>
                 <button onclick="removeUser('${doc.id}')">Remove</button>
@@ -64,25 +92,33 @@
           `;
         });
 
-        userList.innerHTML = usersHTML || "<li>No users found.</li>";
+        onlineUsersList.innerHTML = onlineHTML || "<li>No users online.</li>";
+        allUsersList.innerHTML = allUsersHTML || "<li>No users found.</li>";
+        badge.innerText = unapprovedCount;
+
+        if (unapprovedCount > 0) {
+          sendPushNotification("New User Requests", `${unapprovedCount} users are awaiting approval.`);
+        }
       } catch (error) {
         console.error("Error fetching users:", error);
-        userList.innerHTML = "<li>Error loading users. Please check the console for details.</li>";
       }
     }
 
-    // Hold a user
+    function toggleUserActions(userId, username) {
+      const actions = document.getElementById(`actions-${userId}`);
+      actions.classList.toggle("hidden");
+    }
+
     async function holdUser(userId) {
       try {
         await updateDoc(doc(db, "Users", userId), { status: "Hold" });
-        alert("User put on hold.");
+        alert("User held successfully.");
         fetchUsers();
       } catch (error) {
         console.error("Error holding user:", error);
       }
     }
 
-    // Block a user
     async function blockUser(userId) {
       try {
         await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
@@ -93,7 +129,6 @@
       }
     }
 
-    // Remove a user
     async function removeUser(userId) {
       try {
         await deleteDoc(doc(db, "Users", userId));
@@ -104,7 +139,6 @@
       }
     }
 
-    // Logout function
     async function logout() {
       try {
         await signOut(auth);
@@ -116,11 +150,13 @@
       }
     }
 
-    window.fetchUsers = fetchUsers;
+    window.onload = fetchUsers;
     window.holdUser = holdUser;
     window.blockUser = blockUser;
     window.removeUser = removeUser;
     window.logout = logout;
+    window.toggleUserActions = toggleUserActions;
+    window.requestNotificationPermission = requestNotificationPermission;
   </script>
 
   <style>
@@ -141,18 +177,35 @@
       align-items: center;
     }
 
-    #logout {
-      background-color: white;
-      color: #4CAF50;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      cursor: pointer;
+    #settings {
+      position: relative;
     }
 
-    #logout:hover {
-      background-color: #45a049;
-      color: white;
+    .dropdown {
+      display: none;
+      position: absolute;
+      background-color: white;
+      color: #333;
+      right: 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      width: 150px;
+    }
+
+    .dropdown button {
+      width: 100%;
+      text-align: left;
+      padding: 0.5rem;
+      border: none;
+      background: none;
+    }
+
+    .dropdown button:hover {
+      background: #f0f0f0;
+    }
+
+    .hidden {
+      display: none;
     }
 
     main {
@@ -165,23 +218,27 @@
     }
 
     li {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       padding: 1rem;
       background: white;
       margin-bottom: 1rem;
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .actions {
+      display: none;
+      flex-direction: column;
     }
 
     .actions button {
       background-color: #4CAF50;
       color: white;
       border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      cursor: pointer;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
     }
 
     .actions button:hover {
@@ -189,23 +246,39 @@
     }
 
     .status {
-      padding: 0.2rem 0.5rem;
       background-color: orange;
       color: white;
+      padding: 0.2rem 0.5rem;
       border-radius: 5px;
-      margin-left: 0.5rem;
-      font-size: 0.8rem;
     }
   </style>
 </head>
-<body onload="fetchUsers()">
+<body>
   <header>
     <h1>Admin Dashboard</h1>
-    <button id="logout" onclick="logout()">Log Out</button>
+    <div id="settings">
+      <button onclick="document.querySelector('.dropdown').classList.toggle('hidden')">Settings</button>
+      <div class="dropdown hidden">
+        <button onclick="alert('Admin settings coming soon!')">Change Credentials</button>
+        <button onclick="requestNotificationPermission()">Enable Notifications</button>
+        <button onclick="logout()">Log Out</button>
+      </div>
+    </div>
+    <span id="notification-badge" class="badge">0</span>
   </header>
   <main>
-    <h2>User Management</h2>
-    <ul id="user-list"></ul>
+    <section>
+      <h2>Online Users</h2>
+      <ul id="online-users-list"></ul>
+    </section>
+    <section>
+      <h2>User Logs</h2>
+      <div id="logs-container"></div>
+    </section>
+    <section>
+      <h2>All Users</h2>
+      <ul id="all-users-list"></ul>
+    </section>
   </main>
 </body>
 </html>
