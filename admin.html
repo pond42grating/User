@@ -329,7 +329,7 @@
       holdBlockedList.innerHTML = "Loading...";
       try {
         const querySnapshot = await getDocs(
-          query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"]))
+          query(collection(db, "Users"), where("status", "==", ["Hold", "Blocked"]))
         );
         let html = "";
         querySnapshot.forEach((doc) => {
