@@ -17,6 +17,7 @@
       color: white;
       padding: 15px;
       text-align: center;
+      position: relative;
     }
     .container {
       max-width: 800px;
@@ -59,12 +60,46 @@
     .section-content {
       margin-top: 10px;
     }
+
+    /* Dropdown Styles */
+    .dropdown {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: white;
+      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+    }
+    .dropdown-content a {
+      color: black;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+    }
+    .dropdown-content a:hover {
+      background-color: #ddd;
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
   </style>
 </head>
 <body>
 
   <div class="header">
     <h1>Admin Dashboard</h1>
+    <!-- Dropdown Menu for Settings -->
+    <div class="dropdown">
+      <button class="button">Settings</button>
+      <div class="dropdown-content">
+        <a href="adminprofile.html">Admin Profile</a>
+        <a href="#" onclick="logout()">Logout</a>
+      </div>
+    </div>
   </div>
 
   <div class="container">
@@ -86,6 +121,7 @@
       <h3 class="toggle-section" onclick="toggleSection('user-logs')">User Logs <span id="logs-count" class="badge">0</span></h3>
       <div class="section-content">
         <p>Loading...</p>
+        <button class="button" onclick="clearLogs()">Clear Logs</button>
       </div>
     </div>
 
@@ -147,6 +183,16 @@
         document.getElementById('approved-count').textContent = '3'; // Example count
         document.getElementById('blocked-count').textContent = '1'; // Example count
       }, 1000); // Simulating data fetch delay
+    }
+
+    // Function to clear logs
+    function clearLogs() {
+      alert("Logs cleared");
+    }
+
+    // Function to handle logout
+    function logout() {
+      alert("Logging out...");
     }
 
     window.onload = simulateData;
