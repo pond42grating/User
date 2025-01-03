@@ -1,1 +1,266 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create DWS</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f7f6;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .form-section {
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 8px;
+    }
+    input[type="text"], input[type="number"], input[type="date"] {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .preview-section {
+      margin-top: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    .export-buttons {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Create DWS</h1>
+
+  <!-- DWS Form -->
+  <div class="form-section">
+    <label for="dwsNo">DWS No.</label>
+    <input type="text" id="dwsNo" readonly>
+  </div>
+  <div class="form-section">
+    <label for="dwsDate">DWS Date</label>
+    <input type="date" id="dwsDate">
+  </div>
+  <div class="form-section">
+    <label for="structureName">Structure Name</label>
+    <input type="text" id="structureName">
+  </div>
+  <div class="form-section">
+    <label for="siNo">SI No.</label>
+    <input type="text" id="siNo">
+  </div>
+  <div class="form-section">
+    <label for="workDescription">Work Description</label>
+    <input type="text" id="workDescription">
+  </div>
+  <div class="form-section">
+    <label for="location">Location</label>
+    <input type="text" id="location">
+  </div>
+
+  <button onclick="saveDws()">Save DWS</button>
+  <button onclick="fetchDws()">View Saved DWS</button>
+
+  <!-- DWS Records Table -->
+  <div class="preview-section">
+    <h3>Saved DWS Records</h3>
+    <table id="recordsTable">
+      <thead>
+        <tr>
+          <th>DWS No.</th>
+          <th>Date</th>
+          <th>Structure Name</th>
+          <th>SI No.</th>
+          <th>Work Description</th>
+          <th>Location</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Export Buttons -->
+  <div class="export-buttons">
+    <button onclick="exportToCSV()">Export as CSV</button>
+    <button onclick="exportToJSON()">Export as JSON</button>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.appspot.com",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+
+    let dwsCounter = 1; // Counter for DWS No.
+
+    // Generate Incremental DWS Number
+    function generateDwsNo() {
+      const dwsNo = `DWS-${String(dwsCounter).padStart(4, '0')}`;
+      document.getElementById('dwsNo').value = dwsNo;
+    }
+
+    // Save DWS to Firestore
+    function saveDws() {
+      const dwsNo = document.getElementById('dwsNo').value;
+      const dwsDate = document.getElementById('dwsDate').value;
+      const structureName = document.getElementById('structureName').value;
+      const siNo = document.getElementById('siNo').value;
+      const workDescription = document.getElementById('workDescription').value;
+      const location = document.getElementById('location').value;
+
+      if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
+        alert('Please fill in all fields!');
+        return;
+      }
+
+      const dwsData = {
+        dwsNo,
+        dwsDate,
+        structureName,
+        siNo,
+        workDescription,
+        location,
+      };
+
+      db.collection("DWSRecords")
+        .doc(dwsNo)
+        .set(dwsData)
+        .then(() => {
+          alert("DWS saved successfully!");
+          dwsCounter++;
+          generateDwsNo();
+        })
+        .catch((error) => {
+          console.error("Error saving DWS: ", error);
+        });
+    }
+
+    // Fetch and Display DWS Records
+    function fetchDws() {
+      const recordsTable = document.querySelector("#recordsTable tbody");
+      recordsTable.innerHTML = "";
+
+      db.collection("DWSRecords")
+        .get()
+        .then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const row = `
+              <tr>
+                <td>${data.dwsNo}</td>
+                <td>${data.dwsDate}</td>
+                <td>${data.structureName}</td>
+                <td>${data.siNo}</td>
+                <td>${data.workDescription}</td>
+                <td>${data.location}</td>
+              </tr>
+            `;
+            recordsTable.innerHTML += row;
+          });
+        })
+        .catch((error) => {
+          console.error("Error fetching DWS: ", error);
+        });
+    }
+
+    // Export to CSV
+    function exportToCSV() {
+      db.collection("DWSRecords")
+        .get()
+        .then((querySnapshot) => {
+          const rows = [];
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            rows.push([data.dwsNo, data.dwsDate, data.structureName, data.siNo, data.workDescription, data.location]);
+          });
+
+          let csvContent = "DWS No.,Date,Structure Name,SI No.,Work Description,Location\n";
+          rows.forEach((row) => {
+            csvContent += row.join(",") + "\n";
+          });
+
+          const blob = new Blob([csvContent], { type: "text/csv" });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = "DWS_Records.csv";
+          link.click();
+        })
+        .catch((error) => {
+          console.error("Error exporting to CSV: ", error);
+        });
+    }
+
+    // Export to JSON
+    function exportToJSON() {
+      db.collection("DWSRecords")
+        .get()
+        .then((querySnapshot) => {
+          const data = [];
+          querySnapshot.forEach((doc) => {
+            data.push(doc.data());
+          });
+
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = "DWS_Records.json";
+          link.click();
+        })
+        .catch((error) => {
+          console.error("Error exporting to JSON: ", error);
+        });
+    }
+
+    // Initialize DWS No.
+    generateDwsNo();
+  </script>
+</body>
+</html>
