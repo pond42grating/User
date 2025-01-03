@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - DWS Management</title>
   <style>
+    /* General styles */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #a8edea, #fed6e3);
@@ -18,7 +18,6 @@
       flex-direction: column;
       height: 100vh;
     }
-
     header {
       background-color: #4CAF50;
       color: white;
@@ -27,7 +26,6 @@
       justify-content: space-between;
       align-items: center;
     }
-
     #settings {
       background-color: white;
       color: #4CAF50;
@@ -36,12 +34,10 @@
       border-radius: 5px;
       cursor: pointer;
     }
-
     #settings:hover {
       background-color: #45a049;
       color: white;
     }
-
     .dropdown-content {
       display: none;
       position: absolute;
@@ -52,38 +48,35 @@
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
       border-radius: 5px;
     }
-
     .dropdown:hover .dropdown-content {
       display: block;
     }
-
     .dropdown-content a {
       padding: 12px;
       text-decoration: none;
       display: block;
       color: black;
     }
-
     .dropdown-content a:hover {
       background-color: #ddd;
     }
-
     main {
       flex: 1;
       padding: 2rem;
       overflow-y: auto;
     }
-
     section h2 {
       margin-bottom: 1rem;
       cursor: pointer;
     }
-
     ul {
       list-style: none;
       padding: 0;
+      display: none; /* Initially hidden */
     }
-
+    ul.active {
+      display: block;
+    }
     li {
       background: white;
       margin-bottom: 1rem;
@@ -95,21 +88,6 @@
       align-items: center;
       flex-wrap: wrap;
     }
-
-    .badge {
-      background-color: red;
-      color: white;
-      border-radius: 50%;
-      padding: 0.2rem 0.6rem;
-      font-size: 0.9rem;
-      margin-left: 0.5rem;
-    }
-
-    #log-clear-options {
-      display: none;
-      margin-bottom: 1rem;
-    }
-
     button {
       background-color: #4CAF50;
       color: white;
@@ -118,9 +96,16 @@
       border-radius: 5px;
       cursor: pointer;
     }
-
     button:hover {
       background-color: #45a049;
+    }
+    .badge {
+      background: red;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 50%;
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
     }
   </style>
 </head>
@@ -138,33 +123,44 @@
 
   <main>
     <section>
-      <h2 id="approval-requests-header">Approval Requests <span id="approval-requests-badge" class="badge">0</span></h2>
-      <ul id="approval-requests-list">Loading...</ul>
+      <h2>
+        Approval Requests <span class="badge" id="approval-badge">0</span>
+      </h2>
+      <ul id="approval-requests-list">
+        Loading...
+      </ul>
     </section>
-
     <section>
-      <h2 id="online-users-header">Online Users <span id="online-users-badge" class="badge">0</span></h2>
-      <ul id="online-users-list">Loading...</ul>
+      <h2>
+        Online Users <span class="badge" id="online-badge">0</span>
+      </h2>
+      <ul id="online-users-list">
+        Loading...
+      </ul>
     </section>
-
     <section>
-      <h2 id="user-logs-header">User Logs <span id="user-logs-badge" class="badge">0</span></h2>
-      <div id="log-clear-options">
-        From: <input type="date" id="from-date"> 
-        To: <input type="date" id="to-date"> 
-        <button onclick="clearLogs()">Clear Logs</button>
-      </div>
-      <ul id="user-logs-list">Loading...</ul>
+      <h2>
+        User Logs <span class="badge" id="logs-badge">0</span>
+      </h2>
+      <ul id="logs-list">
+        Loading...
+      </ul>
     </section>
-
     <section>
-      <h2 id="approved-users-header">Approved Users <span id="approved-users-badge" class="badge">0</span></h2>
-      <ul id="approved-users-list">Loading...</ul>
+      <h2>
+        Approved Users <span class="badge" id="approved-badge">0</span>
+      </h2>
+      <ul id="approved-users-list">
+        Loading...
+      </ul>
     </section>
-
     <section>
-      <h2 id="hold-blocked-users-header">Hold/Blocked Users <span id="hold-blocked-users-badge" class="badge">0</span></h2>
-      <ul id="hold-blocked-users-list">Loading...</ul>
+      <h2>
+        Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span>
+      </h2>
+      <ul id="hold-blocked-list">
+        Loading...
+      </ul>
     </section>
   </main>
 
@@ -173,12 +169,9 @@
     import {
       getFirestore,
       collection,
-      doc,
       query,
       where,
       onSnapshot,
-      updateDoc,
-      deleteDoc,
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
@@ -196,73 +189,42 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Ensure authentication
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "index.html";
       }
     });
 
-    // Function to fetch data and update badges
-    function fetchAndUpdateBadge(sectionId, badgeId, queryFilter) {
-      const sectionList = document.getElementById(`${sectionId}-list`);
-      sectionList.innerHTML = "Loading...";
-      const badge = document.getElementById(`${badgeId}-badge`);
-      onSnapshot(query(collection(db, "Users"), queryFilter), (snapshot) => {
-        let html = "";
-        let count = 0;
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          html += `<li>${user.username} (${user.email})</li>`;
-          count++;
-        });
-        sectionList.innerHTML = html || `<li>No ${sectionId} found.</li>`;
-        badge.textContent = count;
+    function initializeSections() {
+      const sections = document.querySelectorAll("main section ul");
+      sections.forEach((section, index) => {
+        section.style.display = index === 0 ? "block" : "none";
       });
     }
 
-    // Fetch data
-    fetchAndUpdateBadge("approval-requests", "approval-requests", where("isApproved", "==", false));
-    fetchAndUpdateBadge("online-users", "online-users", where("isOnline", "==", true));
-    fetchAndUpdateBadge("approved-users", "approved-users", where("isApproved", "==", true));
-    fetchAndUpdateBadge("hold-blocked-users", "hold-blocked-users", where("status", "in", ["Hold", "Blocked"]));
-
-    // Toggle logic
-    const sections = {
-      "approval-requests": false,
-      "online-users": false,
-      "user-logs": false,
-      "approved-users": false,
-      "hold-blocked-users": false,
-    };
-
     function toggleSection(sectionId) {
-      for (let key in sections) {
-        sections[key] = false;
-        document.getElementById(`${key}-list`).style.display = "none";
-        if (key === "user-logs") {
-          document.getElementById("log-clear-options").style.display = "none";
+      const sections = document.querySelectorAll("main section ul");
+      sections.forEach((section) => {
+        if (section.id === sectionId) {
+          section.style.display = section.style.display === "none" ? "block" : "none";
+        } else {
+          section.style.display = "none";
         }
-      }
-
-      sections[sectionId] = !sections[sectionId];
-      if (sections[sectionId]) {
-        document.getElementById(`${sectionId}-list`).style.display = "block";
-        if (sectionId === "user-logs") {
-          document.getElementById("log-clear-options").style.display = "flex";
-        }
-      }
+      });
     }
 
-    document.getElementById("approval-requests-header").addEventListener("click", () => toggleSection("approval-requests"));
-    document.getElementById("online-users-header").addEventListener("click", () => toggleSection("online-users"));
-    document.getElementById("user-logs-header").addEventListener("click", () => toggleSection("user-logs"));
-    document.getElementById("approved-users-header").addEventListener("click", () => toggleSection("approved-users"));
-    document.getElementById("hold-blocked-users-header").addEventListener("click", () => toggleSection("hold-blocked-users"));
+    document.querySelectorAll("main section h2").forEach((title) => {
+      const ulId = title.nextElementSibling.id;
+      title.addEventListener("click", () => toggleSection(ulId));
+    });
 
-    // Logout function
+    window.onload = () => {
+      initializeSections();
+    };
+
     async function logout() {
       await signOut(auth);
+      alert("Logged out successfully!");
       window.location.href = "index.html";
     }
   </script>
