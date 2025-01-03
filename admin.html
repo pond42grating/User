@@ -14,8 +14,7 @@
       updateDoc,
       deleteDoc,
       query,
-      where,
-      onSnapshot
+      where
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
@@ -41,55 +40,6 @@
       }
     });
 
-    // Fetch user logs
-    async function fetchUserLogs() {
-      const logsContainer = document.getElementById("logs-list");
-      logsContainer.innerHTML = "Loading user logs...";
-
-      try {
-        const querySnapshot = await getDocs(collection(db, "Users"));
-        let logsHTML = "";
-
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          if (user.loginLogs && user.loginLogs.length > 0) {
-            logsHTML += `<h3>${user.username}</h3>`;
-            user.loginLogs.forEach((log) => {
-              logsHTML += `<p>${log.activity} - ${new Date(log.timestamp).toLocaleString()}</p>`;
-            });
-          }
-        });
-
-        logsContainer.innerHTML = logsHTML || "No user logs found.";
-      } catch (error) {
-        console.error("Error fetching user logs: ", error);
-        logsContainer.innerHTML = "Error loading logs.";
-      }
-    }
-
-    // Fetch online users
-    async function fetchOnlineUsers() {
-      const onlineContainer = document.getElementById("online-users-list");
-      onlineContainer.innerHTML = "Loading online users...";
-
-      try {
-        const querySnapshot = await getDocs(collection(db, "Users"));
-        let onlineUsersHTML = "";
-
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          if (user.isOnline === true) {
-            onlineUsersHTML += `<p>${user.username} (${user.email})</p>`;
-          }
-        });
-
-        onlineContainer.innerHTML = onlineUsersHTML || "No users online.";
-      } catch (error) {
-        console.error("Error fetching online users: ", error);
-        onlineContainer.innerHTML = "Error loading online users.";
-      }
-    }
-
     // Fetch approved users
     async function fetchApprovedUsers() {
       const approvedUsersList = document.getElementById("approved-users-list");
@@ -104,9 +54,12 @@
           approvedHTML += `
             <li>
               <strong>${user.username}</strong> (${user.email})
-              <button onclick="holdUser('${doc.id}')">Hold</button>
-              <button onclick="blockUser('${doc.id}')">Block</button>
-              <button onclick="removeUser('${doc.id}')">Remove</button>
+              <button onclick="showActions('${doc.id}')">Actions</button>
+              <div id="actions-${doc.id}" class="user-actions hidden">
+                <button onclick="holdUser('${doc.id}')">Hold</button>
+                <button onclick="blockUser('${doc.id}')">Block</button>
+                <button onclick="removeUser('${doc.id}')">Remove</button>
+              </div>
             </li>
           `;
         });
@@ -114,17 +67,49 @@
         approvedUsersList.innerHTML = approvedHTML || "<li>No approved users found.</li>";
       } catch (error) {
         console.error("Error fetching approved users: ", error);
-        approvedUsersList.innerHTML = "Error loading approved users.";
+        approvedUsersList.innerHTML = "<li>Error loading approved users.</li>";
       }
+    }
+
+    // Fetch hold/blocked users
+    async function fetchHoldBlockedUsers() {
+      const holdBlockedUsersList = document.getElementById("hold-blocked-users-list");
+      holdBlockedUsersList.innerHTML = "Loading hold/blocked users...";
+
+      try {
+        const querySnapshot = await getDocs(query(collection(db, "Users"), where("status", "!=", "Active")));
+        let holdBlockedHTML = "";
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          holdBlockedHTML += `
+            <li>
+              <strong>${user.username}</strong> (${user.email}) - Status: ${user.status}
+              <button onclick="unholdUnblockUser('${doc.id}')">Unhold/Unblock</button>
+            </li>
+          `;
+        });
+
+        holdBlockedUsersList.innerHTML = holdBlockedHTML || "<li>No hold/blocked users found.</li>";
+      } catch (error) {
+        console.error("Error fetching hold/blocked users: ", error);
+        holdBlockedUsersList.innerHTML = "<li>Error loading hold/blocked users.</li>";
+      }
+    }
+
+    // Show actions
+    function showActions(userId) {
+      const actionsDiv = document.getElementById(`actions-${userId}`);
+      actionsDiv.classList.toggle("hidden");
     }
 
     // Hold a user
     async function holdUser(userId) {
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { status: "Hold" });
+        await updateDoc(doc(db, "Users", userId), { status: "Hold" });
         alert("User successfully held.");
         fetchApprovedUsers();
+        fetchHoldBlockedUsers();
       } catch (error) {
         console.error("Error holding user: ", error);
       }
@@ -133,10 +118,10 @@
     // Block a user
     async function blockUser(userId) {
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await updateDoc(userDocRef, { status: "Blocked" });
+        await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
         alert("User successfully blocked.");
         fetchApprovedUsers();
+        fetchHoldBlockedUsers();
       } catch (error) {
         console.error("Error blocking user: ", error);
       }
@@ -145,61 +130,24 @@
     // Remove a user
     async function removeUser(userId) {
       try {
-        const userDocRef = doc(db, "Users", userId);
-        await deleteDoc(userDocRef);
+        await deleteDoc(doc(db, "Users", userId));
         alert("User successfully removed.");
         fetchApprovedUsers();
+        fetchHoldBlockedUsers();
       } catch (error) {
         console.error("Error removing user: ", error);
       }
     }
 
-    // Search users
-    async function searchUsers() {
-      const searchInput = document.getElementById("search").value.trim().toLowerCase();
-      const searchResults = document.getElementById("search-results");
-      searchResults.innerHTML = "Searching...";
-
+    // Unhold/Unblock a user
+    async function unholdUnblockUser(userId) {
       try {
-        const querySnapshot = await getDocs(collection(db, "Users"));
-        let resultsHTML = "";
-
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          if (
-            user.username.toLowerCase().includes(searchInput) ||
-            user.email.toLowerCase().includes(searchInput)
-          ) {
-            resultsHTML += `<li><strong>${user.username}</strong> (${user.email})</li>`;
-          }
-        });
-
-        searchResults.innerHTML = resultsHTML || "<li>No results found.</li>";
+        await updateDoc(doc(db, "Users", userId), { status: "Active" });
+        alert("User successfully unheld/unblocked.");
+        fetchApprovedUsers();
+        fetchHoldBlockedUsers();
       } catch (error) {
-        console.error("Error searching users: ", error);
-        searchResults.innerHTML = "Error searching users.";
-      }
-    }
-
-    // Delete old logs
-    async function deleteOldLogs() {
-      try {
-        const querySnapshot = await getDocs(collection(db, "Users"));
-
-        querySnapshot.forEach(async (docSnap) => {
-          const user = docSnap.data();
-          const userDocRef = doc(db, "Users", docSnap.id);
-
-          if (user.loginLogs && user.loginLogs.length > 5) {
-            const updatedLogs = user.loginLogs.slice(-5); // Keep last 5 logs
-            await updateDoc(userDocRef, { loginLogs: updatedLogs });
-          }
-        });
-
-        alert("Old logs cleaned up successfully.");
-        fetchUserLogs();
-      } catch (error) {
-        console.error("Error deleting old logs: ", error);
+        console.error("Error unholding/unblocking user: ", error);
       }
     }
 
@@ -216,20 +164,18 @@
     }
 
     window.onload = () => {
-      fetchUserLogs();
-      fetchOnlineUsers();
       fetchApprovedUsers();
+      fetchHoldBlockedUsers();
     };
 
-    window.fetchUserLogs = fetchUserLogs;
-    window.fetchOnlineUsers = fetchOnlineUsers;
     window.fetchApprovedUsers = fetchApprovedUsers;
+    window.fetchHoldBlockedUsers = fetchHoldBlockedUsers;
     window.holdUser = holdUser;
     window.blockUser = blockUser;
     window.removeUser = removeUser;
-    window.searchUsers = searchUsers;
+    window.unholdUnblockUser = unholdUnblockUser;
     window.logout = logout;
-    window.deleteOldLogs = deleteOldLogs;
+    window.showActions = showActions;
   </script>
 
   <style>
@@ -279,6 +225,17 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       display: flex;
       justify-content: space-between;
+      align-items: center;
+    }
+
+    .user-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
+    }
+
+    .user-actions.hidden {
+      display: none;
     }
 
     button {
@@ -292,10 +249,6 @@
 
     button:hover {
       background: #45a049;
-    }
-
-    .search-container {
-      margin-bottom: 1rem;
     }
 
     input {
@@ -313,24 +266,12 @@
   </header>
   <main>
     <section>
-      <h2>Search Users</h2>
-      <div class="search-container">
-        <input type="text" id="search" placeholder="Search users by username or email..." oninput="searchUsers()">
-        <ul id="search-results"></ul>
-      </div>
-    </section>
-    <section>
-      <h2>Online Users</h2>
-      <ul id="online-users-list"></ul>
-    </section>
-    <section>
-      <h2>User Logs</h2>
-      <button onclick="deleteOldLogs()">Delete Old Logs</button>
-      <ul id="logs-list"></ul>
-    </section>
-    <section>
       <h2>Approved Users</h2>
       <ul id="approved-users-list"></ul>
+    </section>
+    <section>
+      <h2>Hold/Blocked Users</h2>
+      <ul id="hold-blocked-users-list"></ul>
     </section>
   </main>
 </body>
