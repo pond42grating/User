@@ -139,10 +139,6 @@
     button:hover {
       background-color: #45a049;
     }
-
-    #logs-list ul {
-      margin-left: 1rem;
-    }
   </style>
 </head>
 <body>
@@ -158,6 +154,11 @@
   </header>
 
   <main>
+    <section>
+      <h2>Approval Requests</h2>
+      <ul id="approval-requests-list">Loading...</ul>
+    </section>
+
     <section>
       <h2>Online Users</h2>
       <ul id="online-users-list">Loading...</ul>
@@ -212,6 +213,81 @@
         window.location.href = "index.html";
       }
     });
+
+    async function fetchApprovalRequests() {
+      const approvalRequestsList = document.getElementById("approval-requests-list");
+      approvalRequestsList.innerHTML = "Loading...";
+      try {
+        const querySnapshot = await getDocs(
+          query(collection(db, "Users"), where("isApproved", "==", false))
+        );
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          const userId = doc.id;
+
+          html += `
+            <li class="dropdown-btn" onclick="toggleDropdown('${userId}')">
+              ${user.username} (${user.email})
+              <div id="actions-${userId}" class="action-buttons">
+                <button onclick="approveUser('${userId}')">Approve</button>
+                <button onclick="rejectUser('${userId}')">Reject</button>
+              </div>
+            </li>`;
+        });
+        approvalRequestsList.innerHTML = html || "<li>No approval requests found.</li>";
+      } catch (error) {
+        console.error("Error fetching approval requests:", error);
+        approvalRequestsList.innerHTML = "Error loading approval requests.";
+      }
+    }
+
+    function toggleDropdown(userId) {
+      const dropdown = document.getElementById(`actions-${userId}`);
+      if (dropdown.style.display === "flex") {
+        dropdown.style.display = "none";
+      } else {
+        dropdown.style.display = "flex";
+      }
+    }
+
+    async function approveUser(userId) {
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await updateDoc(userDocRef, { isApproved: true });
+        alert("User approved successfully.");
+        fetchApprovalRequests();
+      } catch (error) {
+        console.error("Error approving user:", error);
+        alert("Error approving user.");
+      }
+    }
+
+    async function rejectUser(userId) {
+      try {
+        const userDocRef = doc(db, "Users", userId);
+        await deleteDoc(userDocRef);
+        alert("User rejected successfully.");
+        fetchApprovalRequests();
+      } catch (error) {
+        console.error("Error rejecting user:", error);
+        alert("Error rejecting user.");
+      }
+    }
+
+    // Other fetch functions...
+
+    async function logout() {
+      try {
+        await signOut(auth);
+        alert("Logged out successfully!");
+        window.location.href = "index.html";
+      } catch (error) {
+        console.error("Error during logout:", error);
+        alert("Error: " + error.message);
+      }
+    }
+      
 
     async function fetchOnlineUsers() {
       const onlineUsersList = document.getElementById("online-users-list");
@@ -392,6 +468,7 @@
     }
 
     window.onload = () => {
+      fetchApprovalRequests();
       fetchOnlineUsers();
       fetchUserLogs();
       fetchApprovedUsers();
