@@ -1,295 +1,401 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        .section {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin: 10px 0;
-            padding: 10px;
-        }
-        .section-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-        .badge {
-            background-color: red;
-            color: white;
-            border-radius: 50%;
-            padding: 3px 8px;
-        }
-        .section-content {
-            display: none;
-        }
-        .btn {
-            padding: 5px 10px;
-            margin: 5px;
-            border: none;
-            border-radius: 3px;
-            color: white;
-            cursor: pointer;
-        }
-        .btn-hold { background-color: orange; }
-        .btn-block { background-color: red; }
-        .btn-remove { background-color: grey; }
-        .btn-approve { background-color: green; }
-        .btn-reject { background-color: red; }
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            right: 0;
-            background-color: #f9f9f9;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-        }
-        .dropdown-content a {
-            color: black;
-            padding: 8px 16px;
-            text-decoration: none;
-            display: block;
-        }
-        .dropdown-content a:hover {
-            background-color: #ddd;
-        }
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-    </style>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-        import { getFirestore, doc, getDocs, updateDoc, collection, query, where, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - DWS Management</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-            authDomain: "dws-management.firebaseapp.com",
-            projectId: "dws-management",
-            storageBucket: "dws-management.firebasestorage.app",
-            messagingSenderId: "23827231923",
-            appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-            measurementId: "G-L14GLJDYW7"
-        };
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+    header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-        document.addEventListener("DOMContentLoaded", async () => {
-            const approvalRequests = document.getElementById("approval-requests");
-            const onlineUsers = document.getElementById("online-users");
-            const userLogs = document.getElementById("user-logs");
-            const approvedUsers = document.getElementById("approved-users");
-            const holdBlockedUsers = document.getElementById("hold-blocked-users");
+    .dropdown {
+      position: relative;
+    }
 
-            const toggleSections = document.querySelectorAll(".section-title");
-            toggleSections.forEach(toggle => {
-                toggle.addEventListener("click", () => {
-                    const content = toggle.nextElementSibling;
-                    content.style.display = content.style.display === "block" ? "none" : "block";
-                });
-            });
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: white;
+      min-width: 160px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      z-index: 1;
+    }
 
-            async function fetchApprovalRequests() {
-                const querySnapshot = await getDocs(query(collection(db, "Users"), where("status", "==", "pending")));
-                approvalRequests.innerHTML = querySnapshot.empty ? "No approval requests." : "";
-                querySnapshot.forEach(doc => {
-                    const user = doc.data();
-                    const userDiv = document.createElement("div");
-                    userDiv.innerHTML = `
-                        ${user.username} (${user.email})
-                        <button class="btn btn-approve" onclick="approveUser('${doc.id}')">Approve</button>
-                        <button class="btn btn-reject" onclick="rejectUser('${doc.id}')">Reject</button>
-                    `;
-                    approvalRequests.appendChild(userDiv);
-                });
-            }
+    .dropdown-content a {
+      text-decoration: none;
+      padding: 12px;
+      display: block;
+      color: black;
+    }
 
-            async function fetchOnlineUsers() {
-                const querySnapshot = await getDocs(query(collection(db, "Users"), where("isOnline", "==", true)));
-                onlineUsers.innerHTML = querySnapshot.empty ? "No online users." : "";
-                querySnapshot.forEach(doc => {
-                    const user = doc.data();
-                    const duration = Math.floor((Date.now() - new Date(user.lastLogin)) / (1000 * 60 * 60));
-                    const userDiv = document.createElement("div");
-                    userDiv.textContent = `${user.username} (${user.email}) - ${duration} hours online`;
-                    onlineUsers.appendChild(userDiv);
-                });
-            }
+    .dropdown-content a:hover {
+      background-color: #ddd;
+    }
 
-            async function fetchUserLogs() {
-                const querySnapshot = await getDocs(collection(db, "Logs"));
-                userLogs.innerHTML = querySnapshot.empty ? "No logs found." : "";
-                querySnapshot.forEach(doc => {
-                    const log = doc.data();
-                    const logDiv = document.createElement("div");
-                    logDiv.textContent = `${log.activity} by ${log.username} at ${new Date(log.timestamp).toLocaleString()}`;
-                    userLogs.appendChild(logDiv);
-                });
-            }
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
 
-            async function fetchApprovedUsers() {
-                const querySnapshot = await getDocs(query(collection(db, "Users"), where("status", "==", "approved")));
-                approvedUsers.innerHTML = querySnapshot.empty ? "No approved users." : "";
-                querySnapshot.forEach(doc => {
-                    const user = doc.data();
-                    const userDiv = document.createElement("div");
-                    userDiv.innerHTML = `
-                        ${user.username} (${user.email})
-                        <button class="btn btn-hold" onclick="holdUser('${doc.id}')">Hold</button>
-                        <button class="btn btn-block" onclick="blockUser('${doc.id}')">Block</button>
-                        <button class="btn btn-remove" onclick="removeUser('${doc.id}')">Remove</button>
-                    `;
-                    approvedUsers.appendChild(userDiv);
-                });
-            }
+    main {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
 
-            async function fetchHoldBlockedUsers() {
-                const querySnapshot = await getDocs(query(collection(db, "Users"), where("status", "in", ["hold", "block"])));
-                holdBlockedUsers.innerHTML = querySnapshot.empty ? "No hold/blocked users." : "";
-                querySnapshot.forEach(doc => {
-                    const user = doc.data();
-                    const status = user.status.charAt(0).toUpperCase() + user.status.slice(1);
-                    const userDiv = document.createElement("div");
-                    userDiv.innerHTML = `
-                        ${user.username} (${user.email}) - ${status}
-                        <button class="btn btn-hold" onclick="unholdUser('${doc.id}')">Unhold</button>
-                        <button class="btn btn-block" onclick="unblockUser('${doc.id}')">Unblock</button>
-                        <button class="btn btn-remove" onclick="removeUser('${doc.id}')">Delete</button>
-                    `;
-                    holdBlockedUsers.appendChild(userDiv);
-                });
-            }
+    section {
+      margin-bottom: 1rem;
+    }
 
-            // Approve user
-            window.approveUser = async (id) => {
-                await updateDoc(doc(db, "Users", id), { status: "approved" });
-                fetchApprovalRequests();
-                fetchApprovedUsers();
-            };
+    section h2 {
+      margin-bottom: 0.5rem;
+    }
 
-            // Reject user
-            window.rejectUser = async (id) => {
-                await deleteDoc(doc(db, "Users", id));
-                fetchApprovalRequests();
-            };
+    ul {
+      list-style: none;
+      padding: 0;
+    }
 
-            // Hold user
-            window.holdUser = async (id) => {
-                await updateDoc(doc(db, "Users", id), {
-                    status: "hold",
-                    holdTimestamp: new Date().toISOString()
-                });
-                fetchApprovedUsers();
-                fetchHoldBlockedUsers();
-            };
+    li {
+      background: white;
+      margin-bottom: 0.5rem;
+      padding: 1rem;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-            // Block user
-            window.blockUser = async (id) => {
-                await updateDoc(doc(db, "Users", id), {
-                    status: "block",
-                    blockTimestamp: new Date().toISOString()
-                });
-                fetchApprovedUsers();
-                fetchHoldBlockedUsers();
-            };
+    .action-buttons {
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
 
-            // Remove user
-            window.removeUser = async (id) => {
-                await deleteDoc(doc(db, "Users", id));
-                fetchApprovedUsers();
-                fetchHoldBlockedUsers();
-            };
+    li.active .action-buttons {
+      display: flex;
+    }
 
-            // Unhold user
-            window.unholdUser = async (id) => {
-                await updateDoc(doc(db, "Users", id), { status: "approved" });
-                fetchHoldBlockedUsers();
-                fetchApprovedUsers();
-            };
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
 
-            // Unblock user
-            window.unblockUser = async (id) => {
-                await updateDoc(doc(db, "Users", id), { status: "approved" });
-                fetchHoldBlockedUsers();
-                fetchApprovedUsers();
-            };
+    button:hover {
+      background-color: #45a049;
+    }
 
-            // Fetch all data
-            fetchApprovalRequests();
-            fetchOnlineUsers();
-            fetchUserLogs();
-            fetchApprovedUsers();
-            fetchHoldBlockedUsers();
-
-            // Logout functionality
-            document.getElementById("logout").addEventListener("click", async () => {
-                await signOut(auth);
-                window.location.href = "index.html";
-            });
-
-            // Check auth state
-            onAuthStateChanged(auth, (user) => {
-                if (!user) {
-                    window.location.href = "index.html";
-                }
-            });
-        });
-    </script>
+    .badge {
+      background-color: red;
+      color: white;
+      border-radius: 50%;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.8rem;
+      margin-left: 0.5rem;
+    }
+  </style>
 </head>
 <body>
-    <header style="background-color: green; color: white; padding: 10px; display: flex; justify-content: space-between;">
-        <h1>Admin Dashboard</h1>
+  <header>
+    <h1>Admin Dashboard</h1>
         <div class="dropdown">
-            <button style="background-color: white; border: none; padding: 10px; border-radius: 5px;">Settings</button>
-            <div class="dropdown-content">
-                <a href="adminprofile.html">Admin Profile</a>
-                <a href="#" id="logout">Logout</a>
-            </div>
-        </div>
-    </header>
-    <main style="padding: 20px;">
-        <div class="section">
-            <div class="section-title">
-                Approval Requests <span class="badge" id="approval-badge">0</span>
-            </div>
-            <div class="section-content" id="approval-requests"></div>
-        </div>
-        <div class="section">
-            <div class="section-title">
-                Online Users <span class="badge" id="online-badge">0</span>
-            </div>
-            <div class="section-content" id="online-users"></div>
-        </div>
-        <div class="section">
-            <div class="section-title">
-                User Logs <span class="badge" id="logs-badge">0</span>
-            </div>
-            <div class="section-content" id="user-logs"></div>
-        </div>
-        <div class="section">
-            <div class="section-title">
-                Approved Users <span class="badge" id="approved-badge">0</span>
-            </div>
-            <div class="section-content" id="approved-users"></div>
-        </div>
-        <div class="section">
-            <div class="section-title">
-                Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span>
-            </div>
-            <div class="section-content" id="hold-blocked-users"></div>
-        </div>
-    </main>
+      <button id="settings">Settings</button>
+      <div class="dropdown-content">
+        <a href="adminprofile.html">Admin Profile</a>
+        <a href="#" onclick="logout()">Log Out</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>
+        Approval Requests
+        <span id="approval-badge" class="badge">0</span>
+      </h2>
+      <ul id="approval-requests-list">Loading...</ul>
+    </section>
+
+    <section>
+      <h2>
+        Online Users
+        <span id="online-badge" class="badge">0</span>
+      </h2>
+      <ul id="online-users-list">Loading...</ul>
+    </section>
+
+    <section>
+      <h2>
+        User Logs
+        <span id="logs-badge" class="badge">0</span>
+      </h2>
+      <ul id="logs-list">Loading...</ul>
+    </section>
+
+    <section>
+      <h2>
+        Approved Users
+        <span id="approved-badge" class="badge">0</span>
+      </h2>
+      <ul id="approved-users-list">Loading...</ul>
+    </section>
+
+    <section>
+      <h2>
+        Hold/Blocked Users
+        <span id="hold-blocked-badge" class="badge">0</span>
+      </h2>
+      <ul id="hold-blocked-list">Loading...</ul>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      query,
+      where,
+      updateDoc,
+      deleteDoc,
+      onSnapshot,
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebaseapp.com",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    // Fetch data with real-time listeners and update badges
+    function fetchApprovalRequests() {
+      const approvalRequestsList = document.getElementById("approval-requests-list");
+      const approvalBadge = document.getElementById("approval-badge");
+      const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
+      onSnapshot(approvalQuery, (snapshot) => {
+        let html = "";
+        let count = 0;
+        snapshot.forEach((doc) => {
+          const user = doc.data();
+          html += `
+            <li>
+              ${user.username} (${user.email})
+              <div class="action-buttons">
+                <button onclick="approveUser('${doc.id}')">Approve</button>
+                <button onclick="rejectUser('${doc.id}')">Reject</button>
+              </div>
+            </li>`;
+          count++;
+        });
+        approvalRequestsList.innerHTML = html || "<li>No approval requests found.</li>";
+        approvalBadge.textContent = count;
+      });
+    }
+
+    function fetchOnlineUsers() {
+      const onlineUsersList = document.getElementById("online-users-list");
+      const onlineBadge = document.getElementById("online-badge");
+      const onlineQuery = query(collection(db, "Users"), where("isOnline", "==", true));
+      onSnapshot(onlineQuery, (snapshot) => {
+        let html = "";
+        let count = 0;
+        snapshot.forEach((doc) => {
+          const user = doc.data();
+          html += `<li>${user.username} (${user.email})</li>`;
+          count++;
+        });
+        onlineUsersList.innerHTML = html || "<li>No online users found.</li>";
+        onlineBadge.textContent = count;
+      });
+    }
+
+    function fetchUserLogs() {
+      const logsList = document.getElementById("logs-list");
+      const logsBadge = document.getElementById("logs-badge");
+      const logsQuery = collection(db, "Users");
+      onSnapshot(logsQuery, (snapshot) => {
+        let html = "";
+        let count = 0;
+        snapshot.forEach((doc) => {
+          const user = doc.data();
+          if (user.loginLogs) {
+            user.loginLogs.forEach((log) => {
+              html += `<li>${log.activity} at ${new Date(log.timestamp).toLocaleString()}</li>`;
+              count++;
+            });
+          }
+        });
+        logsList.innerHTML = html || "<li>No user logs found.</li>";
+        logsBadge.textContent = count;
+      });
+    }
+
+    function fetchApprovedUsers() {
+      const approvedUsersList = document.getElementById("approved-users-list");
+      const approvedBadge = document.getElementById("approved-badge");
+      const approvedQuery = query(collection(db, "Users"), where("isApproved", "==", true));
+      onSnapshot(approvedQuery, (snapshot) => {
+        let html = "";
+        let count = 0;
+        snapshot.forEach((doc) => {
+          const user = doc.data();
+          html += `
+            <li>
+              ${user.username} (${user.email})
+              <div class="action-buttons">
+                <button onclick="holdUser('${doc.id}')">Hold</button>
+                <button onclick="blockUser('${doc.id}')">Block</button>
+                <button onclick="removeUser('${doc.id}')">Remove</button>
+              </div>
+            </li>`;
+          count++;
+        });
+        approvedUsersList.innerHTML = html || "<li>No approved users found.</li>";
+        approvedBadge.textContent = count;
+      });
+    }
+
+    function fetchHoldBlockedUsers() {
+      const holdBlockedList = document.getElementById("hold-blocked-list");
+      const holdBlockedBadge = document.getElementById("hold-blocked-badge");
+      const holdBlockedQuery = query(collection(db, "Users"), where("status", "in", ["Hold", "Blocked"]));
+      onSnapshot(holdBlockedQuery, (snapshot) => {
+        let html = "";
+        let count = 0;
+        snapshot.forEach((doc) => {
+          const user = doc.data();
+          html += `
+            <li>
+              ${user.username} (${user.email}) - ${user.status}
+              <button onclick="unblockUser('${doc.id}')">Unblock</button>
+            </li>`;
+          count++;
+        });
+        holdBlockedList.innerHTML = html || "<li>No hold/blocked users found.</li>";
+        holdBlockedBadge.textContent = count;
+      });
+    }
+
+    async function approveUser(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { isApproved: true });
+        alert("User approved successfully.");
+      } catch (error) {
+        console.error("Error approving user:", error);
+        alert("Error approving user.");
+      }
+    }
+
+    async function rejectUser(userId) {
+      try {
+        await deleteDoc(doc(db, "Users", userId));
+        alert("User rejected successfully.");
+      } catch (error) {
+        console.error("Error rejecting user:", error);
+        alert("Error rejecting user.");
+      }
+    }
+
+    async function holdUser(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { status: "Hold" });
+        alert("User held successfully.");
+      } catch (error) {
+        console.error("Error holding user:", error);
+        alert("Error holding user.");
+      }
+    }
+
+    async function blockUser(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { status: "Blocked" });
+        alert("User blocked successfully.");
+      } catch (error) {
+        console.error("Error blocking user:", error);
+        alert("Error blocking user.");
+      }
+    }
+
+    async function removeUser(userId) {
+      try {
+        await deleteDoc(doc(db, "Users", userId));
+        alert("User removed successfully.");
+      } catch (error) {
+        console.error("Error removing user:", error);
+        alert("Error removing user.");
+      }
+    }
+
+    async function unblockUser(userId) {
+      try {
+        await updateDoc(doc(db, "Users", userId), { status: "" });
+        alert("User unblocked successfully.");
+      } catch (error) {
+        console.error("Error unblocking user:", error);
+        alert("Error unblocking user.");
+      }
+    }
+
+    async function logout() {
+      try {
+        await signOut(auth);
+        alert("Logged out successfully!");
+        window.location.href = "index.html";
+      } catch (error) {
+        console.error("Error during logout:", error);
+        alert("Error: " + error.message);
+      }
+    }
+
+    window.onload = () => {
+      fetchApprovalRequests();
+      fetchOnlineUsers();
+      fetchUserLogs();
+      fetchApprovedUsers();
+      fetchHoldBlockedUsers();
+    };
+  </script>
 </body>
 </html>
