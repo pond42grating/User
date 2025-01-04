@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Demo</title>
+  <title>Admin Dashboard</title>
   <style>
     * {
       margin: 0;
@@ -24,18 +24,32 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: relative;
     }
-    #settings {
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
       background-color: white;
-      color: #4CAF50;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      cursor: pointer;
+      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+      z-index: 1;
     }
-    #settings:hover {
-      background-color: #45a049;
-      color: white;
+    .dropdown-content a {
+      color: black;
+      padding: 10px 15px;
+      text-decoration: none;
+      display: block;
+    }
+    .dropdown-content a:hover {
+      background-color: #ddd;
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
     }
     main {
       flex: 1;
@@ -61,10 +75,18 @@
     ul.active {
       display: block;
     }
+    .badge {
+      background: red;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 10px;
+    }
     .button {
       background-color: #4CAF50;
       color: white;
-      padding: 10px;
+      padding: 10px 15px;
       margin: 5px 0;
       border: none;
       border-radius: 5px;
@@ -73,20 +95,19 @@
     .button:hover {
       background-color: #45a049;
     }
-    .badge {
-      background-color: red;
-      color: white;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 12px;
-      margin-left: 10px;
-    }
   </style>
 </head>
 <body>
   <header>
     <h1>Admin Dashboard</h1>
-    <button id="settings">Settings</button>
+    <div class="dropdown">
+      <button class="button">Settings</button>
+      <div class="dropdown-content">
+        <a href="#" onclick="demoFunction('Admin Profile')">Admin Profile</a>
+        <a href="#" onclick="demoFunction('Logout')">Logout</a>
+        <a href="#" onclick="toggleSection('approved-users')">Approved Users</a>
+      </div>
+    </div>
   </header>
 
   <main>
@@ -136,8 +157,16 @@
         Approved Users <span class="badge" id="approved-badge">20</span>
       </h2>
       <ul id="approved-users">
-        <li>Approved User 1</li>
-        <li>Approved User 2</li>
+        <li>
+          Approved User 1
+          <button class="button" onclick="demoFunction('Hold Approved User 1')">Hold</button>
+          <button class="button" onclick="demoFunction('Unhold Approved User 1')">Unhold</button>
+        </li>
+        <li>
+          Approved User 2
+          <button class="button" onclick="demoFunction('Hold Approved User 2')">Hold</button>
+          <button class="button" onclick="demoFunction('Unhold Approved User 2')">Unhold</button>
+        </li>
       </ul>
     </section>
 
@@ -155,8 +184,10 @@
 
   <script>
     function toggleSection(sectionId) {
-      const section = document.getElementById(sectionId);
-      section.classList.toggle("active");
+      const sections = document.querySelectorAll('ul');
+      sections.forEach(section => section.classList.remove('active'));
+      const sectionToShow = document.getElementById(sectionId);
+      sectionToShow.classList.add('active');
     }
 
     function demoFunction(message) {
