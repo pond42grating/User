@@ -49,20 +49,83 @@
     };
 
     // Save DWS to Firestore
-    async function saveDws() {
-      try {
-        // Replace 'userID' with the logged-in user's unique ID
-        const userID = "exampleUserID"; 
-        const collectionRef = db.collection("DWSRecords").doc(userID).collection("UserRecords");
+    // Save DWS Data to Firestore
+async function saveDws() {
+  try {
+    const userID = "hey"; // Replace with dynamic user ID if needed
+    const dwsNo = document.getElementById('dwsNo').value;
+    const dwsDate = document.getElementById('dwsDate').value.trim();
+    const structureName = document.getElementById('structureName').value.trim();
+    const siNo = document.getElementById('siNo').value.trim();
+    const workDescription = document.getElementById('workDescription').value.trim();
+    const location = document.getElementById('location').value.trim();
 
-        await collectionRef.doc(exampleDwsData.dwsNo).set(exampleDwsData);
-
-        alert("DWS saved successfully!");
-      } catch (error) {
-        console.error("Error saving DWS to Firestore:", error);
-        alert("Failed to save DWS. Please check the console for more details.");
-      }
+    // Validation
+    if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
+      alert("Please fill in all fields!");
+      return;
     }
+
+    // Collect Manpower Data
+    const manpower = [];
+    document.querySelectorAll("#manpowerTable tbody tr").forEach((row) => {
+      manpower.push({
+        badgeNo: row.cells[0].textContent,
+        name: row.cells[1].textContent,
+        trade: row.cells[2].textContent,
+        normalHour: parseInt(row.cells[3].textContent, 10),
+        otHour: parseInt(row.cells[4].textContent, 10),
+        holiday: row.cells[5].textContent || "N/A",
+      });
+    });
+
+    // Collect Equipment Data
+    const equipment = [];
+    document.querySelectorAll("#equipmentTable tbody tr").forEach((row) => {
+      equipment.push({
+        equipmentName: row.cells[0].textContent,
+        workingHours: parseInt(row.cells[1].textContent, 10),
+      });
+    });
+
+    // Collect Consumables Data
+    const consumables = [];
+    document.querySelectorAll("#consumableTable tbody tr").forEach((row) => {
+      consumables.push({
+        consumableName: row.cells[0].textContent,
+        quantity: parseInt(row.cells[1].textContent, 10),
+      });
+    });
+
+    // Create DWS Object
+    const dwsData = {
+      dwsNo,
+      dwsDate,
+      structureName,
+      siNo,
+      workDescription,
+      location,
+      manpower,
+      equipment,
+      consumables,
+    };
+
+    // Save to Firestore
+    const collectionRef = db.collection("DWSRecords").doc(userID).collection("UserRecords");
+    await collectionRef.doc(dwsNo).set(dwsData);
+
+    alert("DWS saved successfully!");
+
+    // Increment DWS Number
+    dwsCounter++;
+    localStorage.setItem("dwsCounter", dwsCounter);
+    generateDwsNo(); // Generate the next DWS No.
+    resetForm(); // Clear form fields
+  } catch (error) {
+    console.error("Error saving DWS to Firestore:", error.message);
+    alert("Failed to save DWS. Check the console for details.");
+  }
+}
   </script>
 </body>
 </html>
