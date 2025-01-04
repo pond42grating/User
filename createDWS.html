@@ -76,16 +76,40 @@
       justify-content: space-between;
       margin-top: 20px;
     }
+    .readonly-field {
+      background-color: #e9ecef;
+      color: #495057;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
 
   <header>Create Daily Work Schedule (DWS)</header>
 
-  <!-- DWS Details -->
+  <!-- DWS Number -->
   <div class="form-section">
+    <label for="dwsNo">DWS No.</label>
+    <input type="text" id="dwsNo" class="readonly-field" readonly value="DWS-0001">
+  </div>
+
+  <!-- All Fields -->
+  <div class="form-section">
+    <h3 class="section-title">DWS Details</h3>
     <label for="dwsDate">DWS Date</label>
     <input type="date" id="dwsDate">
+
+    <label for="structureName">Structure Name</label>
+    <input type="text" id="structureName" placeholder="Enter Structure Name">
+
+    <label for="siNo">SI No.</label>
+    <input type="text" id="siNo" placeholder="Enter SI No.">
+
+    <label for="workDescription">Work Description</label>
+    <input type="text" id="workDescription" placeholder="Enter Work Description">
+
+    <label for="location">Location</label>
+    <input type="text" id="location" placeholder="Enter Location">
   </div>
 
   <!-- Manpower Section -->
@@ -189,13 +213,11 @@
       const otHour = document.getElementById('otHour').value.trim();
       const holiday = document.getElementById('holiday').value.trim();
 
-      // Validation: Ensure all fields except Holiday are filled
       if (!dwsDate || !badgeNo || !name || !trade || !normalHour || !otHour) {
         alert('Please fill in all required fields (except Holiday)!');
         return;
       }
 
-      // Validation: Check for duplicate badge numbers on the same date
       if (!addedBadgeNumbersByDate[dwsDate]) {
         addedBadgeNumbersByDate[dwsDate] = new Set();
       }
@@ -204,10 +226,8 @@
         return;
       }
 
-      // Add badge number to the set for the given date
       addedBadgeNumbersByDate[dwsDate].add(badgeNo);
 
-      // Add the manpower data to the preview table
       const table = document.getElementById('manpowerTable').querySelector('tbody');
       table.innerHTML += `<tr>
         <td>${badgeNo}</td>
@@ -218,7 +238,6 @@
         <td>${holiday || 'N/A'}</td>
       </tr>`;
 
-      // Clear input fields after adding
       document.getElementById('badgeNo').value = '';
       document.getElementById('manpowerName').value = '';
       document.getElementById('trade').value = '';
@@ -243,7 +262,6 @@
         <td>${workingHours}</td>
       </tr>`;
 
-      // Clear input fields
       document.getElementById('equipmentName').value = '';
       document.getElementById('workingHours').value = '';
     }
@@ -264,10 +282,10 @@
         <td>${quantity}</td>
       </tr>`;
 
-      // Clear input fields
       document.getElementById('consumableName').value = '';
       document.getElementById('quantity').value = '';
     }
-    </script>
+  </script>
+
 </body>
 </html>
