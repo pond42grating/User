@@ -49,10 +49,6 @@
     ul {
       list-style: none;
       padding: 0;
-      display: none;
-    }
-    ul.active {
-      display: block;
     }
     .badge {
       background: red;
@@ -84,24 +80,8 @@
 
   <main>
     <section>
-      <h2 onclick="toggleSection('approval-requests-list')">Approval Requests <span class="badge" id="approval-badge">0</span></h2>
+      <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
       <ul id="approval-requests-list"></ul>
-    </section>
-    <section>
-      <h2 onclick="toggleSection('online-users-list')">Online Users <span class="badge" id="online-badge">0</span></h2>
-      <ul id="online-users-list"></ul>
-    </section>
-    <section>
-      <h2 onclick="toggleSection('logs-list')">User Logs <span class="badge" id="logs-badge">0</span></h2>
-      <ul id="logs-list"></ul>
-    </section>
-    <section>
-      <h2 onclick="toggleSection('approved-users-list')">Approved Users <span class="badge" id="approved-badge">0</span></h2>
-      <ul id="approved-users-list"></ul>
-    </section>
-    <section>
-      <h2 onclick="toggleSection('hold-blocked-list')">Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span></h2>
-      <ul id="hold-blocked-list"></ul>
     </section>
   </main>
 
@@ -117,14 +97,14 @@
       updateDoc,
       deleteDoc
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebaseapp.com",
+      storageBucket: "dws-management.firebasestorage.app",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7",
@@ -134,78 +114,57 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Authenticate User
+    // Check user authentication
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = "index.html";
       }
     });
 
-    // Toggle Section
-    function toggleSection(sectionId) {
-      const section = document.getElementById(sectionId);
-      if (section) {
-        section.classList.toggle('active');
-      }
-    }
-
     // Fetch Approval Requests
-    async function fetchApprovalRequests() {
-      const approvalList = document.getElementById('approval-requests-list');
-      const approvalBadge = document.getElementById('approval-badge');
-      approvalList.innerHTML = '';
+   async function fetchApprovalRequests() {
+  const approvalList = document.getElementById('approval-requests-list');
+  approvalList.innerHTML = ''; // Clear previous content
 
-      const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
-      const querySnapshot = await getDocs(approvalQuery);
-      const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
+  const querySnapshot = await getDocs(approvalQuery);
+  const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      approvalBadge.textContent = users.length;
+  users.forEach(user => {
+    const userDiv = document.createElement('div');
+    userDiv.innerHTML = `
+      <p>${user.username} (${user.email})</p>
+      <button class="button" id="approve-${user.id}">Approve</button>
+      <button class="button" id="reject-${user.id}">Reject</button>
+    `;
+    approvalList.appendChild(userDiv);
 
-      if (users.length === 0) {
-        approvalList.innerHTML = "<li>No approval requests found.</li>";
-      } else {
-        users.forEach(user => {
-          const userDiv = document.createElement('div');
-          userDiv.innerHTML = `
-            <p>${user.username} (${user.email})</p>
-            <button class="button" onclick="approveUser('${user.id}')">Approve</button>
-            <button class="button" onclick="rejectUser('${user.id}')">Reject</button>
-          `;
-          approvalList.appendChild(userDiv);
-        });
-      }
-    }
+    // Attach event listeners
+    document.getElementById(`approve-${user.id}`).addEventListener('click', () => approveUser(user.id));
+    document.getElementById(`reject-${user.id}`).addEventListener('click', () => rejectUser(user.id));
+  });
+}
 
-    async function approveUser(userId) {
-      const userRef = doc(db, "Users", userId);
-      await updateDoc(userRef, { isApproved: true });
-      alert("User approved.");
-      fetchApprovalRequests();
-    }
+async function approveUser(userId) {
+  console.log("Approving user:", userId); // Debug log
+  const userRef = doc(db, "Users", userId);
+  await updateDoc(userRef, { isApproved: true });
+  alert("User approved.");
+  fetchApprovalRequests();
+}
 
-    async function rejectUser(userId) {
-      const userRef = doc(db, "Users", userId);
-      await deleteDoc(userRef);
-      alert("User rejected.");
-      fetchApprovalRequests();
-    }
+async function rejectUser(userId) {
+  console.log("Rejecting user:", userId); // Debug log
+  const userRef = doc(db, "Users", userId);
+  await deleteDoc(userRef);
+  alert("User rejected.");
+  fetchApprovalRequests();
+}
 
-    // Fetch Dummy Data for Other Sections
-    function fetchDummyData(sectionId, badgeId, data) {
-      const sectionList = document.getElementById(sectionId);
-      const badge = document.getElementById(badgeId);
-      sectionList.innerHTML = data.map(item => `<li>${item}</li>`).join('');
-      badge.textContent = data.length;
-    }
-
-    // Initialize on Load
-    window.onload = () => {
-      fetchApprovalRequests();
-      fetchDummyData('online-users-list', 'online-badge', ['User 1', 'User 2']);
-      fetchDummyData('logs-list', 'logs-badge', ['Log 1', 'Log 2']);
-      fetchDummyData('approved-users-list', 'approved-badge', ['Approved User 1', 'Approved User 2']);
-      fetchDummyData('hold-blocked-list', 'hold-blocked-badge', ['Blocked User 1']);
-    };
+    // Fetch Approval Requests on Load
+    window.onload = fetchApprovalRequests;
   </script>
 </body>
 </html>
+
+In this add a toggle option without changing the function and fix the notification badge it has to show the count don’t touch the working function working pretty well
