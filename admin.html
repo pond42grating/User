@@ -123,14 +123,14 @@
         Approval Requests <span class="badge" id="approval-badge">5</span>
       </h2>
       <ul id="approval-requests">
-        <li>
+        <li onclick="toggleButtons('buttons-user1')">
           User 1
           <div class="user-buttons" id="buttons-user1">
             <button class="button" onclick="demoFunction('Approve User 1')">Approve</button>
             <button class="button" onclick="demoFunction('Reject User 1')">Reject</button>
           </div>
         </li>
-        <li>
+        <li onclick="toggleButtons('buttons-user2')">
           User 2
           <div class="user-buttons" id="buttons-user2">
             <button class="button" onclick="demoFunction('Approve User 2')">Approve</button>
@@ -146,13 +146,13 @@
         Approved Users <span class="badge" id="approved-badge">20</span>
       </h2>
       <ul id="approved-users">
-        <li>
+        <li onclick="toggleButtons('buttons-approved1')">
           Approved User 1
           <div class="user-buttons" id="buttons-approved1">
             <button class="button" onclick="demoFunction('Remove Approved User 1')">Remove</button>
           </div>
         </li>
-        <li>
+        <li onclick="toggleButtons('buttons-approved2')">
           Approved User 2
           <div class="user-buttons" id="buttons-approved2">
             <button class="button" onclick="demoFunction('Remove Approved User 2')">Remove</button>
@@ -167,18 +167,40 @@
         Hold/Blocked Users <span class="badge" id="hold-blocked-badge">2</span>
       </h2>
       <ul id="hold-blocked-users">
-        <li>
+        <li onclick="toggleButtons('buttons-blocked1')">
           Blocked User 1
           <div class="user-buttons" id="buttons-blocked1">
             <button class="button" onclick="demoFunction('Unblock Blocked User 1')">Unblock</button>
           </div>
         </li>
-        <li>
+        <li onclick="toggleButtons('buttons-blocked2')">
           Blocked User 2
           <div class="user-buttons" id="buttons-blocked2">
             <button class="button" onclick="demoFunction('Unblock Blocked User 2')">Unblock</button>
           </div>
         </li>
+      </ul>
+    </section>
+
+    <!-- Logged-In Users Section -->
+    <section>
+      <h2 onclick="toggleSection('online-users')">
+        Logged-In Users <span class="badge" id="online-badge">8</span>
+      </h2>
+      <ul id="online-users">
+        <li>Logged-In User 1</li>
+        <li>Logged-In User 2</li>
+      </ul>
+    </section>
+
+    <!-- Logs Section -->
+    <section>
+      <h2 onclick="toggleSection('logs')">
+        Logs <span class="badge" id="logs-badge">50</span>
+      </h2>
+      <ul id="logs">
+        <li>Log Entry 1</li>
+        <li>Log Entry 2</li>
       </ul>
     </section>
   </main>
@@ -201,12 +223,6 @@
     function demoFunction(message) {
       alert(`Functionality: ${message}`);
     }
-
-    // Attach toggle to user items
-    document.querySelectorAll('li').forEach((user, index) => {
-      const buttonId = `buttons-user${index + 1}`;
-      user.addEventListener('click', () => toggleButtons(buttonId));
-    });
   </script>
 </body>
 </html>
