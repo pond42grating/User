@@ -112,134 +112,133 @@
   </main>
 
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-  import { getFirestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-    authDomain: "dws-management.firebaseapp.com",
-    projectId: "dws-management",
-    storageBucket: "dws-management.firebasestorage.app",
-    messagingSenderId: "23827231923",
-    appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-    measurementId: "G-L14GLJDYW7",
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7",
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-  onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      window.location.href = "index.html";
-    }
-  });
-
-  function initializeSections() {
-    const sections = document.querySelectorAll("main section ul");
-    sections.forEach((section, index) => {
-      section.style.display = index === 0 ? "block" : "none"; // Open only the first section
-    });
-  }
-
-  function toggleSection(sectionId) {
-    const sections = document.querySelectorAll("main section ul");
-    sections.forEach((section) => {
-      if (section.id === sectionId) {
-        section.style.display = section.style.display === "none" ? "block" : "none";
-      } else {
-        section.style.display = "none";
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "index.html";
       }
     });
-  }
 
-  document.querySelectorAll("main section h2").forEach((title) => {
-    const ulId = title.nextElementSibling.id;
-    title.addEventListener("click", () => toggleSection(ulId));
-  });
+    function initializeSections() {
+      const sections = document.querySelectorAll("main section ul");
+      sections.forEach((section, index) => {
+        section.style.display = index === 0 ? "block" : "none"; // Open only the first section
+      });
+    }
 
-  window.onload = () => {
-    initializeSections();
-    fetchApprovalRequests();
-  };
+    function toggleSection(sectionId) {
+      const sections = document.querySelectorAll("main section ul");
+      sections.forEach((section) => {
+        if (section.id === sectionId) {
+          section.style.display = section.style.display === "none" ? "block" : "none";
+        } else {
+          section.style.display = "none";
+        }
+      });
+    }
 
-  // Fetch approval requests function
-  // Fetch approval requests function
-async function fetchApprovalRequests() {
-  const approvalList = document.getElementById('approval-requests-list');
-  const approvalBadge = document.getElementById('approval-badge');
-  approvalList.innerHTML = ''; // Clear previous content
-
-  // Get documents where `isApproved` is false
-  const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
-  const querySnapshot = await getDocs(approvalQuery);
-  const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-  approvalBadge.textContent = users.length; // Update the approval badge count
-
-  if (users.length === 0) {
-    approvalList.innerHTML = "<p>No approval requests found.</p>";
-  } else {
-    users.forEach(user => {
-      const userDiv = document.createElement('div');
-      userDiv.innerHTML = `
-        <p>${user.username} (${user.email}) 
-          <div class="button-container">
-            <button class="button" onclick="approveUser('${user.username}')">Approve</button>
-            <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
-          </div>
-        </p>`;
-      approvalList.appendChild(userDiv);
+    document.querySelectorAll("main section h2").forEach((title) => {
+      const ulId = title.nextElementSibling.id;
+      title.addEventListener("click", () => toggleSection(ulId));
     });
-  }
-}
 
-// Approve user function (using username)
-async function approveUser(username) {
-  const userRef = query(collection(db, "Users"), where("username", "==", username)); // Query by username
-  const querySnapshot = await getDocs(userRef);
-  
-  if (!querySnapshot.empty) {
-    const docRef = querySnapshot.docs[0].ref;
-    await updateDoc(docRef, { isApproved: true }); // Approve the user
-    alert(`User ${username} approved.`);
-    fetchApprovalRequests(); // Refresh the approval requests
-  } else {
-    alert(`User with username ${username} not found.`);
-  }
-}
+    window.onload = () => {
+      initializeSections();
+      fetchApprovalRequests();
+    };
 
-// Reject user function (using username)
-async function rejectUser(username) {
-  const userRef = query(collection(db, "Users"), where("username", "==", username)); // Query by username
-  const querySnapshot = await getDocs(userRef);
-  
-  if (!querySnapshot.empty) {
-    const docRef = querySnapshot.docs[0].ref;
-    await deleteDoc(docRef); // Reject (delete the user)
-    alert(`User ${username} rejected.`);
-    fetchApprovalRequests(); // Refresh the approval requests
-  } else {
-    alert(`User with username ${username} not found.`);
-  }
-}
+    // Fetch approval requests function
+    async function fetchApprovalRequests() {
+      const approvalList = document.getElementById('approval-requests-list');
+      const approvalBadge = document.getElementById('approval-badge');
+      approvalList.innerHTML = ''; // Clear previous content
 
-  // Function to clear logs
-  function clearLogs() {
-    alert("Logs cleared");
-  }
+      // Get documents where `isApproved` is false
+      const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
+      const querySnapshot = await getDocs(approvalQuery);
+      const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-  // Function to handle logout
-  function logout() {
-    signOut(auth).then(() => {
-      alert("Logged out successfully!");
-      window.location.href = "index.html";
-    }).catch(error => {
-      console.error("Error during logout: ", error);
-      alert("Error: " + error.message);
-    });
-  }
+      approvalBadge.textContent = users.length; // Update the approval badge count
+
+      if (users.length === 0) {
+        approvalList.innerHTML = "<p>No approval requests found.</p>";
+      } else {
+        users.forEach(user => {
+          const userDiv = document.createElement('div');
+          userDiv.innerHTML = `
+            <p>${user.username} (${user.email}) 
+              <div class="button-container">
+                <button class="button" onclick="approveUser('${user.username}')">Approve</button>
+                <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
+              </div>
+            </p>`;
+          approvalList.appendChild(userDiv);
+        });
+      }
+    }
+
+    // Approve user function (uses username for user identification)
+    async function approveUser(username) {
+      const userRef = query(collection(db, "Users"), where("username", "==", username)); // Query by username
+      const querySnapshot = await getDocs(userRef);
+      
+      if (!querySnapshot.empty) {
+        const docRef = querySnapshot.docs[0].ref;
+        await updateDoc(docRef, { isApproved: true });
+        alert(`User ${username} approved.`);
+        fetchApprovalRequests(); // Refresh the approval requests
+      } else {
+        alert(`User with username ${username} not found.`);
+      }
+    }
+
+    // Reject user function (uses username for user identification)
+    async function rejectUser(username) {
+      const userRef = query(collection(db, "Users"), where("username", "==", username)); // Query by username
+      const querySnapshot = await getDocs(userRef);
+      
+      if (!querySnapshot.empty) {
+        const docRef = querySnapshot.docs[0].ref;
+        await deleteDoc(docRef); // Reject (delete the user)
+        alert(`User ${username} rejected.`);
+        fetchApprovalRequests(); // Refresh the approval requests
+      } else {
+        alert(`User with username ${username} not found.`);
+      }
+    }
+
+    // Function to clear logs
+    function clearLogs() {
+      alert("Logs cleared");
+    }
+
+    // Function to handle logout
+    function logout() {
+      signOut(auth).then(() => {
+        alert("Logged out successfully!");
+        window.location.href = "index.html";
+      }).catch(error => {
+        console.error("Error during logout: ", error);
+        alert("Error: " + error.message);
+      });
+    }
   </script>
 </body>
 </html>
