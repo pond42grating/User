@@ -191,19 +191,47 @@
     </div>
   </div>
 
-  <!-- Buttons -->
-  <div class="btn-group">
-    <button onclick="saveDws()">Save</button>
-    <button onclick="goBack()">Back</button>
-  </div>
-
   <script>
-    // Placeholder functions for now
-    function addManpower() { alert("Add Manpower functionality"); }
-    function addEquipment() { alert("Add Equipment functionality"); }
-    function addConsumable() { alert("Add Consumable functionality"); }
-    function saveDws() { alert("Save functionality"); }
-    function goBack() { alert("Back functionality"); }
+    function addManpower() {
+      const badgeNo = document.getElementById('badgeNo').value;
+      const name = document.getElementById('manpowerName').value;
+      const trade = document.getElementById('trade').value;
+      const normalHour = document.getElementById('normalHour').value;
+      const otHour = document.getElementById('otHour').value;
+      const holiday = document.getElementById('holiday').value;
+
+      const table = document.getElementById('manpowerTable').querySelector('tbody');
+      table.innerHTML += `<tr>
+        <td>${badgeNo}</td>
+        <td>${name}</td>
+        <td>${trade}</td>
+        <td>${normalHour}</td>
+        <td>${otHour}</td>
+        <td>${holiday}</td>
+      </tr>`;
+    }
+
+    function addEquipment() {
+      const equipmentName = document.getElementById('equipmentName').value;
+      const workingHours = document.getElementById('workingHours').value;
+
+      const table = document.getElementById('equipmentTable').querySelector('tbody');
+      table.innerHTML += `<tr>
+        <td>${equipmentName}</td>
+        <td>${workingHours}</td>
+      </tr>`;
+    }
+
+    function addConsumable() {
+      const consumableName = document.getElementById('consumableName').value;
+      const quantity = document.getElementById('quantity').value;
+
+      const table = document.getElementById('consumableTable').querySelector('tbody');
+      table.innerHTML += `<tr>
+        <td>${consumableName}</td>
+        <td>${quantity}</td>
+      </tr>`;
+    }
   </script>
 
 </body>
