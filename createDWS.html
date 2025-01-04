@@ -3,402 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create DWS</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f7f6;
-      color: #333;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 1.5rem;
-    }
-    .dropdown {
-      position: relative;
-      display: inline-block;
-    }
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      right: 0;
-      background-color: white;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-      z-index: 1;
-      min-width: 150px;
-    }
-    .dropdown-content a {
-      color: black;
-      padding: 10px 15px;
-      text-decoration: none;
-      display: block;
-    }
-    .dropdown-content a:hover {
-      background-color: #f1f1f1;
-    }
-    .dropdown:hover .dropdown-content {
-      display: block;
-    }
-    .form-section {
-      margin: 20px auto;
-      padding: 20px;
-      max-width: 800px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: bold;
-    }
-    input[type="text"], input[type="date"], input[type="number"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .section-title {
-      font-size: 1.2rem;
-      margin-bottom: 10px;
-      color: #4CAF50;
-    }
-    button {
-      padding: 10px 15px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 1rem;
-      margin-top: 10px;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    .preview-section {
-      margin-top: 20px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    table, th, td {
-      border: 1px solid #ccc;
-    }
-    th, td {
-      padding: 8px;
-      text-align: left;
-    }
-    .btn-group {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
-    }
-    .readonly-field {
-      background-color: #e9ecef;
-      color: #495057;
-      pointer-events: none;
-    }
-    .feedback {
-      display: none;
-      margin-top: 10px;
-      font-weight: bold;
-      color: #4CAF50;
-      text-align: center;
-    }
-  </style>
+  <title>Firestore Setup</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 </head>
 <body>
-  <header>
-    <div>Create DWS</div>
-    <div class="dropdown">
-      <span>Settings</span>
-      <div class="dropdown-content">
-        <a href="#">User Profile</a>
-        <a href="#">Logout</a>
-      </div>
-    </div>
-  </header>
-
-  <!-- DWS Number -->
-  <div class="form-section">
-    <label for="dwsNo">DWS No.</label>
-    <input type="text" id="dwsNo" class="readonly-field" readonly>
-  </div>
-
-  <!-- All Fields -->
-  <div class="form-section">
-    <h3 class="section-title">DWS Details</h3>
-    <label for="dwsDate">DWS Date</label>
-    <input type="date" id="dwsDate">
-
-    <label for="structureName">Structure Name</label>
-    <input type="text" id="structureName" placeholder="Enter Structure Name">
-
-    <label for="siNo">SI No.</label>
-    <input type="text" id="siNo" placeholder="Enter SI No.">
-
-    <label for="workDescription">Work Description</label>
-    <input type="text" id="workDescription" placeholder="Enter Work Description">
-
-    <label for="location">Location</label>
-    <input type="text" id="location" placeholder="Enter Location">
-  </div>
-
-  <!-- Manpower Section -->
-  <div class="form-section">
-    <h3 class="section-title">Manpower</h3>
-    <label for="badgeNo">Badge No.</label>
-    <input type="text" id="badgeNo" placeholder="Enter Badge No.">
-
-    <label for="manpowerName">Name</label>
-    <input type="text" id="manpowerName" placeholder="Enter Name">
-
-    <label for="trade">Trade</label>
-    <input type="text" id="trade" placeholder="Enter Trade">
-
-    <label for="normalHour">Normal Hour</label>
-    <input type="number" id="normalHour" placeholder="Enter Normal Hours">
-
-    <label for="otHour">OT Hour</label>
-    <input type="number" id="otHour" placeholder="Enter OT Hours">
-
-    <label for="holiday">Holiday</label>
-    <input type="text" id="holiday" placeholder="Enter Holiday Info (Optional)">
-
-    <button onclick="addManpower()">Add Manpower</button>
-    <div class="preview-section">
-      <h4>Manpower Preview</h4>
-      <table id="manpowerTable">
-        <thead>
-          <tr>
-            <th>Badge No.</th>
-            <th>Name</th>
-            <th>Trade</th>
-            <th>Normal Hour</th>
-            <th>OT Hour</th>
-            <th>Holiday</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Equipment Section -->
-  <div class="form-section">
-    <h3 class="section-title">Equipment</h3>
-    <label for="equipmentName">Equipment Name</label>
-    <input type="text" id="equipmentName" placeholder="Enter Equipment Name">
-
-    <label for="workingHours">Working Hours</label>
-    <input type="number" id="workingHours" placeholder="Enter Working Hours">
-
-    <button onclick="addEquipment()">Add Equipment</button>
-    <div class="preview-section">
-      <h4>Equipment Preview</h4>
-      <table id="equipmentTable">
-        <thead>
-          <tr>
-            <th>Equipment Name</th>
-            <th>Working Hours</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Consumables Section -->
-  <div class="form-section">
-    <h3 class="section-title">Consumables</h3>
-    <label for="consumableName">Consumable Name</label>
-    <input type="text" id="consumableName" placeholder="Enter Consumable Name">
-
-    <label for="quantity">Quantity</label>
-    <input type="number" id="quantity" placeholder="Enter Quantity">
-
-    <button onclick="addConsumable()">Add Consumable</button>
-    <div class="preview-section">
-      <h4>Consumables Preview</h4>
-      <table id="consumableTable">
-        <thead>
-          <tr>
-            <th>Consumable Name</th>
-            <th>Quantity</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Save and Back Buttons -->
-  <div class="form-section">
-    <div class="btn-group">
-      <button onclick="saveDws()">Save</button>
-      <button onclick="goBack()">Back</button>
-    </div>
-    <p id="feedbackMessage" class="feedback"></p>
-  </div>
+  <h1>Firestore Setup</h1>
+  <button onclick="saveDws()">Save DWS</button>
 
   <script>
-    let dwsCounter = parseInt(localStorage.getItem('dwsCounter')) || 1;
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.appspot.com",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+    };
 
-    function generateDwsNo() {
-      const dwsNo = `DWS-${String(dwsCounter).padStart(4, '0')}`;
-      document.getElementById('dwsNo').value = dwsNo;
-    }
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
 
-    function saveDws() {
-      const feedbackMessage = document.getElementById('feedbackMessage');
-            feedbackMessage.style.display = 'block';
-      feedbackMessage.textContent = 'Saving...';
+    // Example DWS data
+    const exampleDwsData = {
+      dwsNo: "DWS-0001",
+      dwsDate: "2025-01-03",
+      structureName: "Bridge Construction",
+      siNo: "SI-001",
+      workDescription: "Foundation Work",
+      location: "City A",
+      manpower: [
+        { badgeNo: "123", name: "John", trade: "Welder", normalHour: 8, otHour: 2, holiday: "No" },
+        { badgeNo: "124", name: "Jane", trade: "Engineer", normalHour: 8, otHour: 0, holiday: "Yes" }
+      ],
+      equipment: [
+        { equipmentName: "Excavator", workingHours: 5 },
+        { equipmentName: "Cement Mixer", workingHours: 3 }
+      ],
+      consumables: [
+        { consumableName: "Cement", quantity: 50 },
+        { consumableName: "Steel Rods", quantity: 100 }
+      ],
+    };
 
-      setTimeout(() => {
-        feedbackMessage.textContent = 'DWS Saved Successfully!';
-        dwsCounter++;
-        localStorage.setItem('dwsCounter', dwsCounter); // Update DWS counter in localStorage
-        generateDwsNo(); // Generate the next DWS number
-        resetForm(); // Clear all input fields
-        setTimeout(() => {
-          feedbackMessage.style.display = 'none'; // Hide the feedback message after a delay
-        }, 2000);
-      }, 1000); // Simulated save delay
-    }
+    // Save DWS to Firestore
+    async function saveDws() {
+      try {
+        // Replace 'userID' with the logged-in user's unique ID
+        const userID = "exampleUserID"; 
+        const collectionRef = db.collection("DWSRecords").doc(userID).collection("UserRecords");
 
-    function goBack() {
-      const feedbackMessage = document.getElementById('feedbackMessage');
-      feedbackMessage.style.display = 'block';
-      feedbackMessage.textContent = 'Going Back...';
+        await collectionRef.doc(exampleDwsData.dwsNo).set(exampleDwsData);
 
-      setTimeout(() => {
-        feedbackMessage.style.display = 'none';
-        alert('Back to Home'); // Simulate back action (you can replace with redirection logic)
-      }, 1000); // Simulated back delay
-    }
-
-    function resetForm() {
-      // Reset all input fields and clear preview tables
-      document.getElementById('dwsDate').value = '';
-      document.getElementById('structureName').value = '';
-      document.getElementById('siNo').value = '';
-      document.getElementById('workDescription').value = '';
-      document.getElementById('location').value = '';
-      document.getElementById('badgeNo').value = '';
-      document.getElementById('manpowerName').value = '';
-      document.getElementById('trade').value = '';
-      document.getElementById('normalHour').value = '';
-      document.getElementById('otHour').value = '';
-      document.getElementById('holiday').value = '';
-      document.getElementById('equipmentName').value = '';
-      document.getElementById('workingHours').value = '';
-      document.getElementById('consumableName').value = '';
-      document.getElementById('quantity').value = '';
-
-      // Clear preview tables
-      document.querySelector('#manpowerTable tbody').innerHTML = '';
-      document.querySelector('#equipmentTable tbody').innerHTML = '';
-      document.querySelector('#consumableTable tbody').innerHTML = '';
-    }
-
-    // Add Manpower Functionality
-    const addedBadgeNumbersByDate = {};
-
-    function addManpower() {
-      const dwsDate = document.getElementById('dwsDate').value.trim();
-      const badgeNo = document.getElementById('badgeNo').value.trim();
-      const name = document.getElementById('manpowerName').value.trim();
-      const trade = document.getElementById('trade').value.trim();
-      const normalHour = document.getElementById('normalHour').value.trim();
-      const otHour = document.getElementById('otHour').value.trim();
-      const holiday = document.getElementById('holiday').value.trim();
-
-      if (!dwsDate || !badgeNo || !name || !trade || !normalHour || !otHour) {
-        alert('Please fill in all required fields (except Holiday)!');
-        return;
+        alert("DWS saved successfully!");
+      } catch (error) {
+        console.error("Error saving DWS to Firestore:", error);
+        alert("Failed to save DWS. Please check the console for more details.");
       }
-
-      if (!addedBadgeNumbersByDate[dwsDate]) {
-        addedBadgeNumbersByDate[dwsDate] = new Set();
-      }
-      if (addedBadgeNumbersByDate[dwsDate].has(badgeNo)) {
-        alert(`Badge No. ${badgeNo} is already added for ${dwsDate}!`);
-        return;
-      }
-
-      addedBadgeNumbersByDate[dwsDate].add(badgeNo);
-
-      const table = document.getElementById('manpowerTable').querySelector('tbody');
-      table.innerHTML += `<tr>
-        <td>${badgeNo}</td>
-        <td>${name}</td>
-        <td>${trade}</td>
-        <td>${normalHour}</td>
-        <td>${otHour}</td>
-        <td>${holiday || 'N/A'}</td>
-      </tr>`;
-
-      document.getElementById('badgeNo').value = '';
-      document.getElementById('manpowerName').value = '';
-      document.getElementById('trade').value = '';
-      document.getElementById('normalHour').value = '';
-      document.getElementById('otHour').value = '';
-      document.getElementById('holiday').value = '';
     }
-
-    // Add Equipment Functionality
-    function addEquipment() {
-      const equipmentName = document.getElementById('equipmentName').value.trim();
-      const workingHours = document.getElementById('workingHours').value.trim();
-
-      if (!equipmentName || !workingHours) {
-        alert('Please fill in all Equipment fields!');
-        return;
-      }
-
-      const table = document.getElementById('equipmentTable').querySelector('tbody');
-      table.innerHTML += `<tr>
-        <td>${equipmentName}</td>
-        <td>${workingHours}</td>
-      </tr>`;
-
-      document.getElementById('equipmentName').value = '';
-      document.getElementById('workingHours').value = '';
-    }
-
-    // Add Consumables Functionality
-    function addConsumable() {
-      const consumableName = document.getElementById('consumableName').value.trim();
-      const quantity = document.getElementById('quantity').value.trim();
-
-      if (!consumableName || !quantity) {
-        alert('Please fill in all Consumable fields!');
-        return;
-      }
-
-      const table = document.getElementById('consumableTable').querySelector('tbody');
-      table.innerHTML += `<tr>
-        <td>${consumableName}</td>
-        <td>${quantity}</td>
-      </tr>`;
-
-      document.getElementById('consumableName').value = '';
-      document.getElementById('quantity').value = '';
-    }
-
-    // Initialize the DWS No. on page load
-    window.onload = generateDwsNo;
   </script>
 </body>
 </html>
