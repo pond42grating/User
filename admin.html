@@ -165,58 +165,65 @@
   };
 
   // Fetch approval requests function
-  async function fetchApprovalRequests() {
-    const approvalList = document.getElementById('approval-requests-list');
-    const approvalBadge = document.getElementById('approval-badge');
-    approvalList.innerHTML = ''; // Clear previous content
+  // Fetch approval requests function
+async function fetchApprovalRequests() {
+  const approvalList = document.getElementById('approval-requests-list');
+  const approvalBadge = document.getElementById('approval-badge');
+  approvalList.innerHTML = ''; // Clear previous content
 
-    // Get documents where `isApproved` is false
-    const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
-    const querySnapshot = await getDocs(approvalQuery);
-    const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  // Get documents where `isApproved` is false
+  const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
+  const querySnapshot = await getDocs(approvalQuery);
+  const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    approvalBadge.textContent = users.length; // Update the approval badge count
+  approvalBadge.textContent = users.length; // Update the approval badge count
 
-    if (users.length === 0) {
-      approvalList.innerHTML = "<p>No approval requests found.</p>";
-    } else {
-      users.forEach(user => {
-        const userDiv = document.createElement('div');
-        userDiv.innerHTML = `
-          <p>${user.username} (${user.email}) 
-            <div class="button-container">
-              <button class="button" onclick="approveUser('${user.id}')">Approve</button>
-              <button class="button" onclick="rejectUser('${user.id}')">Reject</button>
-            </div>
-          </p>`;
-        approvalList.appendChild(userDiv);
-      });
-    }
+  if (users.length === 0) {
+    approvalList.innerHTML = "<p>No approval requests found.</p>";
+  } else {
+    users.forEach(user => {
+      const userDiv = document.createElement('div');
+      userDiv.innerHTML = `
+        <p>${user.username} (${user.email}) 
+          <div class="button-container">
+            <button class="button" onclick="approveUser('${user.username}')">Approve</button>
+            <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
+          </div>
+        </p>`;
+      approvalList.appendChild(userDiv);
+    });
   }
+}
 
-  // Approve user function
-  async function approveUser(userId) {
-    const userRef = doc(db, "Users", userId);
-    try {
-      await updateDoc(userRef, { isApproved: true });
-      alert(`User approved.`);
-      fetchApprovalRequests(); // Refresh the approval requests
-    } catch (error) {
-      console.error("Error approving user: ", error);
-    }
+// Approve user function (using username)
+async function approveUser(username) {
+  const userRef = query(collection(db, "Users"), where("username", "==", username)); // Query by username
+  const querySnapshot = await getDocs(userRef);
+  
+  if (!querySnapshot.empty) {
+    const docRef = querySnapshot.docs[0].ref;
+    await updateDoc(docRef, { isApproved: true }); // Approve the user
+    alert(`User ${username} approved.`);
+    fetchApprovalRequests(); // Refresh the approval requests
+  } else {
+    alert(`User with username ${username} not found.`);
   }
+}
 
-  // Reject user function
-  async function rejectUser(userId) {
-    const userRef = doc(db, "Users", userId);
-    try {
-      await deleteDoc(userRef);
-      alert(`User rejected.`);
-      fetchApprovalRequests(); // Refresh the approval requests
-    } catch (error) {
-      console.error("Error rejecting user: ", error);
-    }
+// Reject user function (using username)
+async function rejectUser(username) {
+  const userRef = query(collection(db, "Users"), where("username", "==", username)); // Query by username
+  const querySnapshot = await getDocs(userRef);
+  
+  if (!querySnapshot.empty) {
+    const docRef = querySnapshot.docs[0].ref;
+    await deleteDoc(docRef); // Reject (delete the user)
+    alert(`User ${username} rejected.`);
+    fetchApprovalRequests(); // Refresh the approval requests
+  } else {
+    alert(`User with username ${username} not found.`);
   }
+}
 
   // Function to clear logs
   function clearLogs() {
