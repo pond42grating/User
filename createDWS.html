@@ -126,6 +126,12 @@
         console.error("Error saving data to Firestore:", error.message);
         messageElement.textContent = 'Failed to save data. Check console for details.';
         messageElement.className = 'error';
+
+        // Add more detailed error display
+        const errorMessage = document.createElement('p');
+        errorMessage.textContent = error.message;
+        errorMessage.className = 'error';
+        messageElement.appendChild(errorMessage);
       }
     }
   </script>
