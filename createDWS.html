@@ -52,7 +52,11 @@
     // Save DWS Data to Firestore
 async function saveDws() {
   try {
+    console.log("Saving DWS..."); // Log when the function starts
+
     const userID = "hey"; // Replace with dynamic user ID if needed
+    console.log("User ID:", userID); // Log the user ID
+
     const dwsNo = document.getElementById('dwsNo').value;
     const dwsDate = document.getElementById('dwsDate').value.trim();
     const structureName = document.getElementById('structureName').value.trim();
@@ -66,7 +70,8 @@ async function saveDws() {
       return;
     }
 
-    // Collect Manpower Data
+    console.log("Fields validated successfully.");
+
     const manpower = [];
     document.querySelectorAll("#manpowerTable tbody tr").forEach((row) => {
       manpower.push({
@@ -79,7 +84,6 @@ async function saveDws() {
       });
     });
 
-    // Collect Equipment Data
     const equipment = [];
     document.querySelectorAll("#equipmentTable tbody tr").forEach((row) => {
       equipment.push({
@@ -88,7 +92,6 @@ async function saveDws() {
       });
     });
 
-    // Collect Consumables Data
     const consumables = [];
     document.querySelectorAll("#consumableTable tbody tr").forEach((row) => {
       consumables.push({
@@ -97,7 +100,10 @@ async function saveDws() {
       });
     });
 
-    // Create DWS Object
+    console.log("Manpower:", manpower);
+    console.log("Equipment:", equipment);
+    console.log("Consumables:", consumables);
+
     const dwsData = {
       dwsNo,
       dwsDate,
@@ -110,19 +116,20 @@ async function saveDws() {
       consumables,
     };
 
-    // Save to Firestore
+    console.log("DWS Data to be saved:", dwsData);
+
     const collectionRef = db.collection("DWSRecords").doc(userID).collection("UserRecords");
     await collectionRef.doc(dwsNo).set(dwsData);
 
     alert("DWS saved successfully!");
+    console.log("DWS saved successfully!");
 
-    // Increment DWS Number
     dwsCounter++;
     localStorage.setItem("dwsCounter", dwsCounter);
-    generateDwsNo(); // Generate the next DWS No.
-    resetForm(); // Clear form fields
+    generateDwsNo();
+    resetForm();
   } catch (error) {
-    console.error("Error saving DWS to Firestore:", error.message);
+    console.error("Error saving DWS to Firestore:", error);
     alert("Failed to save DWS. Check the console for details.");
   }
 }
