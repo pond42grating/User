@@ -199,7 +199,7 @@
       const userRef = query(collection(db, "Users"), where("username", "==", username));
       const querySnapshot = await getDocs(userRef);
       querySnapshot.forEach((doc) => {
-        doc.ref.update({ isApproved: true });
+        updateDoc({ isApproved: true });
       });
       alert(`User ${username} approved.`);
       fetchApprovalRequests(); // Refresh the approval requests
@@ -210,7 +210,7 @@
       const userRef = query(collection(db, "Users"), where("username", "==", username));
       const querySnapshot = await getDocs(userRef);
       querySnapshot.forEach((doc) => {
-        doc.ref.delete();
+        deleteDoc();
       });
       alert(`User ${username} rejected.`);
       fetchApprovalRequests(); // Refresh the approval requests
