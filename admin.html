@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard</title>
+  <title>Admin Dashboard - Demo</title>
   <style>
     * {
       margin: 0;
@@ -42,37 +42,44 @@
       padding: 2rem;
       overflow-y: auto;
     }
+    section {
+      margin-bottom: 20px;
+    }
     section h2 {
-      margin-bottom: 1rem;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
       cursor: pointer;
     }
     ul {
       list-style: none;
       padding: 0;
+      margin-top: 10px;
       display: none;
     }
     ul.active {
       display: block;
     }
-    .badge {
-      background: red;
-      color: white;
-      padding: 0.2rem 0.5rem;
-      border-radius: 50%;
-      font-size: 0.9rem;
-      margin-left: 0.5rem;
-    }
     .button {
       background-color: #4CAF50;
       color: white;
-      padding: 10px 15px;
-      margin: 5px;
+      padding: 10px;
+      margin: 5px 0;
       border: none;
       border-radius: 5px;
       cursor: pointer;
     }
     .button:hover {
       background-color: #45a049;
+    }
+    .badge {
+      background-color: red;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 10px;
     }
   </style>
 </head>
@@ -83,150 +90,78 @@
   </header>
 
   <main>
+    <!-- Approval Requests Section -->
     <section>
-      <h2 onclick="toggleSection('approval-requests-list')">Approval Requests <span class="badge" id="approval-badge">0</span></h2>
-      <ul id="approval-requests-list">Loading...</ul>
+      <h2 onclick="toggleSection('approval-requests')">
+        Approval Requests <span class="badge" id="approval-badge">5</span>
+      </h2>
+      <ul id="approval-requests">
+        <li>
+          User 1 - <button class="button" onclick="demoFunction('Approve User 1')">Approve</button>
+          <button class="button" onclick="demoFunction('Reject User 1')">Reject</button>
+        </li>
+        <li>
+          User 2 - <button class="button" onclick="demoFunction('Approve User 2')">Approve</button>
+          <button class="button" onclick="demoFunction('Reject User 2')">Reject</button>
+        </li>
+      </ul>
     </section>
+
+    <!-- Online Users Section -->
     <section>
-      <h2 onclick="toggleSection('online-users-list')">Online Users <span class="badge" id="online-badge">0</span></h2>
-      <ul id="online-users-list">Loading...</ul>
+      <h2 onclick="toggleSection('online-users')">
+        Online Users <span class="badge" id="online-badge">3</span>
+      </h2>
+      <ul id="online-users">
+        <li>User A</li>
+        <li>User B</li>
+        <li>User C</li>
+      </ul>
     </section>
+
+    <!-- User Logs Section -->
     <section>
-      <h2 onclick="toggleSection('logs-list')">User Logs <span class="badge" id="logs-badge">0</span></h2>
-      <ul id="logs-list">Loading...</ul>
+      <h2 onclick="toggleSection('user-logs')">
+        User Logs <span class="badge" id="logs-badge">10</span>
+      </h2>
+      <ul id="user-logs">
+        <li>Log 1</li>
+        <li>Log 2</li>
+      </ul>
     </section>
+
+    <!-- Approved Users Section -->
     <section>
-      <h2 onclick="toggleSection('approved-users-list')">Approved Users <span class="badge" id="approved-badge">0</span></h2>
-      <ul id="approved-users-list">Loading...</ul>
+      <h2 onclick="toggleSection('approved-users')">
+        Approved Users <span class="badge" id="approved-badge">20</span>
+      </h2>
+      <ul id="approved-users">
+        <li>Approved User 1</li>
+        <li>Approved User 2</li>
+      </ul>
     </section>
+
+    <!-- Hold/Blocked Users Section -->
     <section>
-      <h2 onclick="toggleSection('hold-blocked-list')">Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span></h2>
-      <ul id="hold-blocked-list">Loading...</ul>
+      <h2 onclick="toggleSection('hold-blocked-users')">
+        Hold/Blocked Users <span class="badge" id="hold-blocked-badge">2</span>
+      </h2>
+      <ul id="hold-blocked-users">
+        <li>Blocked User 1</li>
+        <li>Blocked User 2</li>
+      </ul>
     </section>
   </main>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      query,
-      where,
-      getDocs,
-      doc,
-      updateDoc,
-      deleteDoc
-    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-
-    // Firebase Configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-      authDomain: "dws-management.firebaseapp.com",
-      projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
-      messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7",
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-
-    // Check user authentication
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {        window.location.href = "index.html";
-      }
-    });
-
-    // Function to toggle sections
+  <script>
     function toggleSection(sectionId) {
       const section = document.getElementById(sectionId);
-      const isActive = section.classList.contains('active');
-      document.querySelectorAll('ul').forEach(ul => ul.classList.remove('active')); // Close all sections
-      if (!isActive) section.classList.add('active'); // Open the selected section
+      section.classList.toggle("active");
     }
 
-    // Function to update badges and load data
-    async function updateBadgesAndData() {
-      const approvalBadge = document.getElementById('approval-badge');
-      const onlineBadge = document.getElementById('online-badge');
-      const logsBadge = document.getElementById('logs-badge');
-      const approvedBadge = document.getElementById('approved-badge');
-      const holdBlockedBadge = document.getElementById('hold-blocked-badge');
-
-      // Dummy data fetch simulation
-      const approvalRequests = await fetchSectionData("Users", { isApproved: false });
-      const onlineUsers = await fetchSectionData("OnlineUsers");
-      const userLogs = await fetchSectionData("Logs");
-      const approvedUsers = await fetchSectionData("Users", { isApproved: true });
-      const holdBlockedUsers = await fetchSectionData("Users", { isBlocked: true });
-
-      approvalBadge.textContent = approvalRequests.length;
-      onlineBadge.textContent = onlineUsers.length;
-      logsBadge.textContent = userLogs.length;
-      approvedBadge.textContent = approvedUsers.length;
-      holdBlockedBadge.textContent = holdBlockedUsers.length;
-
-      renderSection("approval-requests-list", approvalRequests, true);
-      renderSection("online-users-list", onlineUsers);
-      renderSection("logs-list", userLogs);
-      renderSection("approved-users-list", approvedUsers);
-      renderSection("hold-blocked-list", holdBlockedUsers);
+    function demoFunction(message) {
+      alert(`Functionality: ${message}`);
     }
-
-    // Fetch section data
-    async function fetchSectionData(collectionName, conditions = null) {
-      const colRef = collection(db, collectionName);
-      let q = colRef;
-      if (conditions) {
-        Object.entries(conditions).forEach(([key, value]) => {
-          q = query(q, where(key, "==", value));
-        });
-      }
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    }
-
-    // Render section data
-    function renderSection(sectionId, data, isApprovalSection = false) {
-      const section = document.getElementById(sectionId);
-      section.innerHTML = ''; // Clear previous content
-      if (data.length === 0) {
-        section.innerHTML = '<li>No records found.</li>';
-        return;
-      }
-      data.forEach(item => {
-        const listItem = document.createElement('li');
-        listItem.innerHTML = `
-          ${item.username || item.user || 'Unknown User'}
-          ${isApprovalSection ? `<button class="button" onclick="approveUser('${item.id}')">Approve</button>
-                                 <button class="button" onclick="rejectUser('${item.id}')">Reject</button>` : ''}
-        `;
-        section.appendChild(listItem);
-      });
-    }
-
-    // Approve user function
-    async function approveUser(userId) {
-      const userRef = doc(db, "Users", userId);
-      await updateDoc(userRef, { isApproved: true });
-      alert("User approved.");
-      updateBadgesAndData();
-    }
-
-    // Reject user function
-    async function rejectUser(userId) {
-      const userRef = doc(db, "Users", userId);
-      await deleteDoc(userRef);
-      alert("User rejected.");
-      updateBadgesAndData();
-    }
-
-    // Load data on window load
-    window.onload = updateBadgesAndData;
   </script>
 </body>
 </html>
-       
