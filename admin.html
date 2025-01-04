@@ -197,17 +197,25 @@
   // Approve user function
   async function approveUser(userId) {
     const userRef = doc(db, "Users", userId);
-    await updateDoc(userRef, { isApproved: true });
-    alert(`User approved.`);
-    fetchApprovalRequests(); // Refresh the approval requests
+    try {
+      await updateDoc(userRef, { isApproved: true });
+      alert(`User approved.`);
+      fetchApprovalRequests(); // Refresh the approval requests
+    } catch (error) {
+      console.error("Error approving user: ", error);
+    }
   }
 
   // Reject user function
   async function rejectUser(userId) {
     const userRef = doc(db, "Users", userId);
-    await deleteDoc(userRef);
-    alert(`User rejected.`);
-    fetchApprovalRequests(); // Refresh the approval requests
+    try {
+      await deleteDoc(userRef);
+      alert(`User rejected.`);
+      fetchApprovalRequests(); // Refresh the approval requests
+    } catch (error) {
+      console.error("Error rejecting user: ", error);
+    }
   }
 
   // Function to clear logs
@@ -225,6 +233,6 @@
       alert("Error: " + error.message);
     });
   }
-</script>
+  </script>
 </body>
 </html>
