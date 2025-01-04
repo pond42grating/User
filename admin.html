@@ -24,32 +24,6 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: relative;
-    }
-    .dropdown {
-      position: relative;
-      display: inline-block;
-    }
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background-color: white;
-      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
-      z-index: 1;
-    }
-    .dropdown-content a {
-      color: black;
-      padding: 10px 15px;
-      text-decoration: none;
-      display: block;
-    }
-    .dropdown-content a:hover {
-      background-color: #ddd;
-    }
-    .dropdown:hover .dropdown-content {
-      display: block;
     }
     main {
       flex: 1;
@@ -75,19 +49,10 @@
     ul.active {
       display: block;
     }
-    .badge {
-      background: red;
-      color: white;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 12px;
-      margin-left: 10px;
-    }
     .button {
       background-color: #4CAF50;
       color: white;
       padding: 10px 15px;
-      margin: 5px 0;
       border: none;
       border-radius: 5px;
       cursor: pointer;
@@ -95,159 +60,38 @@
     .button:hover {
       background-color: #45a049;
     }
-    .user-buttons {
-      display: none;
-      margin-left: 20px;
-    }
-    .user-buttons.active {
-      display: block;
-    }
   </style>
 </head>
 <body>
   <header>
     <h1>Admin Dashboard</h1>
-    <div class="dropdown">
-      <button class="button">Settings</button>
-      <div class="dropdown-content">
-        <a href="#" onclick="demoFunction('Admin Profile')">Admin Profile</a>
-        <a href="#" onclick="demoFunction('Logout')">Logout</a>
-      </div>
-    </div>
   </header>
 
   <main>
-    <!-- Approval Requests Section -->
     <section>
-      <h2 onclick="toggleSection('approval-requests')">
-        Approval Requests <span class="badge" id="approval-badge">5</span>
-      </h2>
+      <h2 onclick="toggleSection('approval-requests')">Approval Requests</h2>
       <ul id="approval-requests">
-        <li onclick="toggleButtons('buttons-user1')">
-          User 1
-          <div class="user-buttons" id="buttons-user1">
-            <button class="button" onclick="demoFunction('Approve User 1')">Approve</button>
-            <button class="button" onclick="demoFunction('Reject User 1')">Reject</button>
-          </div>
-        </li>
-        <li onclick="toggleButtons('buttons-user2')">
-          User 2
-          <div class="user-buttons" id="buttons-user2">
-            <button class="button" onclick="demoFunction('Approve User 2')">Approve</button>
-            <button class="button" onclick="demoFunction('Reject User 2')">Reject</button>
-          </div>
-        </li>
+        <li>Approval Request 1</li>
+        <li>Approval Request 2</li>
       </ul>
     </section>
-
-    <!-- Approved Users Section -->
     <section>
-      <h2 onclick="toggleSection('approved-users')">
-        Approved Users <span class="badge" id="approved-badge">20</span>
-      </h2>
+      <h2 onclick="toggleSection('approved-users')">Approved Users</h2>
       <ul id="approved-users">
-        <li onclick="toggleButtons('buttons-approved1')">
-          Approved User 1
-          <div class="user-buttons" id="buttons-approved1">
-            <button class="button" onclick="demoFunction('Hold Approved User 1')">Hold</button>
-            <button class="button" onclick="demoFunction('Block Approved User 1')">Block</button>
-            <button class="button" onclick="demoFunction('Remove Approved User 1')">Remove</button>
-          </div>
-        </li>
-        <li onclick="toggleButtons('buttons-approved2')">
-          Approved User 2
-          <div class="user-buttons" id="buttons-approved2">
-            <button class="button" onclick="demoFunction('Hold Approved User 2')">Hold</button>
-            <button class="button" onclick="demoFunction('Block Approved User 2')">Block</button>
-            <button class="button" onclick="demoFunction('Remove Approved User 2')">Remove</button>
-          </div>
-        </li>
-      </ul>
-    </section>
-
-    <!-- Hold/Blocked Users Section -->
-    <section>
-      <h2 onclick="toggleSection('hold-blocked-users')">
-        Hold/Blocked Users <span class="badge" id="hold-blocked-badge">2</span>
-      </h2>
-      <ul id="hold-blocked-users">
-        <li onclick="toggleButtons('buttons-blocked1')">
-          Blocked User 1
-          <div class="user-buttons" id="buttons-blocked1">
-            <button class="button" onclick="demoFunction('Unblock Blocked User 1')">Unblock</button>
-          </div>
-        </li>
-        <li onclick="toggleButtons('buttons-blocked2')">
-          Blocked User 2
-          <div class="user-buttons" id="buttons-blocked2">
-            <button class="button" onclick="demoFunction('Unblock Blocked User 2')">Unblock</button>
-          </div>
-        </li>
-      </ul>
-    </section>
-
-    <!-- Logged-In Users Section -->
-    <section>
-      <h2 onclick="toggleSection('online-users')">
-        Logged-In Users <span class="badge" id="online-badge">8</span>
-      </h2>
-      <ul id="online-users">
-        <li>Logged-In User 1</li>
-        <li>Logged-In User 2</li>
-      </ul>
-    </section>
-
-    <!-- Logs Section -->
-    <section>
-      <h2 onclick="toggleSection('logs')">
-        Logs <span class="badge" id="logs-badge">50</span>
-      </h2>
-      <ul id="logs">
-        <li>Log Entry 1</li>
-        <li>Log Entry 2</li>
+        <li>Approved User 1</li>
+        <li>Approved User 2</li>
       </ul>
     </section>
   </main>
 
-  <script type="module">
-    // Firebase SDK integration
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-
-    // Firebase Configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-      authDomain: "dws-management.firebaseapp.com",
-      projectId: "dws-management",
-      storageBucket: "dws-management.appspot.com",
-      messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7",
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Functionality for toggling sections
+  <script>
     function toggleSection(sectionId) {
       const sections = document.querySelectorAll('ul');
       sections.forEach(section => section.classList.remove('active'));
       const sectionToShow = document.getElementById(sectionId);
-      sectionToShow.classList.add('active');
-    }
-
-    // Functionality for toggling user buttons
-    function toggleButtons(buttonId) {
-      const allButtons = document.querySelectorAll('.user-buttons');
-      allButtons.forEach(button => button.classList.remove('active'));
-      const buttonsToShow = document.getElementById(buttonId);
-      buttonsToShow.classList.toggle('active');
-    }
-
-    // Demo functionality for alerting actions
-    function demoFunction(message) {
-      alert(`Functionality: ${message}`);
+      if (sectionToShow) {
+        sectionToShow.classList.add('active');
+      }
     }
   </script>
 </body>
