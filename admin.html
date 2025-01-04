@@ -1,146 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Button Fix</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .section {
+            display: none;
+            margin-top: 20px;
+        }
+        .visible {
+            display: block;
+        }
+        .button {
+            padding: 10px 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .settings {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            right: 0;
+            top: 40px;
+        }
+        .dropdown a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: black;
+        }
+        .dropdown a:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
-  <h1>Firebase - Approve/Reject Users & Online Users</h1>
-  <div id="userList">Fetching unapproved users...</div>
-  <h2>Online Users</h2>
-  <div id="onlineUsers">Fetching online users...</div>
+    <h1>Admin Panel</h1>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      query,
-      where,
-      onSnapshot,
-      updateDoc,
-      deleteDoc,
-      doc,
-    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    <!-- Settings -->
+    <div class="settings">
+        <button class="button" onclick="toggleSettings()">Settings</button>
+        <div class="dropdown" id="settings-dropdown">
+            <a href="adminProfile.html">Admin Profile</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </div>
 
-    // Firebase Configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-      authDomain: "dws-management.firebaseapp.com",
-      projectId: "dws-management",
-      storageBucket: "dws-management.firebaseapp.com",
-      messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7",
-    };
+    <!-- Section Toggles -->
+    <div>
+        <button class="button" onclick="showSection('approval')">User Approval</button>
+        <button class="button" onclick="showSection('online')">Online Users</button>
+        <button class="button" onclick="showSection('logs')">User Logs</button>
+        <button class="button" onclick="showSection('approved')">Approved Users</button>
+        <button class="button" onclick="showSection('hold')">Hold/Blocked Users</button>
+    </div>
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    <!-- Sections -->
+    <div id="approval" class="section">
+        <h2>User Approval</h2>
+        <div id="approval-list"></div>
+    </div>
 
-    // Function to listen for unapproved users
-    function listenForUnapprovedUsers() {
-      const userList = document.getElementById("userList");
-      userList.innerHTML = "Fetching unapproved users...";
+    <div id="online" class="section">
+        <h2>Online Users</h2>
+        <div id="online-list"></div>
+    </div>
 
-      const q = query(collection(db, "Users"), where("isApproved", "==", false));
-      onSnapshot(q, (snapshot) => {
-        userList.innerHTML = ""; // Clear the list before adding
+    <div id="logs" class="section">
+        <h2>User Logs</h2>
+        <div id="logs-list"></div>
+        <input type="date" id="clear-date">
+        <button class="button" onclick="clearLogs()">Clear Logs by Date</button>
+    </div>
 
-        if (snapshot.empty) {
-          userList.innerHTML = "No unapproved users.";
-          return;
+    <div id="approved" class="section">
+        <h2>Approved Users</h2>
+        <div id="approved-list"></div>
+    </div>
+
+    <div id="hold" class="section">
+        <h2>Hold/Blocked Users</h2>
+        <div id="hold-list"></div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+            authDomain: "dws-management.firebaseapp.com",
+            projectId: "dws-management",
+            storageBucket: "dws-management.firebasestorage.app",
+            messagingSenderId: "23827231923",
+            appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+            measurementId: "G-L14GLJDYW7"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore(app);
+
+        // Toggle Settings Dropdown
+        function toggleSettings() {
+            const dropdown = document.getElementById("settings-dropdown");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
         }
 
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-
-          // Create user item
-          const userDiv = document.createElement("div");
-          userDiv.innerHTML = `
-            <p>${user.username} (${user.email})</p>
-            <button id="approve-${doc.id}" class="approve-button">Approve</button>
-            <button id="reject-${doc.id}" class="reject-button">Reject</button>
-          `;
-
-          userList.appendChild(userDiv);
-
-          // Attach event listeners
-          document
-            .getElementById(`approve-${doc.id}`)
-            .addEventListener("click", () => approveUser(doc.id));
-          document
-            .getElementById(`reject-${doc.id}`)
-            .addEventListener("click", () => rejectUser(doc.id));
-        });
-      }, (error) => {
-        console.error("Error listening to changes:", error);
-        userList.innerHTML = "Error fetching users.";
-      });
-    }
-
-    // Approve user (set isApproved = true)
-    async function approveUser(userId) {
-      try {
-        const userRef = doc(db, "Users", userId);
-        await updateDoc(userRef, { isApproved: true });
-        alert(`User ${userId} approved.`);
-      } catch (error) {
-        console.error("Error approving user:", error);
-        alert("Failed to approve user.");
-      }
-    }
-
-    // Reject user (delete user)
-    async function rejectUser(userId) {
-      try {
-        const userRef = doc(db, "Users", userId);
-        await deleteDoc(userRef);
-        alert(`User ${userId} rejected.`);
-      } catch (error) {
-        console.error("Error rejecting user:", error);
-        alert("Failed to reject user.");
-      }
-    }
-
-    // Function to listen for online users
-    function listenForOnlineUsers() {
-      const onlineUsersDiv = document.getElementById("onlineUsers");
-      onlineUsersDiv.innerHTML = "Fetching online users...";
-
-      const q = query(collection(db, "Users"), where("isOnline", "==", true));
-      onSnapshot(q, (snapshot) => {
-        onlineUsersDiv.innerHTML = ""; // Clear the list before adding
-
-        if (snapshot.empty) {
-          onlineUsersDiv.innerHTML = "No online users.";
-          return;
+        // Logout Function
+        function logout() {
+            auth.signOut().then(() => {
+                alert("Logged out successfully!");
+                window.location.href = "index.html";
+            }).catch((error) => {
+                alert("Logout failed: " + error.message);
+            });
         }
 
-        snapshot.forEach((doc) => {
-          const user = doc.data();
-          const lastActive = user.lastActive
-            ? new Date(user.lastActive.seconds * 1000).toLocaleString()
-            : "N/A";
+        // Show Section
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll(".section");
+            sections.forEach((section) => {
+                section.classList.remove("visible");
+            });
+            document.getElementById(sectionId).classList.add("visible");
+        }
 
-          // Create online user item
-          const userDiv = document.createElement("div");
-          userDiv.innerHTML = `
-            <p>${user.username} (${user.email}) - Last Active: ${lastActive}</p>
-          `;
-
-          onlineUsersDiv.appendChild(userDiv);
+        // Real-time Listener for User Approval
+        db.collection("Users").where("isApproved", "==", false).onSnapshot((snapshot) => {
+            const approvalList = document.getElementById("approval-list");
+            approvalList.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                approvalList.innerHTML += `
+                    <div>
+                        <p>Email: ${data.email}</p>
+                        <button class="button" onclick="approveUser('${doc.id}')">Approve</button>
+                        <button class="button" onclick="rejectUser('${doc.id}')">Reject</button>
+                    </div>
+                `;
+            });
         });
-      }, (error) => {
-        console.error("Error listening to changes:", error);
-        onlineUsersDiv.innerHTML = "Error fetching online users.";
-      });
-    }
 
-    // Start listening for unapproved and online users
-    listenForUnapprovedUsers();
-    listenForOnlineUsers();
-  </script>
+        // Approve User
+        function approveUser(userId) {
+            db.collection("Users").doc(userId).update({ isApproved: true })
+                .then(() => alert("User approved!"))
+                .catch((error) => alert("Error approving user: " + error.message));
+        }
+
+        // Reject User
+        function rejectUser(userId) {
+            db.collection("Users").doc(userId).delete()
+                .then(() => alert("User rejected and deleted!"))
+                .catch((error) => alert("Error rejecting user: " + error.message));
+        }
+
+        // Other sections (e.g., Online Users, Logs, Approved Users, Hold/Blocked Users) 
+        // will follow a similar pattern with real-time listeners and action buttons.
+    </script>
 </body>
 </html>
