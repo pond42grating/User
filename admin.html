@@ -3,17 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fetch Online Users</title>
+  <title>Firebase Simple Fetch</title>
 </head>
 <body>
-  <h1>Fetch Online Users</h1>
-  <button id="fetchOnlineBtn">Fetch Online Users</button>
-  <div id="data"></div>
+  <h1>Firebase Fetch - isApproved = false</h1>
+  <div id="userList">Fetching users...</div>
 
   <script type="module">
-    // Import Firebase libraries
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      where,
+      getDocs,
+      updateDoc,
+      deleteDoc,
+      doc
+    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase Configuration
     const firebaseConfig = {
@@ -23,38 +30,72 @@
       storageBucket: "dws-management.firebasestorage.app",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
+      measurementId: "G-L14GLJDYW7",
     };
 
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Fetch online users from Firestore
-    async function fetchOnlineUsers() {
+    // Fetch users with isApproved = false
+    async function fetchUnapprovedUsers() {
+      const userList = document.getElementById("userList");
+      userList.innerHTML = "Fetching users...";
+      const q = query(collection(db, "Users"), where("isApproved", "==", false));
+
       try {
-        const dataDiv = document.getElementById("data");
-        dataDiv.innerHTML = "Fetching data...";
+        const querySnapshot = await getDocs(q);
+        userList.innerHTML = ""; // Clear previous content
 
-        const onlineQuery = query(collection(db, "Users"), where("isOnline", "==", true)); // Query where `isOnline` is true
-        const querySnapshot = await getDocs(onlineQuery);
+        if (querySnapshot.empty) {
+          userList.innerHTML = "No users with isApproved = false.";
+          return;
+        }
 
-        let content = "<ul>";
         querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          content += `<li>${JSON.stringify(data)}</li>`;
+          const user = doc.data();
+          const userDiv = document.createElement("div");
+          userDiv.innerHTML = `
+            <p>${user.username} (${user.email})</p>
+            <button onclick="approveUser('${doc.id}')">Approve</button>
+            <button onclick="rejectUser('${doc.id}')">Reject</button>
+          `;
+          userList.appendChild(userDiv);
         });
-        content += "</ul>";
-
-        dataDiv.innerHTML = content || "No online users found.";
       } catch (error) {
-        console.error("Error fetching data:", error);
-        document.getElementById("data").innerHTML = "Error fetching data. Check console for details.";
+        console.error("Error fetching users:", error);
+        userList.innerHTML = "Error fetching users.";
       }
     }
 
-    // Attach event listener to the button
-    document.getElementById("fetchOnlineBtn").addEventListener("click", fetchOnlineUsers);
+    // Approve user (set isApproved = true)
+    async function approveUser(userId) {
+      try {
+        const userRef = doc(db, "Users", userId);
+        await updateDoc(userRef, { isApproved: true });
+        alert(`User ${userId} approved.`);
+        fetchUnapprovedUsers(); // Refresh the list
+      } catch (error) {
+        console.error("Error approving user:", error);
+        alert("Error approving user.");
+      }
+    }
+
+    // Reject user (delete user)
+    async function rejectUser(userId) {
+      try {
+        const userRef = doc(db, "Users", userId);
+        await deleteDoc(userRef);
+        alert(`User ${userId} rejected.`);
+        fetchUnapprovedUsers(); // Refresh the list
+      } catch (error) {
+        console.error("Error rejecting user:", error);
+        alert("Error rejecting user.");
+      }
+    }
+
+    // Fetch unapproved users on page load
+    fetchUnapprovedUsers();
   </script>
 </body>
 </html>
