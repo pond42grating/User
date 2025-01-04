@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Real-Time Fetch</title>
+  <title>Firebase Button Fix</title>
 </head>
 <body>
-  <h1>Firebase Real-Time - isApproved = false</h1>
-  <div id="userList">Fetching users...</div>
+  <h1>Firebase - Approve or Reject Users</h1>
+  <div id="userList">Fetching unapproved users...</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
@@ -19,7 +19,7 @@
       onSnapshot,
       updateDoc,
       deleteDoc,
-      doc
+      doc,
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase Configuration
@@ -37,29 +37,40 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Real-time listener for unapproved users
+    // Function to listen for unapproved users
     function listenForUnapprovedUsers() {
       const userList = document.getElementById("userList");
-      userList.innerHTML = "Fetching users...";
+      userList.innerHTML = "Fetching unapproved users...";
 
       const q = query(collection(db, "Users"), where("isApproved", "==", false));
       onSnapshot(q, (snapshot) => {
-        userList.innerHTML = ""; // Clear previous content
+        userList.innerHTML = ""; // Clear the list before adding
 
         if (snapshot.empty) {
-          userList.innerHTML = "No users with isApproved = false.";
+          userList.innerHTML = "No unapproved users.";
           return;
         }
 
         snapshot.forEach((doc) => {
           const user = doc.data();
+
+          // Create user item
           const userDiv = document.createElement("div");
           userDiv.innerHTML = `
             <p>${user.username} (${user.email})</p>
-            <button onclick="approveUser('${doc.id}')">Approve</button>
-            <button onclick="rejectUser('${doc.id}')">Reject</button>
+            <button id="approve-${doc.id}" class="approve-button">Approve</button>
+            <button id="reject-${doc.id}" class="reject-button">Reject</button>
           `;
+
           userList.appendChild(userDiv);
+
+          // Attach event listeners
+          document
+            .getElementById(`approve-${doc.id}`)
+            .addEventListener("click", () => approveUser(doc.id));
+          document
+            .getElementById(`reject-${doc.id}`)
+            .addEventListener("click", () => rejectUser(doc.id));
         });
       }, (error) => {
         console.error("Error listening to changes:", error);
@@ -75,7 +86,7 @@
         alert(`User ${userId} approved.`);
       } catch (error) {
         console.error("Error approving user:", error);
-        alert("Error approving user.");
+        alert("Failed to approve user.");
       }
     }
 
@@ -87,11 +98,11 @@
         alert(`User ${userId} rejected.`);
       } catch (error) {
         console.error("Error rejecting user:", error);
-        alert("Error rejecting user.");
+        alert("Failed to reject user.");
       }
     }
 
-    // Attach listeners on page load
+    // Start listening for unapproved users
     listenForUnapprovedUsers();
   </script>
 </body>
