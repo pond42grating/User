@@ -3,118 +3,158 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard</title>
+  <title>Firebase Testing</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
     body {
       font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #a8edea, #fed6e3);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      background-color: #4CAF50;
-      color: white;
-      padding: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    main {
-      flex: 1;
-      padding: 2rem;
-      overflow-y: auto;
+      background-color: #f4f4f9;
+      padding: 20px;
     }
     section {
       margin-bottom: 20px;
     }
-    section h2 {
+    h2 {
       background-color: #4CAF50;
       color: white;
       padding: 10px;
-      border-radius: 5px;
       cursor: pointer;
     }
     ul {
       list-style: none;
       padding: 0;
-      margin-top: 10px;
+      margin: 10px 0;
       display: none;
     }
     ul.active {
       display: block;
     }
-    .button {
-      background-color: #4CAF50;
+    .badge {
+      background: red;
       color: white;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .button:hover {
-      background-color: #45a049;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 10px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Admin Dashboard</h1>
-  </header>
-
-  <main>
-    <section>
-      <h2 onclick="toggleSection('approval-requests')">Approval Requests</h2>
-      <ul id="approval-requests">
-        <li>Approval Request 1</li>
-        <li>Approval Request 2</li>
-      </ul>
-    </section>
-    <section>
-      <h2 onclick="toggleSection('approved-users')">Approved Users</h2>
-      <ul id="approved-users">
-        <li>Approved User 1</li>
-        <li>Approved User 2</li>
-      </ul>
-    </section>
-  </main>
+  <h1>Firebase List Testing</h1>
+  <section>
+    <h2 onclick="toggleSection('approval-list')">Approval Requests <span class="badge" id="approval-badge">0</span></h2>
+    <ul id="approval-list"></ul>
+  </section>
+  <section>
+    <h2 onclick="toggleSection('online-list')">Online Users <span class="badge" id="online-badge">0</span></h2>
+    <ul id="online-list"></ul>
+  </section>
+  <section>
+    <h2 onclick="toggleSection('hold-list')">Hold/Blocked Users <span class="badge" id="hold-badge">0</span></h2>
+    <ul id="hold-list"></ul>
+  </section>
 
   <script type="module">
-    // Firebase SDKs
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-    // Firebase Configuration
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
+      storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Toggle Functionality
+    // Toggle sections
     function toggleSection(sectionId) {
       const sections = document.querySelectorAll('ul');
       sections.forEach(section => section.classList.remove('active'));
-      const sectionToShow = document.getElementById(sectionId);
-      if (sectionToShow) {
-        sectionToShow.classList.add('active');
+      document.getElementById(sectionId).classList.add('active');
+    }
+
+    // Fetch and display    // Fetch and display Approval Requests
+    async function fetchApprovalRequests() {
+      const approvalList = document.getElementById('approval-list');
+      const approvalBadge = document.getElementById('approval-badge');
+
+      approvalList.innerHTML = ''; // Clear previous content
+
+      const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
+      const querySnapshot = await getDocs(approvalQuery);
+      const users = querySnapshot.docs.map(doc => doc.data());
+
+      approvalBadge.textContent = users.length; // Update badge count
+
+      if (users.length === 0) {
+        approvalList.innerHTML = '<li>No approval requests found.</li>';
+      } else {
+        users.forEach(user => {
+          const listItem = document.createElement('li');
+          listItem.textContent = `${user.username} (${user.email})`;
+          approvalList.appendChild(listItem);
+        });
       }
     }
 
-    console.log("Firebase initialized successfully!");
+    // Fetch and display Online Users
+    async function fetchOnlineUsers() {
+      const onlineList = document.getElementById('online-list');
+      const onlineBadge = document.getElementById('online-badge');
+
+      onlineList.innerHTML = ''; // Clear previous content
+
+      const onlineQuery = query(collection(db, "Users"), where("isOnline", "==", true));
+      const querySnapshot = await getDocs(onlineQuery);
+      const users = querySnapshot.docs.map(doc => doc.data());
+
+      onlineBadge.textContent = users.length; // Update badge count
+
+      if (users.length === 0) {
+        onlineList.innerHTML = '<li>No users are online.</li>';
+      } else {
+        users.forEach(user => {
+          const listItem = document.createElement('li');
+          listItem.textContent = `${user.username} (${user.email})`;
+          onlineList.appendChild(listItem);
+        });
+      }
+    }
+
+    // Fetch and display Hold/Blocked Users
+    async function fetchHoldUsers() {
+      const holdList = document.getElementById('hold-list');
+      const holdBadge = document.getElementById('hold-badge');
+
+      holdList.innerHTML = ''; // Clear previous content
+
+      const holdQuery = query(collection(db, "Users"), where("isHold", "==", true));
+      const querySnapshot = await getDocs(holdQuery);
+      const users = querySnapshot.docs.map(doc => doc.data());
+
+      holdBadge.textContent = users.length; // Update badge count
+
+      if (users.length === 0) {
+        holdList.innerHTML = '<li>No users are on hold or blocked.</li>';
+      } else {
+        users.forEach(user => {
+          const listItem = document.createElement('li');
+          listItem.textContent = `${user.username} (${user.email})`;
+          holdList.appendChild(listItem);
+        });
+      }
+    }
+
+    // Fetch all data on page load
+    window.onload = () => {
+      fetchApprovalRequests();
+      fetchOnlineUsers();
+      fetchHoldUsers();
+    };
   </script>
 </body>
 </html>
