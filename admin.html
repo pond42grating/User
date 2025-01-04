@@ -122,60 +122,44 @@
     });
 
     // Fetch Approval Requests
-    async function fetchApprovalRequests() {
-      const approvalList = document.getElementById('approval-requests-list');
-      const approvalBadge = document.getElementById('approval-badge');
-      approvalList.innerHTML = ''; // Clear previous content
+   async function fetchApprovalRequests() {
+  const approvalList = document.getElementById('approval-requests-list');
+  approvalList.innerHTML = ''; // Clear previous content
 
-      try {
-        const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
-        const querySnapshot = await getDocs(approvalQuery);
-        const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
+  const querySnapshot = await getDocs(approvalQuery);
+  const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        approvalBadge.textContent = users.length; // Update badge count
+  users.forEach(user => {
+    const userDiv = document.createElement('div');
+    userDiv.innerHTML = `
+      <p>${user.username} (${user.email})</p>
+      <button class="button" id="approve-${user.id}">Approve</button>
+      <button class="button" id="reject-${user.id}">Reject</button>
+    `;
+    approvalList.appendChild(userDiv);
 
-        if (users.length === 0) {
-          approvalList.innerHTML = "<li>No approval requests found.</li>";
-        } else {
-          users.forEach(user => {
-            const userItem = document.createElement('li');
-            userItem.innerHTML = `
-              <p>${user.username} (${user.email})
-                <button class="button" onclick="approveUser('${user.id}')">Approve</button>
-                <button class="button" onclick="rejectUser('${user.id}')">Reject</button>
-              </p>`;
-            approvalList.appendChild(userItem);
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching approval requests: ", error);
-        approvalList.innerHTML = "<li>Error loading approval requests. Try again later.</li>";
-      }
-    }
+    // Attach event listeners
+    document.getElementById(`approve-${user.id}`).addEventListener('click', () => approveUser(user.id));
+    document.getElementById(`reject-${user.id}`).addEventListener('click', () => rejectUser(user.id));
+  });
+}
 
-    // Approve User Function
-    async function approveUser(userId) {
-      try {
-        const userRef = doc(db, "Users", userId);
-        await updateDoc(userRef, { isApproved: true });
-        alert(`User approved.`);
-        fetchApprovalRequests(); // Refresh the approval requests
-      } catch (error) {
-        console.error("Error approving user: ", error);
-      }
-    }
+async function approveUser(userId) {
+  console.log("Approving user:", userId); // Debug log
+  const userRef = doc(db, "Users", userId);
+  await updateDoc(userRef, { isApproved: true });
+  alert("User approved.");
+  fetchApprovalRequests();
+}
 
-    // Reject User Function
-    async function rejectUser(userId) {
-      try {
-        const userRef = doc(db, "Users", userId);
-        await deleteDoc(userRef);
-        alert(`User rejected.`);
-        fetchApprovalRequests(); // Refresh the approval requests
-      } catch (error) {
-        console.error("Error rejecting user: ", error);
-      }
-    }
+async function rejectUser(userId) {
+  console.log("Rejecting user:", userId); // Debug log
+  const userRef = doc(db, "Users", userId);
+  await deleteDoc(userRef);
+  alert("User rejected.");
+  fetchApprovalRequests();
+}
 
     // Fetch Approval Requests on Load
     window.onload = fetchApprovalRequests;
