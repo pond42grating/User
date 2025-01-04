@@ -49,6 +49,10 @@
     ul {
       list-style: none;
       padding: 0;
+      display: none;
+    }
+    ul.active {
+      display: block;
     }
     .badge {
       background: red;
@@ -81,13 +85,13 @@
   <main>
     <!-- Approval Requests Section -->
     <section>
-      <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
+      <h2 onclick="toggleSection('approval-requests-list')">Approval Requests <span class="badge" id="approval-badge">0</span></h2>
       <ul id="approval-requests-list"></ul>
     </section>
 
     <!-- Online Users Section -->
     <section>
-      <h2>Online Users <span class="badge" id="online-badge">0</span></h2>
+      <h2 onclick="toggleSection('online-users-list')">Online Users <span class="badge" id="online-badge">0</span></h2>
       <ul id="online-users-list">
         <li>Online User 1 - Dummy</li>
         <li>Online User 2 - Dummy</li>
@@ -96,7 +100,7 @@
 
     <!-- User Logs Section -->
     <section>
-      <h2>User Logs <span class="badge" id="logs-badge">0</span></h2>
+      <h2 onclick="toggleSection('logs-list')">User Logs <span class="badge" id="logs-badge">0</span></h2>
       <ul id="logs-list">
         <li>Log Entry 1 - Dummy</li>
         <li>Log Entry 2 - Dummy</li>
@@ -106,7 +110,7 @@
 
     <!-- Approved Users Section -->
     <section>
-      <h2>Approved Users <span class="badge" id="approved-badge">0</span></h2>
+      <h2 onclick="toggleSection('approved-users-list')">Approved Users <span class="badge" id="approved-badge">0</span></h2>
       <ul id="approved-users-list">
         <li>Approved User 1 - Dummy</li>
         <li>Approved User 2 - Dummy</li>
@@ -115,7 +119,7 @@
 
     <!-- Hold/Blocked Users Section -->
     <section>
-      <h2>Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span></h2>
+      <h2 onclick="toggleSection('hold-blocked-list')">Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span></h2>
       <ul id="hold-blocked-list">
         <li>Blocked User 1 - Dummy</li>
         <li>Blocked User 2 - Dummy</li>
@@ -158,6 +162,12 @@
         window.location.href = "index.html";
       }
     });
+
+    // Toggle Section Functionality
+    function toggleSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      section.classList.toggle("active");
+    }
 
     // Fetch Approval Requests
     async function fetchApprovalRequests() {
