@@ -142,30 +142,39 @@
         }
 
         // User Approval Section
-        db.collection("Users")
-          .where("isApproved", "==", false) // Filter for unapproved users
-          .onSnapshot((snapshot) => {
-              const approvalList = document.getElementById("approval-list");
-              approvalList.innerHTML = ""; // Clear the list before re-rendering
+        // User Approval Section (Enhanced with Debugging)
+db.collection("Users")
+  .where("isApproved", "==", false) // Filter for unapproved users
+  .onSnapshot((snapshot) => {
+      const approvalList = document.getElementById("approval-list");
+      approvalList.innerHTML = ""; // Clear the list before re-rendering
 
-              if (snapshot.empty) {
-                  approvalList.innerHTML = "<p>No unapproved users found.</p>";
-                  return;
-              }
+      if (snapshot.empty) {
+          console.log("No unapproved users found in Firestore.");
+          approvalList.innerHTML = "<p>No unapproved users found.</p>";
+          return;
+      }
 
-              snapshot.forEach((doc) => {
-                  const data = doc.data();
+      console.log("Snapshot triggered. Unapproved users found:", snapshot.docs.length);
 
-                  approvalList.innerHTML += `
-                      <div style="margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                          <p><strong>Email:</strong> ${data.email}</p>
-                          <p><strong>Last Login:</strong> ${new Date(data.lastLogin).toLocaleString()}</p>
-                          <button class="button" onclick="approveUser('${doc.id}')">Approve</button>
-                          <button class="button" style="background-color: red;" onclick="rejectUser('${doc.id}')">Reject</button>
-                      </div>
-                  `;
-              });
-          });
+      snapshot.forEach((doc) => {
+          const data = doc.data();
+          console.log("User Data:", data); // Log each user's data
+
+          approvalList.innerHTML += `
+              <div style="margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                  <p><strong>Email:</strong> ${data.email}</p>
+                  <p><strong>Last Login:</strong> ${new Date(data.lastLogin).toLocaleString()}</p>
+                  <button class="button" onclick="approveUser('${doc.id}')">Approve</button>
+                  <button class="button" style="background-color: red;" onclick="rejectUser('${doc.id}')">Reject</button>
+              </div>
+          `;
+      });
+  }, (error) => {
+      console.error("Error fetching unapproved users:", error);
+      const approvalList = document.getElementById("approval-list");
+      approvalList.innerHTML = `<p>Error loading users: ${error.message}</p>`;
+  });
 
         // Approve User Function
         function approveUser(userId) {
