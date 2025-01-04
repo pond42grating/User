@@ -185,8 +185,8 @@
           userDiv.innerHTML = `
             <p>${user.username} (${user.email}) 
               <div class="button-container">
-                <button class="button" onclick="approveUser('${user.username}')">Approve</button>
-                <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
+                <button class="button" id="approve-${user.username}" onclick="approveUser('${user.username}')">Approve</button>
+                <button class="button" id="reject-${user.username}" onclick="rejectUser('${user.username}')">Reject</button>
               </div>
             </p>`;
           approvalList.appendChild(userDiv);
