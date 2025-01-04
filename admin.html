@@ -49,6 +49,10 @@
     ul {
       list-style: none;
       padding: 0;
+      display: none;
+    }
+    ul.active {
+      display: block;
     }
     .badge {
       background: red;
@@ -80,8 +84,24 @@
 
   <main>
     <section>
-      <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
-      <ul id="approval-requests-list"></ul>
+      <h2 onclick="toggleSection('approval-requests-list')">Approval Requests <span class="badge" id="approval-badge">0</span></h2>
+      <ul id="approval-requests-list">Loading...</ul>
+    </section>
+    <section>
+      <h2 onclick="toggleSection('online-users-list')">Online Users <span class="badge" id="online-badge">0</span></h2>
+      <ul id="online-users-list">Loading...</ul>
+    </section>
+    <section>
+      <h2 onclick="toggleSection('logs-list')">User Logs <span class="badge" id="logs-badge">0</span></h2>
+      <ul id="logs-list">Loading...</ul>
+    </section>
+    <section>
+      <h2 onclick="toggleSection('approved-users-list')">Approved Users <span class="badge" id="approved-badge">0</span></h2>
+      <ul id="approved-users-list">Loading...</ul>
+    </section>
+    <section>
+      <h2 onclick="toggleSection('hold-blocked-list')">Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span></h2>
+      <ul id="hold-blocked-list">Loading...</ul>
     </section>
   </main>
 
@@ -97,7 +117,7 @@
       updateDoc,
       deleteDoc
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     // Firebase Configuration
     const firebaseConfig = {
@@ -116,55 +136,97 @@
 
     // Check user authentication
     onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "index.html";
+      if (!user) {        window.location.href = "index.html";
       }
     });
 
-    // Fetch Approval Requests
-   async function fetchApprovalRequests() {
-  const approvalList = document.getElementById('approval-requests-list');
-  approvalList.innerHTML = ''; // Clear previous content
+    // Function to toggle sections
+    function toggleSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      const isActive = section.classList.contains('active');
+      document.querySelectorAll('ul').forEach(ul => ul.classList.remove('active')); // Close all sections
+      if (!isActive) section.classList.add('active'); // Open the selected section
+    }
 
-  const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
-  const querySnapshot = await getDocs(approvalQuery);
-  const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Function to update badges and load data
+    async function updateBadgesAndData() {
+      const approvalBadge = document.getElementById('approval-badge');
+      const onlineBadge = document.getElementById('online-badge');
+      const logsBadge = document.getElementById('logs-badge');
+      const approvedBadge = document.getElementById('approved-badge');
+      const holdBlockedBadge = document.getElementById('hold-blocked-badge');
 
-  users.forEach(user => {
-    const userDiv = document.createElement('div');
-    userDiv.innerHTML = `
-      <p>${user.username} (${user.email})</p>
-      <button class="button" id="approve-${user.id}">Approve</button>
-      <button class="button" id="reject-${user.id}">Reject</button>
-    `;
-    approvalList.appendChild(userDiv);
+      // Dummy data fetch simulation
+      const approvalRequests = await fetchSectionData("Users", { isApproved: false });
+      const onlineUsers = await fetchSectionData("OnlineUsers");
+      const userLogs = await fetchSectionData("Logs");
+      const approvedUsers = await fetchSectionData("Users", { isApproved: true });
+      const holdBlockedUsers = await fetchSectionData("Users", { isBlocked: true });
 
-    // Attach event listeners
-    document.getElementById(`approve-${user.id}`).addEventListener('click', () => approveUser(user.id));
-    document.getElementById(`reject-${user.id}`).addEventListener('click', () => rejectUser(user.id));
-  });
-}
+      approvalBadge.textContent = approvalRequests.length;
+      onlineBadge.textContent = onlineUsers.length;
+      logsBadge.textContent = userLogs.length;
+      approvedBadge.textContent = approvedUsers.length;
+      holdBlockedBadge.textContent = holdBlockedUsers.length;
 
-async function approveUser(userId) {
-  console.log("Approving user:", userId); // Debug log
-  const userRef = doc(db, "Users", userId);
-  await updateDoc(userRef, { isApproved: true });
-  alert("User approved.");
-  fetchApprovalRequests();
-}
+      renderSection("approval-requests-list", approvalRequests, true);
+      renderSection("online-users-list", onlineUsers);
+      renderSection("logs-list", userLogs);
+      renderSection("approved-users-list", approvedUsers);
+      renderSection("hold-blocked-list", holdBlockedUsers);
+    }
 
-async function rejectUser(userId) {
-  console.log("Rejecting user:", userId); // Debug log
-  const userRef = doc(db, "Users", userId);
-  await deleteDoc(userRef);
-  alert("User rejected.");
-  fetchApprovalRequests();
-}
+    // Fetch section data
+    async function fetchSectionData(collectionName, conditions = null) {
+      const colRef = collection(db, collectionName);
+      let q = colRef;
+      if (conditions) {
+        Object.entries(conditions).forEach(([key, value]) => {
+          q = query(q, where(key, "==", value));
+        });
+      }
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
 
-    // Fetch Approval Requests on Load
-    window.onload = fetchApprovalRequests;
+    // Render section data
+    function renderSection(sectionId, data, isApprovalSection = false) {
+      const section = document.getElementById(sectionId);
+      section.innerHTML = ''; // Clear previous content
+      if (data.length === 0) {
+        section.innerHTML = '<li>No records found.</li>';
+        return;
+      }
+      data.forEach(item => {
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `
+          ${item.username || item.user || 'Unknown User'}
+          ${isApprovalSection ? `<button class="button" onclick="approveUser('${item.id}')">Approve</button>
+                                 <button class="button" onclick="rejectUser('${item.id}')">Reject</button>` : ''}
+        `;
+        section.appendChild(listItem);
+      });
+    }
+
+    // Approve user function
+    async function approveUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      await updateDoc(userRef, { isApproved: true });
+      alert("User approved.");
+      updateBadgesAndData();
+    }
+
+    // Reject user function
+    async function rejectUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      await deleteDoc(userRef);
+      alert("User rejected.");
+      updateBadgesAndData();
+    }
+
+    // Load data on window load
+    window.onload = updateBadgesAndData;
   </script>
 </body>
 </html>
-
-In this add a toggle option without changing the function and fix the notification badge it has to show the count don’t touch the working function working pretty well
+       
