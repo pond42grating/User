@@ -82,6 +82,12 @@
 
   <header>Create Daily Work Schedule (DWS)</header>
 
+  <!-- DWS Details -->
+  <div class="form-section">
+    <label for="dwsDate">DWS Date</label>
+    <input type="date" id="dwsDate">
+  </div>
+
   <!-- Manpower Section -->
   <div class="form-section">
     <h3 class="section-title">Manpower</h3>
@@ -122,11 +128,60 @@
     </div>
   </div>
 
-  <script>
-    // To store added badge numbers for the current DWS date
-    const addedBadgeNumbers = new Set();
+  <!-- Equipment Section -->
+  <div class="form-section">
+    <h3 class="section-title">Equipment</h3>
+    <label for="equipmentName">Equipment Name</label>
+    <input type="text" id="equipmentName" placeholder="Enter Equipment Name">
 
+    <label for="workingHours">Working Hours</label>
+    <input type="number" id="workingHours" placeholder="Enter Working Hours">
+
+    <button onclick="addEquipment()">Add Equipment</button>
+    <div class="preview-section">
+      <h4>Equipment Preview</h4>
+      <table id="equipmentTable">
+        <thead>
+          <tr>
+            <th>Equipment Name</th>
+            <th>Working Hours</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Consumables Section -->
+  <div class="form-section">
+    <h3 class="section-title">Consumables</h3>
+    <label for="consumableName">Consumable Name</label>
+    <input type="text" id="consumableName" placeholder="Enter Consumable Name">
+
+    <label for="quantity">Quantity</label>
+    <input type="number" id="quantity" placeholder="Enter Quantity">
+
+    <button onclick="addConsumable()">Add Consumable</button>
+    <div class="preview-section">
+      <h4>Consumables Preview</h4>
+      <table id="consumableTable">
+        <thead>
+          <tr>
+            <th>Consumable Name</th>
+            <th>Quantity</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const addedBadgeNumbersByDate = {}; // Store badge numbers by date
+
+    // Add Manpower
     function addManpower() {
+      const dwsDate = document.getElementById('dwsDate').value.trim();
       const badgeNo = document.getElementById('badgeNo').value.trim();
       const name = document.getElementById('manpowerName').value.trim();
       const trade = document.getElementById('trade').value.trim();
@@ -134,22 +189,25 @@
       const otHour = document.getElementById('otHour').value.trim();
       const holiday = document.getElementById('holiday').value.trim();
 
-      // Check if required fields are empty
-      if (!badgeNo || !name || !trade || !normalHour || !otHour) {
-        alert('Please fill in all required fields except Holiday!');
+      // Validation: Ensure all fields except Holiday are filled
+      if (!dwsDate || !badgeNo || !name || !trade || !normalHour || !otHour) {
+        alert('Please fill in all required fields (except Holiday)!');
         return;
       }
 
-      // Check for duplicate badge number
-      if (addedBadgeNumbers.has(badgeNo)) {
-        alert('This Badge Number is already added for the current date!');
+      // Validation: Check for duplicate badge numbers on the same date
+      if (!addedBadgeNumbersByDate[dwsDate]) {
+        addedBadgeNumbersByDate[dwsDate] = new Set();
+      }
+      if (addedBadgeNumbersByDate[dwsDate].has(badgeNo)) {
+        alert(`Badge No. ${badgeNo} is already added for ${dwsDate}!`);
         return;
       }
 
-      // Add badge number to the set to track duplicates
-      addedBadgeNumbers.add(badgeNo);
+      // Add badge number to the set for the given date
+      addedBadgeNumbersByDate[dwsDate].add(badgeNo);
 
-      // Add data to the table
+      // Add the manpower data to the preview table
       const table = document.getElementById('manpowerTable').querySelector('tbody');
       table.innerHTML += `<tr>
         <td>${badgeNo}</td>
@@ -168,7 +226,48 @@
       document.getElementById('otHour').value = '';
       document.getElementById('holiday').value = '';
     }
-  </script>
 
+    // Add Equipment
+    function addEquipment() {
+      const equipmentName = document.getElementById('equipmentName').value.trim();
+      const workingHours = document.getElementById('workingHours').value.trim();
+
+      if (!equipmentName || !workingHours) {
+        alert('Please fill in all Equipment fields!');
+        return;
+      }
+
+      const table = document.getElementById('equipmentTable').querySelector('tbody');
+      table.innerHTML += `<tr>
+        <td>${equipmentName}</td>
+        <td>${workingHours}</td>
+      </tr>`;
+
+      // Clear input fields
+      document.getElementById('equipmentName').value = '';
+      document.getElementById('workingHours').value = '';
+    }
+
+    // Add Consumable
+    function addConsumable() {
+      const consumableName = document.getElementById('consumableName').value.trim();
+      const quantity = document.getElementById('quantity').value.trim();
+
+      if (!consumableName || !quantity) {
+        alert('Please fill in all Consumable fields!');
+        return;
+      }
+
+      const table = document.getElementById('consumableTable').querySelector('tbody');
+      table.innerHTML += `<tr>
+        <td>${consumableName}</td>
+        <td>${quantity}</td>
+      </tr>`;
+
+      // Clear input fields
+      document.getElementById('consumableName').value = '';
+      document.getElementById('quantity').value = '';
+    }
+    </script>
 </body>
 </html>
