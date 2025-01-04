@@ -120,113 +120,148 @@
     <!-- Approval Requests Section -->
     <section>
       <h2 onclick="toggleSection('approval-requests')">
-        Approval Requests <span class="badge" id="approval-badge">5</span>
+        Approval Requests <span class="badge" id="approval-badge">0</span>
       </h2>
-      <ul id="approval-requests">
-        <li onclick="toggleButtons('buttons-user1')">
-          User 1
-          <div class="user-buttons" id="buttons-user1">
-            <button class="button" onclick="demoFunction('Approve User 1')">Approve</button>
-            <button class="button" onclick="demoFunction('Reject User 1')">Reject</button>
-          </div>
-        </li>
-        <li onclick="toggleButtons('buttons-user2')">
-          User 2
-          <div class="user-buttons" id="buttons-user2">
-            <button class="button" onclick="demoFunction('Approve User 2')">Approve</button>
-            <button class="button" onclick="demoFunction('Reject User 2')">Reject</button>
-          </div>
-        </li>
-      </ul>
+      <ul id="approval-requests"></ul>
     </section>
 
     <!-- Approved Users Section -->
     <section>
       <h2 onclick="toggleSection('approved-users')">
-        Approved Users <span class="badge" id="approved-badge">20</span>
+        Approved Users <span class="badge" id="approved-badge">0</span>
       </h2>
-      <ul id="approved-users">
-        <li onclick="toggleButtons('buttons-approved1')">
-          Approved User 1
-          <div class="user-buttons" id="buttons-approved1">
-            <button class="button" onclick="demoFunction('Hold Approved User 1')">Hold</button>
-            <button class="button" onclick="demoFunction('Block Approved User 1')">Block</button>
-            <button class="button" onclick="demoFunction('Remove Approved User 1')">Remove</button>
-          </div>
-        </li>
-        <li onclick="toggleButtons('buttons-approved2')">
-          Approved User 2
-          <div class="user-buttons" id="buttons-approved2">
-            <button class="button" onclick="demoFunction('Hold Approved User 2')">Hold</button>
-            <button class="button" onclick="demoFunction('Block Approved User 2')">Block</button>
-            <button class="button" onclick="demoFunction('Remove Approved User 2')">Remove</button>
-          </div>
-        </li>
-      </ul>
+      <ul id="approved-users"></ul>
     </section>
 
     <!-- Hold/Blocked Users Section -->
     <section>
       <h2 onclick="toggleSection('hold-blocked-users')">
-        Hold/Blocked Users <span class="badge" id="hold-blocked-badge">2</span>
+        Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span>
       </h2>
-      <ul id="hold-blocked-users">
-        <li onclick="toggleButtons('buttons-blocked1')">
-          Blocked User 1
-          <div class="user-buttons" id="buttons-blocked1">
-            <button class="button" onclick="demoFunction('Unblock Blocked User 1')">Unblock</button>
-          </div>
-        </li>
-        <li onclick="toggleButtons('buttons-blocked2')">
-          Blocked User 2
-          <div class="user-buttons" id="buttons-blocked2">
-            <button class="button" onclick="demoFunction('Unblock Blocked User 2')">Unblock</button>
-          </div>
-        </li>
-      </ul>
+      <ul id="hold-blocked-users"></ul>
     </section>
 
     <!-- Logged-In Users Section -->
     <section>
       <h2 onclick="toggleSection('online-users')">
-        Logged-In Users <span class="badge" id="online-badge">8</span>
+        Logged-In Users <span class="badge" id="online-badge">0</span>
       </h2>
-      <ul id="online-users">
-        <li>Logged-In User 1</li>
-        <li>Logged-In User 2</li>
-      </ul>
+      <ul id="online-users"></ul>
     </section>
 
     <!-- Logs Section -->
     <section>
       <h2 onclick="toggleSection('logs')">
-        Logs <span class="badge" id="logs-badge">50</span>
+        Logs <span class="badge" id="logs-badge">0</span>
       </h2>
-      <ul id="logs">
-        <li>Log Entry 1</li>
-        <li>Log Entry 2</li>
-      </ul>
+      <ul id="logs"></ul>
     </section>
   </main>
 
-  <script>
+  <script type="module">
+    // Firebase Imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7",
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Functionality Placeholders
     function toggleSection(sectionId) {
-      const sections = document.querySelectorAll('ul');
-      sections.forEach(section => section.classList.remove('active'));
-      const sectionToShow = document.getElementById(sectionId);
-      sectionToShow.classList.add('active');
+           const sections = document.querySelectorAll("ul");
+      sections.forEach((section) => {
+        if (section.id === sectionId) {
+          section.classList.toggle("active");
+        } else {
+          section.classList.remove("active");
+        }
+      });
     }
 
-    function toggleButtons(buttonId) {
-      const allButtons = document.querySelectorAll('.user-buttons');
-      allButtons.forEach(button => button.classList.remove('active'));
-      const buttonsToShow = document.getElementById(buttonId);
-      buttonsToShow.classList.toggle('active');
+    function demoFunction(actionName) {
+      alert(`${actionName} function triggered.`);
     }
 
-    function demoFunction(message) {
-      alert(`Functionality: ${message}`);
+    // Function to display demo buttons for users
+    function createDemoUserList(sectionId, users, buttons = []) {
+      const section = document.getElementById(sectionId);
+      section.innerHTML = ""; // Clear previous content
+
+      users.forEach((user) => {
+        const listItem = document.createElement("li");
+        listItem.textContent = `${user.name} (${user.email})`;
+
+        const buttonContainer = document.createElement("div");
+        buttonContainer.className = "user-buttons";
+
+        buttons.forEach((button) => {
+          const btn = document.createElement("button");
+          btn.className = "button";
+          btn.textContent = button.label;
+          btn.onclick = () => demoFunction(button.action);
+          buttonContainer.appendChild(btn);
+        });
+
+        listItem.appendChild(buttonContainer);
+        listItem.addEventListener("click", () => {
+          buttonContainer.classList.toggle("active");
+        });
+
+        section.appendChild(listItem);
+      });
     }
+
+    // Populate demo sections with placeholder data
+    window.onload = () => {
+      createDemoUserList("approval-requests", [
+        { name: "John Doe", email: "john@example.com" },
+        { name: "Jane Smith", email: "jane@example.com" },
+      ], [
+        { label: "Approve", action: "Approve User" },
+        { label: "Reject", action: "Reject User" },
+      ]);
+
+      createDemoUserList("approved-users", [
+        { name: "Alice Green", email: "alice@example.com" },
+        { name: "Bob Brown", email: "bob@example.com" },
+      ], [
+        { label: "Hold/Block", action: "Hold/Block User" },
+        { label: "Remove", action: "Remove User" },
+      ]);
+
+      createDemoUserList("hold-blocked-users", [
+        { name: "Charlie Black", email: "charlie@example.com" },
+        { name: "Diana White", email: "diana@example.com" },
+      ], [
+        { label: "Unhold/Unblock", action: "Unhold/Unblock User" },
+      ]);
+
+      createDemoUserList("online-users", [
+        { name: "Eve Blue", email: "eve@example.com" },
+        { name: "Frank Yellow", email: "frank@example.com" },
+      ], []);
+
+      createDemoUserList("logs", [
+        { name: "System Log 1", email: "log1@example.com" },
+        { name: "System Log 2", email: "log2@example.com" },
+      ], [
+        { label: "View Log", action: "View Log Details" },
+      ]);
+    };
   </script>
 </body>
 </html>
