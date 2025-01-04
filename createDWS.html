@@ -113,12 +113,6 @@
     </table>
   </div>
 
-  <!-- Export Buttons -->
-  <div class="export-buttons">
-    <button onclick="exportToCSV()">Export as CSV</button>
-    <button onclick="exportToJSON()">Export as JSON</button>
-  </div>
-
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
@@ -138,7 +132,7 @@
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore(app);
 
-    let dwsCounter = 1; // Counter for DWS No.
+    let dwsCounter = 1;
 
     // Generate Incremental DWS Number
     function generateDwsNo() {
@@ -147,7 +141,7 @@
     }
 
     // Save DWS to Firestore
-    function saveDws() {
+    async function saveDws() {
       const dwsNo = document.getElementById('dwsNo').value;
       const dwsDate = document.getElementById('dwsDate').value;
       const structureName = document.getElementById('structureName').value;
@@ -169,93 +163,41 @@
         location,
       };
 
-      db.collection("DWSRecords")
-        .doc(dwsNo)
-        .set(dwsData)
-        .then(() => {
-          alert("DWS saved successfully!");
-          dwsCounter++;
-          generateDwsNo();
-        })
-        .catch((error) => {
-          console.error("Error saving DWS: ", error);
-        });
+      try {
+        await db.collection("DWSRecords").doc(dwsNo).set(dwsData);
+        alert("DWS saved successfully!");
+        dwsCounter++;
+        generateDwsNo();
+      } catch (error) {
+        console.error("Error saving DWS: ", error);
+        alert("Error saving DWS: " + error.message);
+      }
     }
 
     // Fetch and Display DWS Records
-    function fetchDws() {
+    async function fetchDws() {
       const recordsTable = document.querySelector("#recordsTable tbody");
       recordsTable.innerHTML = "";
 
-      db.collection("DWSRecords")
-        .get()
-        .then((querySnapshot) => {
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const row = `
-              <tr>
-                <td>${data.dwsNo}</td>
-                <td>${data.dwsDate}</td>
-                <td>${data.structureName}</td>
-                <td>${data.siNo}</td>
-                <td>${data.workDescription}</td>
-                <td>${data.location}</td>
-              </tr>
-            `;
-            recordsTable.innerHTML += row;
-          });
-        })
-        .catch((error) => {
-          console.error("Error fetching DWS: ", error);
+      try {
+        const querySnapshot = await db.collection("DWSRecords").get();
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const row = `
+            <tr>
+              <td>${data.dwsNo}</td>
+              <td>${data.dwsDate}</td>
+              <td>${data.structureName}</td>
+              <td>${data.siNo}</td>
+              <td>${data.workDescription}</td>
+              <td>${data.location}</td>
+            </tr>
+          `;
+          recordsTable.innerHTML += row;
         });
-    }
-
-    // Export to CSV
-    function exportToCSV() {
-      db.collection("DWSRecords")
-        .get()
-        .then((querySnapshot) => {
-          const rows = [];
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            rows.push([data.dwsNo, data.dwsDate, data.structureName, data.siNo, data.workDescription, data.location]);
-          });
-
-          let csvContent = "DWS No.,Date,Structure Name,SI No.,Work Description,Location\n";
-          rows.forEach((row) => {
-            csvContent += row.join(",") + "\n";
-          });
-
-          const blob = new Blob([csvContent], { type: "text/csv" });
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = "DWS_Records.csv";
-          link.click();
-        })
-        .catch((error) => {
-          console.error("Error exporting to CSV: ", error);
-        });
-    }
-
-    // Export to JSON
-    function exportToJSON() {
-      db.collection("DWSRecords")
-        .get()
-        .then((querySnapshot) => {
-          const data = [];
-          querySnapshot.forEach((doc) => {
-            data.push(doc.data());
-          });
-
-          const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = "DWS_Records.json";
-          link.click();
-        })
-        .catch((error) => {
-          console.error("Error exporting to JSON: ", error);
-        });
+      } catch (error) {
+        console.error("Error fetching DWS: ", error);
+      }
     }
 
     // Initialize DWS No.
