@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Simple Example</title>
+  <title>Fetch Online Users</title>
 </head>
 <body>
-  <h1>Fetching Firebase Data</h1>
+  <h1>Fetch Online Users</h1>
+  <button id="fetchOnlineBtn">Fetch Online Users</button>
   <div id="data"></div>
 
   <script type="module">
     // Import Firebase libraries
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase Configuration
     const firebaseConfig = {
@@ -29,13 +30,15 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Fetch data from Firestore
-    async function fetchData() {
+    // Fetch online users from Firestore
+    async function fetchOnlineUsers() {
       try {
         const dataDiv = document.getElementById("data");
         dataDiv.innerHTML = "Fetching data...";
 
-        const querySnapshot = await getDocs(collection(db, "Users")); // Replace "Users" with your collection name
+        const onlineQuery = query(collection(db, "Users"), where("isOnline", "==", true)); // Query where `isOnline` is true
+        const querySnapshot = await getDocs(onlineQuery);
+
         let content = "<ul>";
         querySnapshot.forEach((doc) => {
           const data = doc.data();
@@ -43,15 +46,15 @@
         });
         content += "</ul>";
 
-        dataDiv.innerHTML = content || "No data found.";
+        dataDiv.innerHTML = content || "No online users found.";
       } catch (error) {
         console.error("Error fetching data:", error);
         document.getElementById("data").innerHTML = "Error fetching data. Check console for details.";
       }
     }
 
-    // Fetch data on load
-    fetchData();
+    // Attach event listener to the button
+    document.getElementById("fetchOnlineBtn").addEventListener("click", fetchOnlineUsers);
   </script>
 </body>
 </html>
