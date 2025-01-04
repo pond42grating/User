@@ -49,10 +49,6 @@
     ul {
       list-style: none;
       padding: 0;
-      display: none;
-    }
-    ul.active {
-      display: block;
     }
     .badge {
       background: red;
@@ -83,47 +79,9 @@
   </header>
 
   <main>
-    <!-- Approval Requests Section -->
     <section>
-      <h2 onclick="toggleSection('approval-requests-list')">Approval Requests <span class="badge" id="approval-badge">0</span></h2>
+      <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
       <ul id="approval-requests-list"></ul>
-    </section>
-
-    <!-- Online Users Section -->
-    <section>
-      <h2 onclick="toggleSection('online-users-list')">Online Users <span class="badge">Dummy</span></h2>
-      <ul id="online-users-list">
-        <li>Online User 1 - Dummy</li>
-        <li>Online User 2 - Dummy</li>
-      </ul>
-    </section>
-
-    <!-- User Logs Section -->
-    <section>
-      <h2 onclick="toggleSection('logs-list')">User Logs <span class="badge">Dummy</span></h2>
-      <ul id="logs-list">
-        <li>Log Entry 1 - Dummy</li>
-        <li>Log Entry 2 - Dummy</li>
-        <li>Log Entry 3 - Dummy</li>
-      </ul>
-    </section>
-
-    <!-- Approved Users Section -->
-    <section>
-      <h2 onclick="toggleSection('approved-users-list')">Approved Users <span class="badge">Dummy</span></h2>
-      <ul id="approved-users-list">
-        <li>Approved User 1 - Dummy</li>
-        <li>Approved User 2 - Dummy</li>
-      </ul>
-    </section>
-
-    <!-- Hold/Blocked Users Section -->
-    <section>
-      <h2 onclick="toggleSection('hold-blocked-list')">Hold/Blocked Users <span class="badge">Dummy</span></h2>
-      <ul id="hold-blocked-list">
-        <li>Blocked User 1 - Dummy</li>
-        <li>Blocked User 2 - Dummy</li>
-      </ul>
     </section>
   </main>
 
@@ -139,14 +97,14 @@
       updateDoc,
       deleteDoc
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebasefirestorage.app",
+      storageBucket: "dws-management.firebasestorage.app",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7",
@@ -163,14 +121,8 @@
       }
     });
 
-    // Toggle Section Functionality
-    function toggleSection(sectionId) {
-      const section = document.getElementById(sectionId);
-      section.classList.toggle("active");
-    }
-
     // Fetch Approval Requests
-    async function fetchApprovalRequests() {
+   async function fetchApprovalRequests() {
   const approvalList = document.getElementById('approval-requests-list');
   approvalList.innerHTML = ''; // Clear previous content
 
@@ -207,6 +159,7 @@ async function rejectUser(userId) {
   await deleteDoc(userRef);
   alert("User rejected.");
   fetchApprovalRequests();
+}
 
     // Fetch Approval Requests on Load
     window.onload = fetchApprovalRequests;
