@@ -78,7 +78,7 @@
     }
 
     .button-container {
-      display: block;
+      display: inline-block;
     }
   </style>
 </head>
@@ -164,7 +164,7 @@
       fetchApprovalRequests();
     };
 
-    // Approval Request function
+    // Fetch approval requests function
     async function fetchApprovalRequests() {
       const approvalList = document.getElementById('approval-requests-list');
       const approvalBadge = document.getElementById('approval-badge');
@@ -185,8 +185,8 @@
           userDiv.innerHTML = `
             <p>${user.username} (${user.email}) 
               <div class="button-container">
-                <button class="button" id="approve-${user.username}" onclick="approveUser('${user.username}')">Approve</button>
-                <button class="button" id="reject-${user.username}" onclick="rejectUser('${user.username}')">Reject</button>
+                <button class="button" onclick="approveUser('${user.username}')">Approve</button>
+                <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
               </div>
             </p>`;
           approvalList.appendChild(userDiv);
