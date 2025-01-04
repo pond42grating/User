@@ -3,81 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Fetch Example</title>
+  <title>Firebase Simple Example</title>
 </head>
 <body>
   <h1>Fetching Firebase Data</h1>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+  <div id="data"></div>
 
-    // Firebase configuration
+  <script type="module">
+    // Import Firebase libraries
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+    // Firebase Configuration
     const firebaseConfig = {
-    apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-    authDomain: "dws-management.firebaseapp.com",
-    projectId: "dws-management",
-    storageBucket: "dws-management.firebasestorage.app",
-    messagingSenderId: "23827231923",
-    appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-    measurementId: "G-L14GLJDYW7"
-  };
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
+    };
+
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Function to fetch hold users
-    const fetchHoldUsers = async () => {
+    // Fetch data from Firestore
+    async function fetchData() {
       try {
-        const holdQuery = query(collection(db, "Users"), where("isHold", "==", true));
-        const snapshot = await getDocs(holdQuery);
-        console.log("Hold Users:");
-        snapshot.docs.forEach(doc => console.log(doc.data()));
-      } catch (error) {
-        console.error("Error fetching hold users:", error);
-      }
-    };
+        const dataDiv = document.getElementById("data");
+        dataDiv.innerHTML = "Fetching data...";
 
-    // Function to fetch blocked users
-    const fetchBlockedUsers = async () => {
-      try {
-        const blockQuery = query(collection(db, "Users"), where("isBlocked", "==", true));
-        const snapshot = await getDocs(blockQuery);
-        console.log("Blocked Users:");
-        snapshot.docs.forEach(doc => console.log(doc.data()));
-      } catch (error) {
-        console.error("Error fetching blocked users:", error);
-      }
-    };
+        const querySnapshot = await getDocs(collection(db, "Users")); // Replace "Users" with your collection name
+        let content = "<ul>";
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          content += `<li>${JSON.stringify(data)}</li>`;
+        });
+        content += "</ul>";
 
-    // Function to fetch online users
-    const fetchOnlineUsers = async () => {
-      try {
-        const onlineQuery = query(collection(db, "Users"), where("isOnline", "==", true));
-        const snapshot = await getDocs(onlineQuery);
-        console.log("Online Users:");
-        snapshot.docs.forEach(doc => console.log(doc.data()));
+        dataDiv.innerHTML = content || "No data found.";
       } catch (error) {
-        console.error("Error fetching online users:", error);
+        console.error("Error fetching data:", error);
+        document.getElementById("data").innerHTML = "Error fetching data. Check console for details.";
       }
-    };
+    }
 
-    // Function to fetch approval requests
-    const fetchApprovalRequests = async () => {
-      try {
-        const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
-        const snapshot = await getDocs(approvalQuery);
-        console.log("Approval Requests:");
-        snapshot.docs.forEach(doc => console.log(doc.data()));
-      } catch (error) {
-        console.error("Error fetching approval requests:", error);
-      }
-    };
-
-    // Fetch data
-    fetchHoldUsers();
-    fetchBlockedUsers();
-    fetchOnlineUsers();
-    fetchApprovalRequests();
+    // Fetch data on load
+    fetchData();
   </script>
 </body>
 </html>
