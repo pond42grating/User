@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Simple Fetch</title>
+  <title>Firebase Real-Time Fetch</title>
 </head>
 <body>
-  <h1>Firebase Fetch - isApproved = false</h1>
+  <h1>Firebase Real-Time - isApproved = false</h1>
   <div id="userList">Fetching users...</div>
 
   <script type="module">
@@ -16,7 +16,7 @@
       collection,
       query,
       where,
-      getDocs,
+      onSnapshot,
       updateDoc,
       deleteDoc,
       doc
@@ -37,22 +37,21 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Fetch users with isApproved = false
-    async function fetchUnapprovedUsers() {
+    // Real-time listener for unapproved users
+    function listenForUnapprovedUsers() {
       const userList = document.getElementById("userList");
       userList.innerHTML = "Fetching users...";
-      const q = query(collection(db, "Users"), where("isApproved", "==", false));
 
-      try {
-        const querySnapshot = await getDocs(q);
+      const q = query(collection(db, "Users"), where("isApproved", "==", false));
+      onSnapshot(q, (snapshot) => {
         userList.innerHTML = ""; // Clear previous content
 
-        if (querySnapshot.empty) {
+        if (snapshot.empty) {
           userList.innerHTML = "No users with isApproved = false.";
           return;
         }
 
-        querySnapshot.forEach((doc) => {
+        snapshot.forEach((doc) => {
           const user = doc.data();
           const userDiv = document.createElement("div");
           userDiv.innerHTML = `
@@ -62,10 +61,10 @@
           `;
           userList.appendChild(userDiv);
         });
-      } catch (error) {
-        console.error("Error fetching users:", error);
+      }, (error) => {
+        console.error("Error listening to changes:", error);
         userList.innerHTML = "Error fetching users.";
-      }
+      });
     }
 
     // Approve user (set isApproved = true)
@@ -74,7 +73,6 @@
         const userRef = doc(db, "Users", userId);
         await updateDoc(userRef, { isApproved: true });
         alert(`User ${userId} approved.`);
-        fetchUnapprovedUsers(); // Refresh the list
       } catch (error) {
         console.error("Error approving user:", error);
         alert("Error approving user.");
@@ -87,15 +85,14 @@
         const userRef = doc(db, "Users", userId);
         await deleteDoc(userRef);
         alert(`User ${userId} rejected.`);
-        fetchUnapprovedUsers(); // Refresh the list
       } catch (error) {
         console.error("Error rejecting user:", error);
         alert("Error rejecting user.");
       }
     }
 
-    // Fetch unapproved users on page load
-    fetchUnapprovedUsers();
+    // Attach listeners on page load
+    listenForUnapprovedUsers();
   </script>
 </body>
 </html>
