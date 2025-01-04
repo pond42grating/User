@@ -79,9 +79,47 @@
   </header>
 
   <main>
+    <!-- Approval Requests Section -->
     <section>
       <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
       <ul id="approval-requests-list"></ul>
+    </section>
+
+    <!-- Online Users Section -->
+    <section>
+      <h2>Online Users <span class="badge" id="online-badge">0</span></h2>
+      <ul id="online-users-list">
+        <li>Online User 1 - Dummy</li>
+        <li>Online User 2 - Dummy</li>
+      </ul>
+    </section>
+
+    <!-- User Logs Section -->
+    <section>
+      <h2>User Logs <span class="badge" id="logs-badge">0</span></h2>
+      <ul id="logs-list">
+        <li>Log Entry 1 - Dummy</li>
+        <li>Log Entry 2 - Dummy</li>
+        <li>Log Entry 3 - Dummy</li>
+      </ul>
+    </section>
+
+    <!-- Approved Users Section -->
+    <section>
+      <h2>Approved Users <span class="badge" id="approved-badge">0</span></h2>
+      <ul id="approved-users-list">
+        <li>Approved User 1 - Dummy</li>
+        <li>Approved User 2 - Dummy</li>
+      </ul>
+    </section>
+
+    <!-- Hold/Blocked Users Section -->
+    <section>
+      <h2>Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span></h2>
+      <ul id="hold-blocked-list">
+        <li>Blocked User 1 - Dummy</li>
+        <li>Blocked User 2 - Dummy</li>
+      </ul>
     </section>
   </main>
 
@@ -97,14 +135,14 @@
       updateDoc,
       deleteDoc
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
+      storageBucket: "dws-management.firebaseapp.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7",
@@ -122,44 +160,42 @@
     });
 
     // Fetch Approval Requests
-   async function fetchApprovalRequests() {
-  const approvalList = document.getElementById('approval-requests-list');
-  approvalList.innerHTML = ''; // Clear previous content
+    async function fetchApprovalRequests() {
+      const approvalList = document.getElementById('approval-requests-list');
+      approvalList.innerHTML = ''; // Clear previous content
 
-  const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
-  const querySnapshot = await getDocs(approvalQuery);
-  const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
+      const querySnapshot = await getDocs(approvalQuery);
+      const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-  users.forEach(user => {
-    const userDiv = document.createElement('div');
-    userDiv.innerHTML = `
-      <p>${user.username} (${user.email})</p>
-      <button class="button" id="approve-${user.id}">Approve</button>
-      <button class="button" id="reject-${user.id}">Reject</button>
-    `;
-    approvalList.appendChild(userDiv);
+      users.forEach(user => {
+        const userDiv = document.createElement('div');
+        userDiv.innerHTML = `
+          <p>${user.username} (${user.email})</p>
+          <button class="button" id="approve-${user.id}">Approve</button>
+          <button class="button" id="reject-${user.id}">Reject</button>
+        `;
+        approvalList.appendChild(userDiv);
 
-    // Attach event listeners
-    document.getElementById(`approve-${user.id}`).addEventListener('click', () => approveUser(user.id));
-    document.getElementById(`reject-${user.id}`).addEventListener('click', () => rejectUser(user.id));
-  });
-}
+        // Attach event listeners
+        document.getElementById(`approve-${user.id}`).addEventListener('click', () => approveUser(user.id));
+        document.getElementById(`reject-${user.id}`).addEventListener('click', () => rejectUser(user.id));
+      });
+    }
 
-async function approveUser(userId) {
-  console.log("Approving user:", userId); // Debug log
-  const userRef = doc(db, "Users", userId);
-  await updateDoc(userRef, { isApproved: true });
-  alert("User approved.");
-  fetchApprovalRequests();
-}
+    async function approveUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      await updateDoc(userRef, { isApproved: true });
+      alert("User approved.");
+      fetchApprovalRequests();
+    }
 
-async function rejectUser(userId) {
-  console.log("Rejecting user:", userId); // Debug log
-  const userRef = doc(db, "Users", userId);
-  await deleteDoc(userRef);
-  alert("User rejected.");
-  fetchApprovalRequests();
-}
+    async function rejectUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      await deleteDoc(userRef);
+      alert("User rejected.");
+      fetchApprovalRequests();
+    }
 
     // Fetch Approval Requests on Load
     window.onload = fetchApprovalRequests;
