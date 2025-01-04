@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
   <style>
-    /* Existing CSS code remains unchanged */
     * {
       margin: 0;
       padding: 0;
@@ -118,35 +117,109 @@
   </header>
 
   <main>
+    <!-- Approval Requests Section -->
     <section>
       <h2 onclick="toggleSection('approval-requests')">
-        Approval Requests <span class="badge" id="approval-badge">0</span>
+        Approval Requests <span class="badge" id="approval-badge">5</span>
       </h2>
       <ul id="approval-requests">
-        <!-- Approval list will be dynamically populated -->
+        <li onclick="toggleButtons('buttons-user1')">
+          User 1
+          <div class="user-buttons" id="buttons-user1">
+            <button class="button" onclick="demoFunction('Approve User 1')">Approve</button>
+            <button class="button" onclick="demoFunction('Reject User 1')">Reject</button>
+          </div>
+        </li>
+        <li onclick="toggleButtons('buttons-user2')">
+          User 2
+          <div class="user-buttons" id="buttons-user2">
+            <button class="button" onclick="demoFunction('Approve User 2')">Approve</button>
+            <button class="button" onclick="demoFunction('Reject User 2')">Reject</button>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Approved Users Section -->
+    <section>
+      <h2 onclick="toggleSection('approved-users')">
+        Approved Users <span class="badge" id="approved-badge">20</span>
+      </h2>
+      <ul id="approved-users">
+        <li onclick="toggleButtons('buttons-approved1')">
+          Approved User 1
+          <div class="user-buttons" id="buttons-approved1">
+            <button class="button" onclick="demoFunction('Hold Approved User 1')">Hold</button>
+            <button class="button" onclick="demoFunction('Block Approved User 1')">Block</button>
+            <button class="button" onclick="demoFunction('Remove Approved User 1')">Remove</button>
+          </div>
+        </li>
+        <li onclick="toggleButtons('buttons-approved2')">
+          Approved User 2
+          <div class="user-buttons" id="buttons-approved2">
+            <button class="button" onclick="demoFunction('Hold Approved User 2')">Hold</button>
+            <button class="button" onclick="demoFunction('Block Approved User 2')">Block</button>
+            <button class="button" onclick="demoFunction('Remove Approved User 2')">Remove</button>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Hold/Blocked Users Section -->
+    <section>
+      <h2 onclick="toggleSection('hold-blocked-users')">
+        Hold/Blocked Users <span class="badge" id="hold-blocked-badge">2</span>
+      </h2>
+      <ul id="hold-blocked-users">
+        <li onclick="toggleButtons('buttons-blocked1')">
+          Blocked User 1
+          <div class="user-buttons" id="buttons-blocked1">
+            <button class="button" onclick="demoFunction('Unblock Blocked User 1')">Unblock</button>
+          </div>
+        </li>
+        <li onclick="toggleButtons('buttons-blocked2')">
+          Blocked User 2
+          <div class="user-buttons" id="buttons-blocked2">
+            <button class="button" onclick="demoFunction('Unblock Blocked User 2')">Unblock</button>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Logged-In Users Section -->
+    <section>
+      <h2 onclick="toggleSection('online-users')">
+        Logged-In Users <span class="badge" id="online-badge">8</span>
+      </h2>
+      <ul id="online-users">
+        <li>Logged-In User 1</li>
+        <li>Logged-In User 2</li>
+      </ul>
+    </section>
+
+    <!-- Logs Section -->
+    <section>
+      <h2 onclick="toggleSection('logs')">
+        Logs <span class="badge" id="logs-badge">50</span>
+      </h2>
+      <ul id="logs">
+        <li>Log Entry 1</li>
+        <li>Log Entry 2</li>
       </ul>
     </section>
   </main>
 
   <script type="module">
+    // Firebase SDK integration
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      query,
-      where,
-      getDocs,
-      updateDoc,
-      doc,
-      deleteDoc
-    } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
+      storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7",
@@ -156,62 +229,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function fetchApprovalRequests() {
-      const approvalList = document.getElementById('approval-requests');
-      const approvalBadge = document.getElementById('approval-badge');
-      approvalList.innerHTML = ''; // Clear existing content
-
-      try {
-        const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
-        const querySnapshot = await getDocs(approvalQuery);
-
-        approvalBadge.textContent = querySnapshot.size;
-
-        if (querySnapshot.empty) {
-          approvalList.innerHTML = "<li>No approval requests found.</li>";
-        } else {
-          querySnapshot.forEach(doc => {
-            const user = doc.data();
-            const userId = doc.id;
-
-            const listItem = document.createElement('li');
-            listItem.innerHTML = `
-              <p>${user.username} (${user.email})</p>
-              <div class="user-buttons">
-                <button class="button" onclick="approveUser('${userId}')">Approve</button>
-                <button class="button" onclick="rejectUser('${userId}')">Reject</button>
-              </div>
-            `;
-            approvalList.appendChild(listItem);
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching approval requests:", error);
-      }
-    }
-
-    async function approveUser(userId) {
-      const userRef = doc(db, "Users", userId);
-      try {
-        await updateDoc(userRef, { isApproved: true });
-        alert("User approved.");
-        fetchApprovalRequests(); // Refresh the list
-      } catch (error) {
-        console.error("Error approving user:", error);
-      }
-    }
-
-    async function rejectUser(userId) {
-      const userRef = doc(db, "Users", userId);
-      try {
-        await deleteDoc(userRef);
-        alert("User rejected.");
-        fetchApprovalRequests(); // Refresh the list
-      } catch (error) {
-        console.error("Error rejecting user:", error);
-      }
-    }
-
+    // Functionality for toggling sections
     function toggleSection(sectionId) {
       const sections = document.querySelectorAll('ul');
       sections.forEach(section => section.classList.remove('active'));
@@ -219,11 +237,18 @@
       sectionToShow.classList.add('active');
     }
 
+    // Functionality for toggling user buttons
+    function toggleButtons(buttonId) {
+      const allButtons = document.querySelectorAll('.user-buttons');
+      allButtons.forEach(button => button.classList.remove('active'));
+      const buttonsToShow = document.getElementById(buttonId);
+      buttonsToShow.classList.toggle('active');
+    }
+
+    // Demo functionality for alerting actions
     function demoFunction(message) {
       alert(`Functionality: ${message}`);
     }
-
-    window.onload = fetchApprovalRequests;
   </script>
 </body>
 </html>
