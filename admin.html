@@ -95,6 +95,13 @@
     .button:hover {
       background-color: #45a049;
     }
+    .user-buttons {
+      display: none;
+      margin-left: 20px;
+    }
+    .user-buttons.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -105,7 +112,6 @@
       <div class="dropdown-content">
         <a href="#" onclick="demoFunction('Admin Profile')">Admin Profile</a>
         <a href="#" onclick="demoFunction('Logout')">Logout</a>
-        <a href="#" onclick="toggleSection('approved-users')">Approved Users</a>
       </div>
     </div>
   </header>
@@ -118,36 +124,19 @@
       </h2>
       <ul id="approval-requests">
         <li>
-          User 1 - <button class="button" onclick="demoFunction('Approve User 1')">Approve</button>
-          <button class="button" onclick="demoFunction('Reject User 1')">Reject</button>
+          User 1
+          <div class="user-buttons" id="buttons-user1">
+            <button class="button" onclick="demoFunction('Approve User 1')">Approve</button>
+            <button class="button" onclick="demoFunction('Reject User 1')">Reject</button>
+          </div>
         </li>
         <li>
-          User 2 - <button class="button" onclick="demoFunction('Approve User 2')">Approve</button>
-          <button class="button" onclick="demoFunction('Reject User 2')">Reject</button>
+          User 2
+          <div class="user-buttons" id="buttons-user2">
+            <button class="button" onclick="demoFunction('Approve User 2')">Approve</button>
+            <button class="button" onclick="demoFunction('Reject User 2')">Reject</button>
+          </div>
         </li>
-      </ul>
-    </section>
-
-    <!-- Online Users Section -->
-    <section>
-      <h2 onclick="toggleSection('online-users')">
-        Online Users <span class="badge" id="online-badge">3</span>
-      </h2>
-      <ul id="online-users">
-        <li>User A</li>
-        <li>User B</li>
-        <li>User C</li>
-      </ul>
-    </section>
-
-    <!-- User Logs Section -->
-    <section>
-      <h2 onclick="toggleSection('user-logs')">
-        User Logs <span class="badge" id="logs-badge">10</span>
-      </h2>
-      <ul id="user-logs">
-        <li>Log 1</li>
-        <li>Log 2</li>
       </ul>
     </section>
 
@@ -159,13 +148,15 @@
       <ul id="approved-users">
         <li>
           Approved User 1
-          <button class="button" onclick="demoFunction('Hold Approved User 1')">Hold</button>
-          <button class="button" onclick="demoFunction('Unhold Approved User 1')">Unhold</button>
+          <div class="user-buttons" id="buttons-approved1">
+            <button class="button" onclick="demoFunction('Remove Approved User 1')">Remove</button>
+          </div>
         </li>
         <li>
           Approved User 2
-          <button class="button" onclick="demoFunction('Hold Approved User 2')">Hold</button>
-          <button class="button" onclick="demoFunction('Unhold Approved User 2')">Unhold</button>
+          <div class="user-buttons" id="buttons-approved2">
+            <button class="button" onclick="demoFunction('Remove Approved User 2')">Remove</button>
+          </div>
         </li>
       </ul>
     </section>
@@ -176,8 +167,18 @@
         Hold/Blocked Users <span class="badge" id="hold-blocked-badge">2</span>
       </h2>
       <ul id="hold-blocked-users">
-        <li>Blocked User 1</li>
-        <li>Blocked User 2</li>
+        <li>
+          Blocked User 1
+          <div class="user-buttons" id="buttons-blocked1">
+            <button class="button" onclick="demoFunction('Unblock Blocked User 1')">Unblock</button>
+          </div>
+        </li>
+        <li>
+          Blocked User 2
+          <div class="user-buttons" id="buttons-blocked2">
+            <button class="button" onclick="demoFunction('Unblock Blocked User 2')">Unblock</button>
+          </div>
+        </li>
       </ul>
     </section>
   </main>
@@ -190,9 +191,22 @@
       sectionToShow.classList.add('active');
     }
 
+    function toggleButtons(buttonId) {
+      const allButtons = document.querySelectorAll('.user-buttons');
+      allButtons.forEach(button => button.classList.remove('active'));
+      const buttonsToShow = document.getElementById(buttonId);
+      buttonsToShow.classList.toggle('active');
+    }
+
     function demoFunction(message) {
       alert(`Functionality: ${message}`);
     }
+
+    // Attach toggle to user items
+    document.querySelectorAll('li').forEach((user, index) => {
+      const buttonId = `buttons-user${index + 1}`;
+      user.addEventListener('click', () => toggleButtons(buttonId));
+    });
   </script>
 </body>
 </html>
