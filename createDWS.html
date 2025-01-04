@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Save UserID and DWS No.</title>
+  <title>Firestore Save DWS</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 20px;
-      background-color: #f9f9f9;
+      background-color: #f4f7f6;
     }
     .container {
       max-width: 400px;
@@ -21,13 +21,12 @@
     }
     h1 {
       text-align: center;
-      font-size: 24px;
       margin-bottom: 20px;
     }
     label {
       font-weight: bold;
       display: block;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
     }
     input {
       width: 100%;
@@ -54,6 +53,14 @@
       margin-top: 10px;
       font-size: 14px;
     }
+    .error {
+      color: red;
+      text-align: center;
+    }
+    .success {
+      color: green;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -63,11 +70,11 @@
     <input type="text" id="userID" placeholder="Enter User ID">
     <label for="dwsNo">DWS No.</label>
     <input type="text" id="dwsNo" placeholder="Enter DWS No.">
-    <button onclick="saveData()">Save</button>
+    <button onclick="saveDws()">Save</button>
     <p class="message" id="message"></p>
   </div>
 
-  <!-- Firebase -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 
@@ -79,21 +86,25 @@
       projectId: "dws-management",
       storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6"
     };
 
     // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore(app);
 
-    async function saveData() {
+    async function saveDws() {
       const userID = document.getElementById('userID').value.trim();
       const dwsNo = document.getElementById('dwsNo').value.trim();
-      const message = document.getElementById('message');
+      const messageElement = document.getElementById('message');
 
+      // Clear previous messages
+      messageElement.textContent = '';
+
+      // Validate inputs
       if (!userID || !dwsNo) {
-        message.textContent = "Please fill in all fields.";
-        message.style.color = "red";
+        messageElement.textContent = 'Please fill in all fields.';
+        messageElement.className = 'error';
         return;
       }
 
@@ -102,19 +113,19 @@
         await docRef.set({
           userID: userID,
           dwsNo: dwsNo,
-          timestamp: new Date().toISOString(), // Optional: Add a timestamp
+          timestamp: new Date().toISOString() // Optional: Add timestamp
         });
 
-        message.textContent = "Data saved successfully!";
-        message.style.color = "green";
+        messageElement.textContent = 'Data saved successfully!';
+        messageElement.className = 'success';
 
-        // Clear the input fields
-        document.getElementById('userID').value = "";
-        document.getElementById('dwsNo').value = "";
+        // Clear input fields
+        document.getElementById('userID').value = '';
+        document.getElementById('dwsNo').value = '';
       } catch (error) {
-        console.error("Error saving data:", error);
-        message.textContent = "Failed to save data. Check console for details.";
-        message.style.color = "red";
+        console.error("Error saving data to Firestore:", error.message);
+        messageElement.textContent = 'Failed to save data. Check console for details.';
+        messageElement.className = 'error';
       }
     }
   </script>
