@@ -1,138 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firestore Setup</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        .button {
+            padding: 10px 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .settings {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            right: 0;
+            top: 40px;
+            z-index: 1000;
+        }
+
+        .dropdown a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: black;
+        }
+
+        .dropdown a:hover {
+            background-color: #f0f0f0;
+        }
+
+        .section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .visible {
+            display: block;
+        }
+    </style>
 </head>
 <body>
-  <h1>Firestore Setup</h1>
-  <button onclick="saveDws()">Save DWS</button>
+    <!-- Header -->
+    <h1>Admin Panel</h1>
 
-  <script>
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-      authDomain: "dws-management.firebaseapp.com",
-      projectId: "dws-management",
-      storageBucket: "dws-management.appspot.com",
-      messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-    };
+    <!-- Settings Dropdown -->
+    <div class="settings">
+        <button class="button" onclick="toggleSettings()">Settings</button>
+        <div class="dropdown" id="settings-dropdown">
+            <a href="adminProfile.html">Admin Profile</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </div>
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
+    <!-- Section Navigation -->
+    <div>
+        <button class="button" onclick="showSection('approval')">User Approval</button>
+        <button class="button" onclick="showSection('online')">Online Users</button>
+        <button class="button" onclick="showSection('logs')">User Logs</button>
+        <button class="button" onclick="showSection('approved')">Approved Users</button>
+        <button class="button" onclick="showSection('hold')">Hold/Blocked Users</button>
+    </div>
 
-    // Example DWS data
-    const exampleDwsData = {
-      dwsNo: "DWS-0001",
-      dwsDate: "2025-01-03",
-      structureName: "Bridge Construction",
-      siNo: "SI-001",
-      workDescription: "Foundation Work",
-      location: "City A",
-      manpower: [
-        { badgeNo: "123", name: "John", trade: "Welder", normalHour: 8, otHour: 2, holiday: "No" },
-        { badgeNo: "124", name: "Jane", trade: "Engineer", normalHour: 8, otHour: 0, holiday: "Yes" }
-      ],
-      equipment: [
-        { equipmentName: "Excavator", workingHours: 5 },
-        { equipmentName: "Cement Mixer", workingHours: 3 }
-      ],
-      consumables: [
-        { consumableName: "Cement", quantity: 50 },
-        { consumableName: "Steel Rods", quantity: 100 }
-      ],
-    };
+    <!-- Sections -->
+    <!-- User Approval Section -->
+    <div id="approval" class="section">
+        <h2>User Approval</h2>
+        <div id="approval-list"></div>
+    </div>
 
-    // Save DWS to Firestore
-    // Save DWS Data to Firestore
-async function saveDws() {
-  try {
-    console.log("Saving DWS..."); // Log when the function starts
+    <!-- Online Users Section -->
+    <div id="online" class="section">
+        <h2>Online Users</h2>
+        <div id="online-list"></div>
+    </div>
 
-    const userID = "hey"; // Replace with dynamic user ID if needed
-    console.log("User ID:", userID); // Log the user ID
+    <!-- User Logs Section -->
+    <div id="logs" class="section">
+        <h2>User Logs</h2>
+        <div id="logs-list"></div>
+        <input type="date" id="clear-date">
+        <button class="button" onclick="clearLogs()">Clear Logs by Date</button>
+    </div>
 
-    const dwsNo = document.getElementById('dwsNo').value;
-    const dwsDate = document.getElementById('dwsDate').value.trim();
-    const structureName = document.getElementById('structureName').value.trim();
-    const siNo = document.getElementById('siNo').value.trim();
-    const workDescription = document.getElementById('workDescription').value.trim();
-    const location = document.getElementById('location').value.trim();
+    <!-- Approved Users Section -->
+    <div id="approved" class="section">
+        <h2>Approved Users</h2>
+        <div id="approved-list"></div>
+    </div>
 
-    // Validation
-    if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
-      alert("Please fill in all fields!");
-      return;
-    }
+    <!-- Hold/Blocked Users Section -->
+    <div id="hold" class="section">
+        <h2>Hold/Blocked Users</h2>
+        <div id="hold-list"></div>
+    </div>
 
-    console.log("Fields validated successfully.");
+    <!-- JavaScript -->
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+            authDomain: "dws-management.firebaseapp.com",
+            projectId: "dws-management",
+            storageBucket: "dws-management.firebasestorage.app",
+            messagingSenderId: "23827231923",
+            appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+            measurementId: "G-L14GLJDYW7"
+        };
 
-    const manpower = [];
-    document.querySelectorAll("#manpowerTable tbody tr").forEach((row) => {
-      manpower.push({
-        badgeNo: row.cells[0].textContent,
-        name: row.cells[1].textContent,
-        trade: row.cells[2].textContent,
-        normalHour: parseInt(row.cells[3].textContent, 10),
-        otHour: parseInt(row.cells[4].textContent, 10),
-        holiday: row.cells[5].textContent || "N/A",
-      });
-    });
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore(app);
 
-    const equipment = [];
-    document.querySelectorAll("#equipmentTable tbody tr").forEach((row) => {
-      equipment.push({
-        equipmentName: row.cells[0].textContent,
-        workingHours: parseInt(row.cells[1].textContent, 10),
-      });
-    });
+        // Toggle Settings Dropdown
+        function toggleSettings() {
+            const dropdown = document.getElementById("settings-dropdown");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
 
-    const consumables = [];
-    document.querySelectorAll("#consumableTable tbody tr").forEach((row) => {
-      consumables.push({
-        consumableName: row.cells[0].textContent,
-        quantity: parseInt(row.cells[1].textContent, 10),
-      });
-    });
+        // Logout Function
+        function logout() {
+            auth.signOut().then(() => {
+                alert("Logged out successfully!");
+                window.location.href = "index.html";
+            }).catch((error) => {
+                alert("Logout failed: " + error.message);
+            });
+        }
 
-    console.log("Manpower:", manpower);
-    console.log("Equipment:", equipment);
-    console.log("Consumables:", consumables);
+        // Show Section
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll(".section");
+            sections.forEach((section) => {
+                section.classList.remove("visible");
+            });
+            document.getElementById(sectionId).classList.add("visible");
+        }
 
-    const dwsData = {
-      dwsNo,
-      dwsDate,
-      structureName,
-      siNo,
-      workDescription,
-      location,
-      manpower,
-      equipment,
-      consumables,
-    };
+        // User Approval Section
+        db.collection("Users").where("isApproved", "==", false).onSnapshot((snapshot) => {
+            const approvalList = document.getElementById("approval-list");
+            approvalList.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                approvalList.innerHTML += `
+                    <div>
+                        <p>Email: ${data.email}</p>
+                        <button class="button" onclick="approveUser('${doc.id}')">Approve</button>
+                        <button class="button" onclick="rejectUser('${doc.id}')">Reject</button>
+                    </div>
+                `;
+            });
+        });
 
-    console.log("DWS Data to be saved:", dwsData);
+        function approveUser(userId) {
+            db.collection("Users").doc(userId).update({ isApproved: true })
+                .then(() => alert("User approved!"))
+                .catch((error) => alert("Error approving user: " + error.message));
+        }
 
-    const collectionRef = db.collection("DWSRecords").doc(userID).collection("UserRecords");
-    await collectionRef.doc(dwsNo).set(dwsData);
+        function rejectUser(userId) {
+            db.collection("Users").doc(userId).delete()
+                .then(() => alert("User rejected and deleted!"))
+                .catch((error) => alert("Error rejecting user: " + error.message));
+        }
 
-    alert("DWS saved successfully!");
-    console.log("DWS saved successfully!");
-
-    dwsCounter++;
-    localStorage.setItem("dwsCounter", dwsCounter);
-    generateDwsNo();
-    resetForm();
-  } catch (error) {
-    console.error("Error saving DWS to Firestore:", error);
-    alert("Failed to save DWS. Check the console for details.");
-  }
-}
-  </script>
+        // Other Sections (Online Users, Logs, Approved Users, Hold/Blocked Users)
+        // You can use similar logic to update, delete, or fetch data dynamically.
+    </script>
 </body>
 </html>
