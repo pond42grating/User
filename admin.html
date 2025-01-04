@@ -6,8 +6,10 @@
   <title>Firebase Button Fix</title>
 </head>
 <body>
-  <h1>Firebase - Approve or Reject Users</h1>
+  <h1>Firebase - Approve/Reject Users & Online Users</h1>
   <div id="userList">Fetching unapproved users...</div>
+  <h2>Online Users</h2>
+  <div id="onlineUsers">Fetching online users...</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
@@ -27,7 +29,7 @@
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
+      storageBucket: "dws-management.firebaseapp.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
       measurementId: "G-L14GLJDYW7",
@@ -102,8 +104,43 @@
       }
     }
 
-    // Start listening for unapproved users
+    // Function to listen for online users
+    function listenForOnlineUsers() {
+      const onlineUsersDiv = document.getElementById("onlineUsers");
+      onlineUsersDiv.innerHTML = "Fetching online users...";
+
+      const q = query(collection(db, "Users"), where("isOnline", "==", true));
+      onSnapshot(q, (snapshot) => {
+        onlineUsersDiv.innerHTML = ""; // Clear the list before adding
+
+        if (snapshot.empty) {
+          onlineUsersDiv.innerHTML = "No online users.";
+          return;
+        }
+
+        snapshot.forEach((doc) => {
+          const user = doc.data();
+          const lastActive = user.lastActive
+            ? new Date(user.lastActive.seconds * 1000).toLocaleString()
+            : "N/A";
+
+          // Create online user item
+          const userDiv = document.createElement("div");
+          userDiv.innerHTML = `
+            <p>${user.username} (${user.email}) - Last Active: ${lastActive}</p>
+          `;
+
+          onlineUsersDiv.appendChild(userDiv);
+        });
+      }, (error) => {
+        console.error("Error listening to changes:", error);
+        onlineUsersDiv.innerHTML = "Error fetching online users.";
+      });
+    }
+
+    // Start listening for unapproved and online users
     listenForUnapprovedUsers();
+    listenForOnlineUsers();
   </script>
 </body>
 </html>
