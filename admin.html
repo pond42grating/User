@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
   <style>
+    /* Existing CSS code remains unchanged */
     * {
       margin: 0;
       padding: 0;
@@ -24,31 +25,52 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: relative;
     }
-    #settings {
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
       background-color: white;
-      color: #4CAF50;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      cursor: pointer;
+      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+      z-index: 1;
     }
-    #settings:hover {
-      background-color: #45a049;
-      color: white;
+    .dropdown-content a {
+      color: black;
+      padding: 10px 15px;
+      text-decoration: none;
+      display: block;
+    }
+    .dropdown-content a:hover {
+      background-color: #ddd;
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
     }
     main {
       flex: 1;
       padding: 2rem;
       overflow-y: auto;
     }
+    section {
+      margin-bottom: 20px;
+    }
     section h2 {
-      margin-bottom: 1rem;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
       cursor: pointer;
     }
     ul {
       list-style: none;
       padding: 0;
+      margin-top: 10px;
       display: none;
     }
     ul.active {
@@ -57,16 +79,16 @@
     .badge {
       background: red;
       color: white;
-      padding: 0.2rem 0.5rem;
-      border-radius: 50%;
-      font-size: 0.9rem;
-      margin-left: 0.5rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 10px;
     }
     .button {
       background-color: #4CAF50;
       color: white;
       padding: 10px 15px;
-      margin: 5px;
+      margin: 5px 0;
       border: none;
       border-radius: 5px;
       cursor: pointer;
@@ -74,21 +96,36 @@
     .button:hover {
       background-color: #45a049;
     }
+    .user-buttons {
+      display: none;
+      margin-left: 20px;
+    }
+    .user-buttons.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>Admin Dashboard</h1>
-    <button id="settings">Settings</button>
+    <div class="dropdown">
+      <button class="button">Settings</button>
+      <div class="dropdown-content">
+        <a href="#" onclick="demoFunction('Admin Profile')">Admin Profile</a>
+        <a href="#" onclick="demoFunction('Logout')">Logout</a>
+      </div>
+    </div>
   </header>
 
   <main>
-    <!-- Section Template -->
     <section>
-      <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
-      <ul id="approval-requests-list"></ul>
+      <h2 onclick="toggleSection('approval-requests')">
+        Approval Requests <span class="badge" id="approval-badge">0</span>
+      </h2>
+      <ul id="approval-requests">
+        <!-- Approval list will be dynamically populated -->
+      </ul>
     </section>
-    <!-- Add more sections as needed -->
   </main>
 
   <script type="module">
@@ -98,7 +135,10 @@
       collection,
       query,
       where,
-      getDocs
+      getDocs,
+      updateDoc,
+      doc,
+      deleteDoc
     } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase Configuration
@@ -116,26 +156,32 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Fetch Approval Requests
     async function fetchApprovalRequests() {
-      const approvalList = document.getElementById('approval-requests-list');
+      const approvalList = document.getElementById('approval-requests');
       const approvalBadge = document.getElementById('approval-badge');
-      approvalList.innerHTML = ''; // Clear previous content
+      approvalList.innerHTML = ''; // Clear existing content
 
       try {
         const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
         const querySnapshot = await getDocs(approvalQuery);
 
-        // Update badge count
         approvalBadge.textContent = querySnapshot.size;
 
         if (querySnapshot.empty) {
-          approvalList.innerHTML = "<p>No approval requests found.</p>";
+          approvalList.innerHTML = "<li>No approval requests found.</li>";
         } else {
           querySnapshot.forEach(doc => {
             const user = doc.data();
+            const userId = doc.id;
+
             const listItem = document.createElement('li');
-            listItem.textContent = `${user.username} (${user.email})`;
+            listItem.innerHTML = `
+              <p>${user.username} (${user.email})</p>
+              <div class="user-buttons">
+                <button class="button" onclick="approveUser('${userId}')">Approve</button>
+                <button class="button" onclick="rejectUser('${userId}')">Reject</button>
+              </div>
+            `;
             approvalList.appendChild(listItem);
           });
         }
@@ -144,10 +190,40 @@
       }
     }
 
-    // Fetch data on page load
-    window.onload = () => {
-      fetchApprovalRequests();
-    };
+    async function approveUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      try {
+        await updateDoc(userRef, { isApproved: true });
+        alert("User approved.");
+        fetchApprovalRequests(); // Refresh the list
+      } catch (error) {
+        console.error("Error approving user:", error);
+      }
+    }
+
+    async function rejectUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      try {
+        await deleteDoc(userRef);
+        alert("User rejected.");
+        fetchApprovalRequests(); // Refresh the list
+      } catch (error) {
+        console.error("Error rejecting user:", error);
+      }
+    }
+
+    function toggleSection(sectionId) {
+      const sections = document.querySelectorAll('ul');
+      sections.forEach(section => section.classList.remove('active'));
+      const sectionToShow = document.getElementById(sectionId);
+      sectionToShow.classList.add('active');
+    }
+
+    function demoFunction(message) {
+      alert(`Functionality: ${message}`);
+    }
+
+    window.onload = fetchApprovalRequests;
   </script>
 </body>
 </html>
