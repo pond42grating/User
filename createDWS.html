@@ -114,6 +114,7 @@
       margin-top: 10px;
       font-weight: bold;
       color: #4CAF50;
+      text-align: center;
     }
   </style>
 </head>
@@ -154,15 +155,105 @@
     <input type="text" id="location" placeholder="Enter Location">
   </div>
 
-  <!-- Save and Back Buttons -->
-  <div class="btn-group">
-    <button onclick="saveDws()">Save</button>
-    <button onclick="goBack()">Back</button>
+  <!-- Manpower Section -->
+  <div class="form-section">
+    <h3 class="section-title">Manpower</h3>
+    <label for="badgeNo">Badge No.</label>
+    <input type="text" id="badgeNo" placeholder="Enter Badge No.">
+
+    <label for="manpowerName">Name</label>
+    <input type="text" id="manpowerName" placeholder="Enter Name">
+
+    <label for="trade">Trade</label>
+    <input type="text" id="trade" placeholder="Enter Trade">
+
+    <label for="normalHour">Normal Hour</label>
+    <input type="number" id="normalHour" placeholder="Enter Normal Hours">
+
+    <label for="otHour">OT Hour</label>
+    <input type="number" id="otHour" placeholder="Enter OT Hours">
+
+    <label for="holiday">Holiday</label>
+    <input type="text" id="holiday" placeholder="Enter Holiday Info (Optional)">
+
+    <button onclick="addManpower()">Add Manpower</button>
+    <div class="preview-section">
+      <h4>Manpower Preview</h4>
+      <table id="manpowerTable">
+        <thead>
+          <tr>
+            <th>Badge No.</th>
+            <th>Name</th>
+            <th>Trade</th>
+            <th>Normal Hour</th>
+            <th>OT Hour</th>
+            <th>Holiday</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
-  <p id="feedbackMessage" class="feedback"></p>
+
+  <!-- Equipment Section -->
+  <div class="form-section">
+    <h3 class="section-title">Equipment</h3>
+    <label for="equipmentName">Equipment Name</label>
+    <input type="text" id="equipmentName" placeholder="Enter Equipment Name">
+
+    <label for="workingHours">Working Hours</label>
+    <input type="number" id="workingHours" placeholder="Enter Working Hours">
+
+    <button onclick="addEquipment()">Add Equipment</button>
+    <div class="preview-section">
+      <h4>Equipment Preview</h4>
+      <table id="equipmentTable">
+        <thead>
+          <tr>
+            <th>Equipment Name</th>
+            <th>Working Hours</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Consumables Section -->
+  <div class="form-section">
+    <h3 class="section-title">Consumables</h3>
+    <label for="consumableName">Consumable Name</label>
+    <input type="text" id="consumableName" placeholder="Enter Consumable Name">
+
+    <label for="quantity">Quantity</label>
+    <input type="number" id="quantity" placeholder="Enter Quantity">
+
+    <button onclick="addConsumable()">Add Consumable</button>
+    <div class="preview-section">
+      <h4>Consumables Preview</h4>
+      <table id="consumableTable">
+        <thead>
+          <tr>
+            <th>Consumable Name</th>
+            <th>Quantity</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Save and Back Buttons -->
+  <div class="form-section">
+    <div class="btn-group">
+      <button onclick="saveDws()">Save</button>
+      <button onclick="goBack()">Back</button>
+    </div>
+    <p id="feedbackMessage" class="feedback"></p>
+  </div>
 
   <script>
-    let dwsCounter = parseInt(localStorage.getItem('dwsCounter')) || 1; // Initialize DWS counter
+    let dwsCounter = parseInt(localStorage.getItem('dwsCounter')) || 1;
 
     function generateDwsNo() {
       const dwsNo = `DWS-${String(dwsCounter).padStart(4, '0')}`;
@@ -171,16 +262,19 @@
 
     function saveDws() {
       const feedbackMessage = document.getElementById('feedbackMessage');
-      feedbackMessage.style.display = 'block';
+            feedbackMessage.style.display = 'block';
       feedbackMessage.textContent = 'Saving...';
 
       setTimeout(() => {
         feedbackMessage.textContent = 'DWS Saved Successfully!';
         dwsCounter++;
         localStorage.setItem('dwsCounter', dwsCounter); // Update DWS counter in localStorage
-        generateDwsNo(); // Generate new DWS No.
-        resetForm(); // Reset the form
-      }, 1000); // Simulate saving delay
+        generateDwsNo(); // Generate the next DWS number
+        resetForm(); // Clear all input fields
+        setTimeout(() => {
+          feedbackMessage.style.display = 'none'; // Hide the feedback message after a delay
+        }, 2000);
+      }, 1000); // Simulated save delay
     }
 
     function goBack() {
@@ -189,18 +283,118 @@
       feedbackMessage.textContent = 'Going Back...';
 
       setTimeout(() => {
-        feedbackMessage.textContent = '';
-        // Simulate going back (e.g., window.location.href = "previousPage.html";)
-        alert('Back to Home');
-      }, 1000); // Simulate delay for going back
+        feedbackMessage.style.display = 'none';
+        alert('Back to Home'); // Simulate back action (you can replace with redirection logic)
+      }, 1000); // Simulated back delay
     }
 
     function resetForm() {
+      // Reset all input fields and clear preview tables
       document.getElementById('dwsDate').value = '';
       document.getElementById('structureName').value = '';
       document.getElementById('siNo').value = '';
       document.getElementById('workDescription').value = '';
       document.getElementById('location').value = '';
+      document.getElementById('badgeNo').value = '';
+      document.getElementById('manpowerName').value = '';
+      document.getElementById('trade').value = '';
+      document.getElementById('normalHour').value = '';
+      document.getElementById('otHour').value = '';
+      document.getElementById('holiday').value = '';
+      document.getElementById('equipmentName').value = '';
+      document.getElementById('workingHours').value = '';
+      document.getElementById('consumableName').value = '';
+      document.getElementById('quantity').value = '';
+
+      // Clear preview tables
+      document.querySelector('#manpowerTable tbody').innerHTML = '';
+      document.querySelector('#equipmentTable tbody').innerHTML = '';
+      document.querySelector('#consumableTable tbody').innerHTML = '';
+    }
+
+    // Add Manpower Functionality
+    const addedBadgeNumbersByDate = {};
+
+    function addManpower() {
+      const dwsDate = document.getElementById('dwsDate').value.trim();
+      const badgeNo = document.getElementById('badgeNo').value.trim();
+      const name = document.getElementById('manpowerName').value.trim();
+      const trade = document.getElementById('trade').value.trim();
+      const normalHour = document.getElementById('normalHour').value.trim();
+      const otHour = document.getElementById('otHour').value.trim();
+      const holiday = document.getElementById('holiday').value.trim();
+
+      if (!dwsDate || !badgeNo || !name || !trade || !normalHour || !otHour) {
+        alert('Please fill in all required fields (except Holiday)!');
+        return;
+      }
+
+      if (!addedBadgeNumbersByDate[dwsDate]) {
+        addedBadgeNumbersByDate[dwsDate] = new Set();
+      }
+      if (addedBadgeNumbersByDate[dwsDate].has(badgeNo)) {
+        alert(`Badge No. ${badgeNo} is already added for ${dwsDate}!`);
+        return;
+      }
+
+      addedBadgeNumbersByDate[dwsDate].add(badgeNo);
+
+      const table = document.getElementById('manpowerTable').querySelector('tbody');
+      table.innerHTML += `<tr>
+        <td>${badgeNo}</td>
+        <td>${name}</td>
+        <td>${trade}</td>
+        <td>${normalHour}</td>
+        <td>${otHour}</td>
+        <td>${holiday || 'N/A'}</td>
+      </tr>`;
+
+      document.getElementById('badgeNo').value = '';
+      document.getElementById('manpowerName').value = '';
+      document.getElementById('trade').value = '';
+      document.getElementById('normalHour').value = '';
+      document.getElementById('otHour').value = '';
+      document.getElementById('holiday').value = '';
+    }
+
+    // Add Equipment Functionality
+    function addEquipment() {
+      const equipmentName = document.getElementById('equipmentName').value.trim();
+      const workingHours = document.getElementById('workingHours').value.trim();
+
+      if (!equipmentName || !workingHours) {
+        alert('Please fill in all Equipment fields!');
+        return;
+      }
+
+      const table = document.getElementById('equipmentTable').querySelector('tbody');
+      table.innerHTML += `<tr>
+        <td>${equipmentName}</td>
+        <td>${workingHours}</td>
+      </tr>`;
+
+      document.getElementById('equipmentName').value = '';
+      document.getElementById('workingHours').value = '';
+    }
+
+    // Add Consumables Functionality
+    function addConsumable() {
+      const consumableName = document.getElementById('consumableName').value.trim();
+      const quantity = document.getElementById('quantity').value.trim();
+
+      if (!consumableName || !quantity) {
+        alert('Please fill in all Consumable fields!');
+        return;
+      }
+
+      const table = document.getElementById('consumableTable').querySelector('tbody');
+      table.innerHTML += `<tr>
+        <td>${consumableName}</td>
+        <td>${quantity}</td>
+      </tr>`;
+
+      document.getElementById('consumableName').value = '';
+      document.getElementById('quantity').value = '';
     }
 
     // Initialize the DWS No. on page load
