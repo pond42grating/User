@@ -93,22 +93,6 @@
       <h2>Approval Requests <span class="badge" id="approval-badge">0</span></h2>
       <ul id="approval-requests-list">Loading...</ul>
     </section>
-    <section>
-      <h2>Online Users <span class="badge" id="online-badge">0</span></h2>
-      <ul id="online-users-list">Loading...</ul>
-    </section>
-    <section>
-      <h2>User Logs <span class="badge" id="logs-badge">0</span></h2>
-      <ul id="logs-list">Loading...</ul>
-    </section>
-    <section>
-      <h2>Approved Users <span class="badge" id="approved-badge">0</span></h2>
-      <ul id="approved-users-list">Loading...</ul>
-    </section>
-    <section>
-      <h2>Hold/Blocked Users <span class="badge" id="hold-blocked-badge">0</span></h2>
-      <ul id="hold-blocked-list">Loading...</ul>
-    </section>
   </main>
 
   <script type="module">
@@ -136,57 +120,28 @@
       }
     });
 
-    function initializeSections() {
-      const sections = document.querySelectorAll("main section ul");
-      sections.forEach((section, index) => {
-        section.style.display = index === 0 ? "block" : "none"; // Open only the first section
-      });
-    }
-
-    function toggleSection(sectionId) {
-      const sections = document.querySelectorAll("main section ul");
-      sections.forEach((section) => {
-        if (section.id === sectionId) {
-          section.style.display = section.style.display === "none" ? "block" : "none";
-        } else {
-          section.style.display = "none";
-        }
-      });
-    }
-
-    document.querySelectorAll("main section h2").forEach((title) => {
-      const ulId = title.nextElementSibling.id;
-      title.addEventListener("click", () => toggleSection(ulId));
-    });
-
-    window.onload = () => {
-      initializeSections();
-      fetchApprovalRequests();
-    };
-
-    // Fetch approval requests function
     async function fetchApprovalRequests() {
-      const approvalList = document.getElementById('approval-requests-list');
-      const approvalBadge = document.getElementById('approval-badge');
-      approvalList.innerHTML = ''; // Clear previous content
+      const approvalList = document.getElementById("approval-requests-list");
+      const approvalBadge = document.getElementById("approval-badge");
 
-      // Get documents where `isApproved` is false
+      approvalList.innerHTML = ""; // Clear previous content
+
       const approvalQuery = query(collection(db, "Users"), where("isApproved", "==", false));
       const querySnapshot = await getDocs(approvalQuery);
-      const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      approvalBadge.textContent = users.length; // Update the approval badge count
+      const users = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      approvalBadge.textContent = users.length;
 
       if (users.length === 0) {
         approvalList.innerHTML = "<p>No approval requests found.</p>";
       } else {
-        users.forEach(user => {
-          const userDiv = document.createElement('div');
+        users.forEach((user) => {
+          const userDiv = document.createElement("div");
           userDiv.innerHTML = `
-            <p>${user.username} (${user.email}) 
+            <p>${user.username} (${user.email})
               <div class="button-container">
-                <button class="button" onclick="approveUser('${user.username}')">Approve</button>
-                <button class="button" onclick="rejectUser('${user.username}')">Reject</button>
+                <button class="button" onclick="approveUser('${user.id}')">Approve</button>
+                <button class="button" onclick="rejectUser('${user.id}')">Reject</button>
               </div>
             </p>`;
           approvalList.appendChild(userDiv);
@@ -194,51 +149,21 @@
       }
     }
 
-    // Approve user function (uses username for user identification)
-    async function approveUser(username) {
-      const userRef = query(collection(db, "Users"), where("username", "==", username)); // Query by username
-      const querySnapshot = await getDocs(userRef);
-      
-      if (!querySnapshot.empty) {
-        const docRef = querySnapshot.docs[0].ref;
-        await updateDoc(docRef, { isApproved: true });
-        alert(`User ${username} approved.`);
-        fetchApprovalRequests(); // Refresh the approval requests
-      } else {
-        alert(`User with username ${username} not found.`);
-      }
+    async function approveUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      await updateDoc(userRef, { isApproved: true });
+      alert("User approved.");
+      fetchApprovalRequests();
     }
 
-    // Reject user function (uses username for user identification)
-    async function rejectUser(username) {
-      const userRef = query(collection(db, "Users"), where("username", "==", username)); // Query by username
-      const querySnapshot = await getDocs(userRef);
-      
-      if (!querySnapshot.empty) {
-        const docRef = querySnapshot.docs[0].ref;
-        await deleteDoc(docRef); // Reject (delete the user)
-        alert(`User ${username} rejected.`);
-        fetchApprovalRequests(); // Refresh the approval requests
-      } else {
-        alert(`User with username ${username} not found.`);
-      }
+    async function rejectUser(userId) {
+      const userRef = doc(db, "Users", userId);
+      await deleteDoc(userRef);
+      alert("User rejected.");
+      fetchApprovalRequests();
     }
 
-    // Function to clear logs
-    function clearLogs() {
-      alert("Logs cleared");
-    }
-
-    // Function to handle logout
-    function logout() {
-      signOut(auth).then(() => {
-        alert("Logged out successfully!");
-        window.location.href = "index.html";
-      }).catch(error => {
-        console.error("Error during logout: ", error);
-        alert("Error: " + error.message);
-      });
-    }
+    window.onload = fetchApprovalRequests;
   </script>
 </body>
 </html>
