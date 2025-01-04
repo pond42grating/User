@@ -1,204 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
-    <style>
-        /* General Styles */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        h1, h2 {
-            color: #333;
-        }
-
-        .button {
-            padding: 10px 15px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
-
-        .button:hover {
-            background-color: #0056b3;
-        }
-
-        .settings {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-        }
-
-        .dropdown {
-            display: none;
-            position: absolute;
-            background-color: white;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            right: 0;
-            top: 40px;
-            z-index: 1000;
-        }
-
-        .dropdown a {
-            display: block;
-            padding: 10px;
-            text-decoration: none;
-            color: black;
-        }
-
-        .dropdown a:hover {
-            background-color: #f0f0f0;
-        }
-
-        .section {
-            display: none;
-            margin-top: 20px;
-        }
-
-        .visible {
-            display: block;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Save UserID and DWS No.</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    .container {
+      max-width: 400px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .message {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
-    <!-- Header -->
-    <h1>Admin Panel</h1>
+  <div class="container">
+    <h1>Save DWS Data</h1>
+    <label for="userID">User ID</label>
+    <input type="text" id="userID" placeholder="Enter User ID">
+    <label for="dwsNo">DWS No.</label>
+    <input type="text" id="dwsNo" placeholder="Enter DWS No.">
+    <button onclick="saveData()">Save</button>
+    <p class="message" id="message"></p>
+  </div>
 
-    <!-- Settings Dropdown -->
-    <div class="settings">
-        <button class="button" onclick="toggleSettings()">Settings</button>
-        <div class="dropdown" id="settings-dropdown">
-            <a href="adminProfile.html">Admin Profile</a>
-            <a href="#" onclick="logout()">Logout</a>
-        </div>
-    </div>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 
-    <!-- Section Navigation -->
-    <div>
-        <button class="button" onclick="showSection('approval')">User Approval</button>
-        <button class="button" onclick="showSection('online')">Online Users</button>
-        <button class="button" onclick="showSection('logs')">User Logs</button>
-        <button class="button" onclick="showSection('approved')">Approved Users</button>
-        <button class="button" onclick="showSection('hold')">Hold/Blocked Users</button>
-    </div>
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.appspot.com",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+    };
 
-    <!-- Sections -->
-    <!-- User Approval Section -->
-    <div id="approval" class="section">
-        <h2>User Approval</h2>
-        <div id="approval-list"></div>
-    </div>
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
 
-    <!-- Online Users Section -->
-    <div id="online" class="section">
-        <h2>Online Users</h2>
-        <div id="online-list"></div>
-    </div>
+    async function saveData() {
+      const userID = document.getElementById('userID').value.trim();
+      const dwsNo = document.getElementById('dwsNo').value.trim();
+      const message = document.getElementById('message');
 
-    <!-- User Logs Section -->
-    <div id="logs" class="section">
-        <h2>User Logs</h2>
-        <div id="logs-list"></div>
-        <input type="date" id="clear-date">
-        <button class="button" onclick="clearLogs()">Clear Logs by Date</button>
-    </div>
+      if (!userID || !dwsNo) {
+        message.textContent = "Please fill in all fields.";
+        message.style.color = "red";
+        return;
+      }
 
-    <!-- Approved Users Section -->
-    <div id="approved" class="section">
-        <h2>Approved Users</h2>
-        <div id="approved-list"></div>
-    </div>
-
-    <!-- Hold/Blocked Users Section -->
-    <div id="hold" class="section">
-        <h2>Hold/Blocked Users</h2>
-        <div id="hold-list"></div>
-    </div>
-
-    <!-- JavaScript -->
-    <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-            authDomain: "dws-management.firebaseapp.com",
-            projectId: "dws-management",
-            storageBucket: "dws-management.firebasestorage.app",
-            messagingSenderId: "23827231923",
-            appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-            measurementId: "G-L14GLJDYW7"
-        };
-
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore(app);
-
-        // Toggle Settings Dropdown
-        function toggleSettings() {
-            const dropdown = document.getElementById("settings-dropdown");
-            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-        }
-
-        // Logout Function
-        function logout() {
-            auth.signOut().then(() => {
-                alert("Logged out successfully!");
-                window.location.href = "index.html";
-            }).catch((error) => {
-                alert("Logout failed: " + error.message);
-            });
-        }
-
-        // Show Section
-        function showSection(sectionId) {
-            const sections = document.querySelectorAll(".section");
-            sections.forEach((section) => {
-                section.classList.remove("visible");
-            });
-            document.getElementById(sectionId).classList.add("visible");
-        }
-
-        // User Approval Section
-        db.collection("Users").where("isApproved", "==", false).onSnapshot((snapshot) => {
-            const approvalList = document.getElementById("approval-list");
-            approvalList.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                approvalList.innerHTML += `
-                    <div>
-                        <p>Email: ${data.email}</p>
-                        <button class="button" onclick="approveUser('${doc.id}')">Approve</button>
-                        <button class="button" onclick="rejectUser('${doc.id}')">Reject</button>
-                    </div>
-                `;
-            });
+      try {
+        const docRef = db.collection("DWSRecords").doc(userID).collection("UserRecords").doc(dwsNo);
+        await docRef.set({
+          userID: userID,
+          dwsNo: dwsNo,
+          timestamp: new Date().toISOString(), // Optional: Add a timestamp
         });
 
-        function approveUser(userId) {
-            db.collection("Users").doc(userId).update({ isApproved: true })
-                .then(() => alert("User approved!"))
-                .catch((error) => alert("Error approving user: " + error.message));
-        }
+        message.textContent = "Data saved successfully!";
+        message.style.color = "green";
 
-        function rejectUser(userId) {
-            db.collection("Users").doc(userId).delete()
-                .then(() => alert("User rejected and deleted!"))
-                .catch((error) => alert("Error rejecting user: " + error.message));
-        }
-
-        // Other Sections (Online Users, Logs, Approved Users, Hold/Blocked Users)
-        // You can use similar logic to update, delete, or fetch data dynamically.
-    </script>
+        // Clear the input fields
+        document.getElementById('userID').value = "";
+        document.getElementById('dwsNo').value = "";
+      } catch (error) {
+        console.error("Error saving data:", error);
+        message.textContent = "Failed to save data. Check console for details.";
+        message.style.color = "red";
+      }
+    }
+  </script>
 </body>
 </html>
