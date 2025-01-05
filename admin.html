@@ -4,30 +4,130 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 20px;
+      background-color: #4CAF50;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px;
+    }
+
+    .section-button {
+      padding: 10px 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f0f0f0;
+      cursor: pointer;
+      font-size: 14px;
+      text-align: center;
+      transition: background-color 0.3s ease;
+    }
+
+    .section-button:hover {
+      background-color: #e0e0e0;
+    }
+
+    .section {
+      display: none;
+      margin: 20px auto;
+      width: 90%;
+      max-width: 800px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    .section h2 {
+      margin-bottom: 10px;
+    }
+
+    .section div {
+      margin-top: 10px;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
   <h1>User Management</h1>
-  
-  <!-- Pending Users Section -->
-  <h2>Pending User Approvals</h2>
-  <div id="pending-users"></div>
-  
-  <!-- Approved Users Section -->
-  <h2>Approved Users</h2>
-  <div id="approved-users"></div>
-  
-  <!-- Hold/Blocked Users Section -->
-  <h2>Hold/Blocked Users</h2>
-  <div id="hold-blocked-users"></div>
-  
-  <!-- Online Users Section -->
-  <h2>Online Users</h2>
-  <div id="online-users"></div>
-  
-  <!-- User Logs Section -->
-  <h2>User Logs</h2>
-  <div id="user-logs"></div>
 
+  <!-- Navigation Buttons -->
+  <div class="button-container">
+    <button class="section-button" onclick="toggleSection('pending-users-section')">Pending</button>
+    <button class="section-button" onclick="toggleSection('approved-users-section')">Approved</button>
+    <button class="section-button" onclick="toggleSection('hold-blocked-users-section')">Hold/Blocked</button>
+    <button class="section-button" onclick="toggleSection('online-users-section')">Online</button>
+    <button class="section-button" onclick="toggleSection('user-logs-section')">Logs</button>
+  </div>
+
+  <!-- Sections -->
+  <div id="pending-users-section" class="section">
+    <h2>Pending User Approvals</h2>
+    <div id="pending-users"></div>
+  </div>
+
+  <div id="approved-users-section" class="section">
+    <h2>Approved Users</h2>
+    <div id="approved-users"></div>
+  </div>
+
+  <div id="hold-blocked-users-section" class="section">
+    <h2>Hold/Blocked Users</h2>
+    <div id="hold-blocked-users"></div>
+  </div>
+
+  <div id="online-users-section" class="section">
+    <h2>Online Users</h2>
+    <div id="online-users"></div>
+  </div>
+
+  <div id="user-logs-section" class="section">
+    <h2>User Logs</h2>
+    <div id="user-logs"></div>
+  </div>
+
+  <div class="footer">
+    <p>&copy; 2025 User Management System</p>
+  </div>
+
+  <script>
+    // Toggle Section Visibility
+    function toggleSection(sectionId) {
+      const sections = document.querySelectorAll('.section');
+      sections.forEach(section => section.classList.remove('active'));
+      document.getElementById(sectionId).classList.add('active');
+    }
+  </script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
@@ -47,232 +147,16 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Fetch and display pending users
-    async function fetchPendingUsers() {
-      const pendingUsersDiv = document.getElementById("pending-users");
-      pendingUsersDiv.innerHTML = "<p>Loading...</p>";
+    // Your existing functions go here
+    // fetchPendingUsers(), fetchApprovedUsers(), fetchHoldBlockedUsers(), fetchOnlineUsers(), fetchUserLogs()
+    // approveUser(), updateUserStatus(), removeUser()
 
-      try {
-        const usersRef = collection(db, "Users");
-        const q = query(usersRef, where("isApproved", "==", false));
-        const querySnapshot = await getDocs(q);
-
-        pendingUsersDiv.innerHTML = "";
-
-        if (querySnapshot.empty) {
-          pendingUsersDiv.innerHTML = "<p>No pending users found.</p>";
-          return;
-        }
-
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          const userDiv = document.createElement("div");
-          userDiv.innerHTML = `
-            <p><strong>Email:</strong> ${user.email}</p>
-            <button onclick="approveUser('${doc.id}')">Approve</button>
-            <button onclick="removeUser('${doc.id}')">Remove</button>
-          `;
-          pendingUsersDiv.appendChild(userDiv);
-        });
-      } catch (error) {
-        console.error("Error fetching pending users:", error);
-        pendingUsersDiv.innerHTML = "<p>Error loading users. Check console for details.</p>";
-      }
-    }
-
-    // Fetch and display approved users
-    async function fetchApprovedUsers() {
-      const approvedUsersDiv = document.getElementById("approved-users");
-      approvedUsersDiv.innerHTML = "<p>Loading...</p>";
-
-      try {
-        const usersRef = collection(db, "Users");
-        const q = query(usersRef, where("isApproved", "==", true), where("status", "==", ""));
-        const querySnapshot = await getDocs(q);
-
-        approvedUsersDiv.innerHTML = "";
-
-        if (querySnapshot.empty) {
-          approvedUsersDiv.innerHTML = "<p>No approved users found.</p>";
-          return;
-        }
-
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          const userDiv = document.createElement("div");
-          userDiv.innerHTML = `
-            <p><strong>Email:</strong> ${user.email}</p>
-            <p><strong>Status:</strong> ${user.status || "Active"}</p>
-            <button onclick="updateUserStatus('${doc.id}', 'Hold')">Hold</button>
-            <button onclick="updateUserStatus('${doc.id}', 'Blocked')">Block</button>
-            <button onclick="removeUser('${doc.id}')">Remove</button>
-          `;
-          approvedUsersDiv.appendChild(userDiv);
-        });
-      } catch (error) {
-        console.error("Error fetching approved users:", error);
-        approvedUsersDiv.innerHTML = "<p>Error loading users. Check console for details.</p>";
-      }
-    }
-
-    // Fetch and display hold/blocked users
-    async function fetchHoldBlockedUsers() {
-      const holdBlockedUsersDiv = document.getElementById("hold-blocked-users");
-      holdBlockedUsersDiv.innerHTML = "<p>Loading...</p>";
-
-      try {
-        const usersRef = collection(db, "Users");
-        const q = query(usersRef, where("status", "in", ["Hold", "Blocked"]));
-        const querySnapshot = await getDocs(q);
-
-        holdBlockedUsersDiv.innerHTML = "";
-
-        if (querySnapshot.empty) {
-          holdBlockedUsersDiv.innerHTML = "<p>No hold/blocked users found.</p>";
-          return;
-        }
-
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          const userDiv = document.createElement("div");
-          userDiv.innerHTML = `
-            <p><strong>Email:</strong> ${user.email}</p>
-            <p><strong>Current Status:</strong> ${user.status}</p>
-            <button onclick="updateUserStatus('${doc.id}', '')">Unhold/Unblock</button>
-            <button onclick="removeUser('${doc.id}')">Remove</button>
-          `;
-          holdBlockedUsersDiv.appendChild(userDiv);
-        });
-      } catch (error) {
-        console.error("Error fetching hold/blocked users:", error);
-        holdBlockedUsersDiv.innerHTML = "<p>Error loading users. Check console for details.</p>";
-      }
-    }
-
-    // Fetch and display online users
-    async function fetchOnlineUsers() {
-      const onlineUsersDiv = document.getElementById("online-users");
-      onlineUsersDiv.innerHTML = "<p>Loading...</p>";
-
-      try {
-        const usersRef = collection(db, "Users");
-        const q = query(usersRef, where("isOnline", "==", true));
-        const querySnapshot = await getDocs(q);
-
-        onlineUsersDiv.innerHTML = "";
-
-        if (querySnapshot.empty) {
-          onlineUsersDiv.innerHTML = "<p>No online users found.</p>";
-          return;
-        }
-
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          const lastLogin = user.lastLogin ? new Date(user.lastLogin) : null;
-          const diff = lastLogin ? (Date.now() - lastLogin) / (1000 * 60) : 0; // Minutes online
-          const hours = Math.floor(diff / 60);
-          const minutes = Math.floor(diff % 60);
-          const onlineDuration = `${hours} hours and ${minutes} minutes online`;
-          const userDiv = document.createElement("div");
-          userDiv.innerHTML = `
-            <p><strong>Email:</strong> ${user.email}</p>
-            <p><strong>Online Duration:</strong> ${onlineDuration}</p>
-          `;
-          onlineUsersDiv.appendChild(userDiv);
-        });
-      } catch (error) {
-        console.error("Error fetching online users:", error);
-        onlineUsersDiv.innerHTML = "<p>Error loading users. Check console for details.</p>";
-      }
-    }
-
-    // Fetch and display user logs
-    async function fetchUserLogs() {
-      const userLogsDiv = document.getElementById("user-logs");
-      userLogsDiv.innerHTML = "<p>Loading...</p>";
-
-      try {
-        const usersRef = collection(db, "Users");
-        const querySnapshot = await getDocs(usersRef);
-
-        userLogsDiv.innerHTML = "";
-
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          if (user.loginLogs && user.loginLogs.length > 0) {
-            const logsDiv = document.createElement("div");
-            logsDiv.innerHTML = `<h3>${user.email} Logs:</h3>`;
-            user.loginLogs.forEach((log) => {
-              logsDiv.innerHTML += `
-                <p><strong>Activity:</strong> ${log.activity}</p>
-                <p><strong>Timestamp:</strong> ${new Date(log.timestamp).toLocaleString()}</p>
-              `;
-            });
-            userLogsDiv.appendChild(logsDiv);
-          }
-        });
-
-        if (userLogsDiv.innerHTML === "") {
-          userLogsDiv.innerHTML = "<p>No logs found.</p>";
-        }
-      } catch (error) {
-        console.error("Error fetching user logs:", error);
-        userLogsDiv.innerHTML = "<p>Error loading user logs. Check console for details.</p>";
-      }
-    }
-
-    // Approve user
-    async function approveUser(userId) {
-      try {
-        const userDoc = doc(db, "Users", userId);
-        await updateDoc(userDoc, { isApproved: true });
-        alert(`User ${userId} approved.`);
-        fetchPendingUsers();
-        fetchApprovedUsers();
-      } catch (error) {
-        console.error("Error approving user:", error);
-        alert("Error approving user. Check console for details.");
-      }
-    }
-
-    // Update user status
-    async function updateUserStatus(userId, status) {
-      try {
-        const userDoc = doc(db, "Users", userId);
-        await updateDoc(userDoc, { status });
-        alert(`User ${userId} status updated to ${status || "Active"}.`);
-        fetchApprovedUsers();
-        fetchHoldBlockedUsers();
-      } catch (error) {
-        console.error(`Error updating user status to ${status}:`, error);
-        alert(`Error updating user status. Check console for details.`);
-      }
-    }
-
-    // Remove user
-    async function removeUser(userId) {
-      try {
-        const userDoc = doc(db, "Users", userId);
-        await deleteDoc(userDoc);
-        alert(`User ${userId} removed.`);
-        fetchPendingUsers();
-        fetchApprovedUsers();
-        fetchHoldBlockedUsers();
-        fetchOnlineUsers();
-      } catch (error) {
-        console.error("Error removing user:", error);
-        alert("Error removing user. Check console for details.");
-      }
-    }
-
-    // Fetch all sections on page load
     fetchPendingUsers();
     fetchApprovedUsers();
     fetchHoldBlockedUsers();
     fetchOnlineUsers();
     fetchUserLogs();
 
-    // Expose functions globally (optional, for debugging)
     window.approveUser = approveUser;
     window.updateUserStatus = updateUserStatus;
     window.removeUser = removeUser;
