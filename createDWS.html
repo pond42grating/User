@@ -156,7 +156,6 @@
   <!-- Save DWS -->
   <button type="button" id="saveDwsBtn">Save DWS</button>
 
-  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
@@ -173,23 +172,28 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
-    document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
-    document.getElementById("addConsumableBtn").addEventListener("click", addConsumable);
-    document.getElementById("saveDwsBtn").addEventListener("click", saveDWS);
-
     let dwsCounter = parseInt(localStorage.getItem("dwsCounter")) || 1;
 
-    function addManpower() {
-      const badgeNo = document.getElementById("badgeNo").value;
-      const name = document.getElementById("manpowerName").value;
-      const trade = document.getElementById("trade").value;
-      const normalHour = document.getElementById("normalHour").value;
-      const otHour = document.getElementById("otHour").value;
-      const holiday = document.getElementById("holiday").value;
+    function generateDwsNo() {
+      const dwsNo = `DWS-${String(dwsCounter).padStart(4, "0")}`;
+      document.getElementById("dwsNo").value = dwsNo;
+    }
 
-      const table = document.getElementById("manpowerTable");
-      const row = table.insertRow();
+    document.getElementById("addManpowerBtn").addEventListener("click", () => {
+      const badgeNo = document.getElementById("badgeNo").value.trim();
+      const name = document.getElementById("manpowerName").value.trim();
+      const trade = document.getElementById("trade").value.trim();
+      const normalHour = document.getElementById("normalHour").value.trim();
+      const otHour = document.getElementById("otHour").value.trim();
+      const holiday = document.getElementById("holiday").value.trim();
+
+      if (!badgeNo || !name || !trade) {
+        alert("All manpower fields are required.");
+        return;
+      }
+
+      const manpowerTable = document.getElementById("manpowerTable");
+      const row = manpowerTable.insertRow();
       row.innerHTML = `
         <td>${badgeNo}</td>
         <td>${name}</td>
@@ -199,46 +203,51 @@
         <td>${holiday}</td>
         <td><button onclick="deleteRow(this)">Delete</button></td>
       `;
-    }
+    });
 
-    function addEquipment() {
-      const equipmentName = document.getElementById("equipmentName").value;
-      const workingHours = document.getElementById("workingHours").value;
+    document.getElementById("addEquipmentBtn").addEventListener("click", () => {
+           const equipmentName = document.getElementById("equipmentName").value.trim();
+      const workingHours = document.getElementById("workingHours").value.trim();
 
-      const table = document.getElementById("equipmentTable");
-      const row = table.insertRow();
+      if (!equipmentName || !workingHours) {
+        alert("All equipment fields are required.");
+        return;
+      }
+
+      const equipmentTable = document.getElementById("equipmentTable");
+      const row = equipmentTable.insertRow();
       row.innerHTML = `
         <td>${equipmentName}</td>
         <td>${workingHours}</td>
         <td><button onclick="deleteRow(this)">Delete</button></td>
       `;
-    }
+    });
 
-    function addConsumable() {
-      const consumableName = document.getElementById("consumableName").value;
-      const quantity = document.getElementById("quantity").value;
+    document.getElementById("addConsumableBtn").addEventListener("click", () => {
+      const consumableName = document.getElementById("consumableName").value.trim();
+      const quantity = document.getElementById("quantity").value.trim();
 
-      const table = document.getElementById("consumableTable");
-      const row = table.insertRow();
+      if (!consumableName || !quantity) {
+        alert("All consumable fields are required.");
+        return;
+      }
+
+      const consumableTable = document.getElementById("consumableTable");
+      const row = consumableTable.insertRow();
       row.innerHTML = `
         <td>${consumableName}</td>
         <td>${quantity}</td>
         <td><button onclick="deleteRow(this)">Delete</button></td>
       `;
-    }
+    });
 
-    function deleteRow(button) {
-      const row = button.parentNode.parentNode;
-      row.parentNode.removeChild(row);
-    }
-
-    async function saveDWS() {
-      const dwsNo = `DWS-${String(dwsCounter).padStart(4, "0")}`;
-      const dwsDate = document.getElementById("dwsDate").value;
-      const structureName = document.getElementById("structureName").value;
-      const siNo = document.getElementById("siNo").value;
-      const workDescription = document.getElementById("workDescription").value;
-      const location = document.getElementById("location").value;
+    document.getElementById("saveDwsBtn").addEventListener("click", async () => {
+      const dwsNo = document.getElementById("dwsNo").value;
+      const dwsDate = document.getElementById("dwsDate").value.trim();
+      const structureName = document.getElementById("structureName").value.trim();
+      const siNo = document.getElementById("siNo").value.trim();
+      const workDescription = document.getElementById("workDescription").value.trim();
+      const location = document.getElementById("location").value.trim();
 
       if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
         alert("All fields are required before saving.");
@@ -253,21 +262,21 @@
           trade: row.cells[2].textContent,
           normalHour: row.cells[3].textContent,
           otHour: row.cells[4].textContent,
-          holiday: row.cells[5].textContent
+          holiday: row.cells[5].textContent,
         }));
 
       const equipment = Array.from(document.querySelectorAll("#equipmentTable tr"))
         .slice(1)
         .map(row => ({
           name: row.cells[0].textContent,
-          workingHours: row.cells[1].textContent
+          workingHours: row.cells[1].textContent,
         }));
 
       const consumables = Array.from(document.querySelectorAll("#consumableTable tr"))
         .slice(1)
         .map(row => ({
           name: row.cells[0].textContent,
-          quantity: row.cells[1].textContent
+          quantity: row.cells[1].textContent,
         }));
 
       const dwsData = {
@@ -279,19 +288,25 @@
         location,
         manpower,
         equipment,
-        consumables
+        consumables,
       };
 
       try {
         await addDoc(collection(db, "DWS"), dwsData);
-        alert("DWS saved successfully!");
+        alert(`DWS ${dwsNo} saved successfully!`);
         dwsCounter++;
         localStorage.setItem("dwsCounter", dwsCounter);
         clearAllFields();
+        generateDwsNo();
       } catch (error) {
         console.error("Error saving DWS:", error);
-        alert("Error saving DWS. Please try again.");
+        alert("Failed to save DWS. Please try again.");
       }
+    });
+
+    function deleteRow(button) {
+      const row = button.parentNode.parentNode;
+      row.parentNode.removeChild(row);
     }
 
     function clearAllFields() {
