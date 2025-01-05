@@ -14,22 +14,17 @@
     }
 
     .button-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 10px;
       margin: 20px auto;
-      max-width: 800px;
       padding: 10px;
     }
 
     .section-button {
-      padding: 10px;
+      padding: 10px 20px;
       border: 1px solid #ddd;
       border-radius: 5px;
       background-color: #f0f0f0;
       cursor: pointer;
       font-size: 14px;
-      white-space: nowrap;
       text-align: center;
     }
 
@@ -60,39 +55,15 @@
 <body>
   <h1>User Management</h1>
 
-  <!-- Top Buttons -->
+  <!-- Button for Pending Users -->
   <div class="button-container">
     <div class="section-button" onclick="showSection('pending-users-section')">Pending</div>
-    <div class="section-button" onclick="showSection('approved-users-section')">Approved</div>
-    <div class="section-button" onclick="showSection('hold-blocked-users-section')">Hold/Blocked</div>
-    <div class="section-button" onclick="showSection('online-users-section')">Online</div>
-    <div class="section-button" onclick="showSection('user-logs-section')">Logs</div>
   </div>
 
-  <!-- Sections -->
+  <!-- Pending Users Section -->
   <div id="pending-users-section" class="section">
     <h2>Pending User Approvals</h2>
     <div id="pending-users"></div>
-  </div>
-
-  <div id="approved-users-section" class="section">
-    <h2>Approved Users</h2>
-    <div id="approved-users"></div>
-  </div>
-
-  <div id="hold-blocked-users-section" class="section">
-    <h2>Hold/Blocked Users</h2>
-    <div id="hold-blocked-users"></div>
-  </div>
-
-  <div id="online-users-section" class="section">
-    <h2>Online Users</h2>
-    <div id="online-users"></div>
-  </div>
-
-  <div id="user-logs-section" class="section">
-    <h2>User Logs</h2>
-    <div id="user-logs"></div>
   </div>
 
   <script type="module">
@@ -114,7 +85,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Toggle sections
+    // Show the selected section
     function showSection(sectionId) {
       const sections = document.querySelectorAll('.section');
       sections.forEach(section => {
@@ -156,12 +127,6 @@
       }
     }
 
-    // Add similar functions for approved users, hold/blocked users, online users, and logs
-    async function fetchApprovedUsers() { /* Existing functionality */ }
-    async function fetchHoldBlockedUsers() { /* Existing functionality */ }
-    async function fetchOnlineUsers() { /* Existing functionality */ }
-    async function fetchUserLogs() { /* Existing functionality */ }
-
     // Approve user
     async function approveUser(userId) {
       try {
@@ -169,24 +134,9 @@
         await updateDoc(userDoc, { isApproved: true });
         alert(`User ${userId} approved.`);
         fetchPendingUsers();
-        fetchApprovedUsers();
       } catch (error) {
         console.error("Error approving user:", error);
         alert("Error approving user. Check console for details.");
-      }
-    }
-
-    // Update user status
-    async function updateUserStatus(userId, status) {
-      try {
-        const userDoc = doc(db, "Users", userId);
-        await updateDoc(userDoc, { status });
-        alert(`User ${userId} status updated to ${status || "Active"}.`);
-        fetchApprovedUsers();
-        fetchHoldBlockedUsers();
-      } catch (error) {
-        console.error(`Error updating user status to ${status}:`, error);
-        alert(`Error updating user status. Check console for details.`);
       }
     }
 
@@ -197,21 +147,14 @@
         await deleteDoc(userDoc);
         alert(`User ${userId} removed.`);
         fetchPendingUsers();
-        fetchApprovedUsers();
-        fetchHoldBlockedUsers();
-        fetchOnlineUsers();
       } catch (error) {
         console.error("Error removing user:", error);
         alert("Error removing user. Check console for details.`);
       }
     }
 
-    // Fetch all sections on page load
+    // Fetch pending users on page load
     fetchPendingUsers();
-    fetchApprovedUsers();
-    fetchHoldBlockedUsers();
-    fetchOnlineUsers();
-    fetchUserLogs();
   </script>
 </body>
 </html>
