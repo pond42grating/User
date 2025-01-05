@@ -15,6 +15,10 @@
   <!-- Approved Users Section -->
   <h2>Approved Users</h2>
   <div id="approved-users"></div>
+  
+  <!-- Hold/Blocked Users Section -->
+  <h2>Hold/Blocked Users</h2>
+  <div id="hold-blocked-users"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
@@ -103,6 +107,40 @@
       }
     }
 
+    // Fetch and display hold/blocked users
+    async function fetchHoldBlockedUsers() {
+      const holdBlockedUsersDiv = document.getElementById("hold-blocked-users");
+      holdBlockedUsersDiv.innerHTML = "<p>Loading...</p>"; // Loading indicator
+
+      try {
+        const usersRef = collection(db, "Users");
+        const q = query(usersRef, where("status", "in", ["Hold", "Blocked"]));
+        const querySnapshot = await getDocs(q);
+
+        holdBlockedUsersDiv.innerHTML = ""; // Clear previous content
+
+        if (querySnapshot.empty) {
+          holdBlockedUsersDiv.innerHTML = "<p>No hold/blocked users found.</p>";
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          const userDiv = document.createElement("div");
+          userDiv.innerHTML = `
+            <p><strong>Email:</strong> ${user.email}</p>
+            <p><strong>Current Status:</strong> ${user.status}</p>
+            <button onclick="updateUserStatus('${doc.id}', '')">Unhold/Unblock</button>
+            <button onclick="removeUser('${doc.id}')">Remove</button>
+          `;
+          holdBlockedUsersDiv.appendChild(userDiv);
+        });
+      } catch (error) {
+        console.error("Error fetching hold/blocked users:", error);
+        holdBlockedUsersDiv.innerHTML = "<p>Error loading users. Check console for details.</p>";
+      }
+    }
+
     // Approve user by updating `isApproved` status
     async function approveUser(userId) {
       try {
@@ -117,13 +155,14 @@
       }
     }
 
-    // Update user status (Hold/Blocked)
+    // Update user status (Hold/Blocked/Unhold/Unblock)
     async function updateUserStatus(userId, status) {
       try {
         const userDoc = doc(db, "Users", userId);
         await updateDoc(userDoc, { status });
-        alert(`User ${userId} status updated to ${status}.`);
+        alert(`User ${userId} status updated to ${status || "Active"}.`);
         fetchApprovedUsers(); // Refresh approved users list
+        fetchHoldBlockedUsers(); // Refresh hold/blocked users list
       } catch (error) {
         console.error(`Error updating user status to ${status}:`, error);
         alert(`Error updating user status. Check console for details.`);
@@ -138,6 +177,7 @@
         alert(`User ${userId} removed.`);
         fetchPendingUsers(); // Refresh pending users list
         fetchApprovedUsers(); // Refresh approved users list
+        fetchHoldBlockedUsers(); // Refresh hold/blocked users list
       } catch (error) {
         console.error("Error removing user:", error);
         alert("Error removing user. Check console for details.");
@@ -147,6 +187,7 @@
     // Fetch users on page load
     fetchPendingUsers();
     fetchApprovedUsers();
+    fetchHoldBlockedUsers();
 
     // Expose functions globally
     window.approveUser = approveUser;
