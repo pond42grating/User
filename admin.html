@@ -23,6 +23,10 @@
   <!-- Online Users Section -->
   <h2>Online Users</h2>
   <div id="online-users"></div>
+  
+  <!-- User Logs Section -->
+  <h2>User Logs</h2>
+  <div id="user-logs"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
@@ -42,108 +46,6 @@
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
-    // Fetch and display pending users
-    async function fetchPendingUsers() {
-      const pendingUsersDiv = document.getElementById("pending-users");
-      pendingUsersDiv.innerHTML = "<p>Loading...</p>"; // Loading indicator
-
-      try {
-        const usersRef = collection(db, "Users");
-        const q = query(usersRef, where("isApproved", "==", false));
-        const querySnapshot = await getDocs(q);
-
-        pendingUsersDiv.innerHTML = ""; // Clear previous content
-
-        if (querySnapshot.empty) {
-          pendingUsersDiv.innerHTML = "<p>No pending users found.</p>";
-          return;
-        }
-
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          const userDiv = document.createElement("div");
-          userDiv.innerHTML = `
-            <p><strong>Email:</strong> ${user.email}</p>
-            <button onclick="approveUser('${doc.id}')">Approve</button>
-            <button onclick="removeUser('${doc.id}')">Remove</button>
-          `;
-          pendingUsersDiv.appendChild(userDiv);
-        });
-      } catch (error) {
-        console.error("Error fetching pending users:", error);
-        pendingUsersDiv.innerHTML = "<p>Error loading users. Check console for details.</p>";
-      }
-    }
-
-    // Fetch and display approved users
-    async function fetchApprovedUsers() {
-      const approvedUsersDiv = document.getElementById("approved-users");
-      approvedUsersDiv.innerHTML = "<p>Loading...</p>"; // Loading indicator
-
-      try {
-        const usersRef = collection(db, "Users");
-        const q = query(usersRef, where("isApproved", "==", true), where("status", "==", ""));
-        const querySnapshot = await getDocs(q);
-
-        approvedUsersDiv.innerHTML = ""; // Clear previous content
-
-        if (querySnapshot.empty) {
-          approvedUsersDiv.innerHTML = "<p>No approved users found.</p>";
-          return;
-        }
-
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          const userDiv = document.createElement("div");
-          userDiv.innerHTML = `
-            <p><strong>Email:</strong> ${user.email}</p>
-            <p><strong>Status:</strong> ${user.status || "Active"}</p>
-            <button onclick="updateUserStatus('${doc.id}', 'Hold')">Hold</button>
-            <button onclick="updateUserStatus('${doc.id}', 'Blocked')">Block</button>
-            <button onclick="removeUser('${doc.id}')">Remove</button>
-          `;
-          approvedUsersDiv.appendChild(userDiv);
-        });
-      } catch (error) {
-        console.error("Error fetching approved users:", error);
-        approvedUsersDiv.innerHTML = "<p>Error loading users. Check console for details.</p>";
-      }
-    }
-
-    // Fetch and display hold/blocked users
-    async function fetchHoldBlockedUsers() {
-      const holdBlockedUsersDiv = document.getElementById("hold-blocked-users");
-      holdBlockedUsersDiv.innerHTML = "<p>Loading...</p>"; // Loading indicator
-
-      try {
-        const usersRef = collection(db, "Users");
-        const q = query(usersRef, where("status", "in", ["Hold", "Blocked"]));
-        const querySnapshot = await getDocs(q);
-
-        holdBlockedUsersDiv.innerHTML = ""; // Clear previous content
-
-        if (querySnapshot.empty) {
-          holdBlockedUsersDiv.innerHTML = "<p>No hold/blocked users found.</p>";
-          return;
-        }
-
-        querySnapshot.forEach((doc) => {
-          const user = doc.data();
-          const userDiv = document.createElement("div");
-          userDiv.innerHTML = `
-            <p><strong>Email:</strong> ${user.email}</p>
-            <p><strong>Current Status:</strong> ${user.status}</p>
-            <button onclick="updateUserStatus('${doc.id}', '')">Unhold/Unblock</button>
-            <button onclick="removeUser('${doc.id}')">Remove</button>
-          `;
-          holdBlockedUsersDiv.appendChild(userDiv);
-        });
-      } catch (error) {
-        console.error("Error fetching hold/blocked users:", error);
-        holdBlockedUsersDiv.innerHTML = "<p>Error loading users. Check console for details.</p>";
-      }
-    }
 
     // Fetch and display online users
     async function fetchOnlineUsers() {
@@ -165,9 +67,10 @@
         querySnapshot.forEach((doc) => {
           const user = doc.data();
           const lastLogin = user.lastLogin ? new Date(user.lastLogin) : null;
-          const onlineDuration = lastLogin
-            ? `${Math.floor((Date.now() - lastLogin) / (1000 * 60 * 60))} hours online`
-            : "Unknown duration";
+          const diff = lastLogin ? (Date.now() - lastLogin) / (1000 * 60) : 0; // Minutes online
+          const hours = Math.floor(diff / 60);
+          const minutes = Math.floor(diff % 60);
+          const onlineDuration = `${hours} hours and ${minutes} minutes online`;
           const userDiv = document.createElement("div");
           userDiv.innerHTML = `
             <p><strong>Email:</strong> ${user.email}</p>
@@ -181,60 +84,48 @@
       }
     }
 
-    // Approve user by updating `isApproved` status
-    async function approveUser(userId) {
-      try {
-        const userDoc = doc(db, "Users", userId);
-        await updateDoc(userDoc, { isApproved: true });
-        alert(`User ${userId} approved.`);
-        fetchPendingUsers(); // Refresh pending users list
-        fetchApprovedUsers(); // Refresh approved users list
-      } catch (error) {
-        console.error("Error approving user:", error);
-        alert("Error approving user. Check console for details.");
-      }
-    }
+    // Fetch and display user logs
+    async function fetchUserLogs() {
+      const userLogsDiv = document.getElementById("user-logs");
+      userLogsDiv.innerHTML = "<p>Loading...</p>"; // Loading indicator
 
-    // Update user status (Hold/Blocked/Unhold/Unblock)
-    async function updateUserStatus(userId, status) {
       try {
-        const userDoc = doc(db, "Users", userId);
-        await updateDoc(userDoc, { status });
-        alert(`User ${userId} status updated to ${status || "Active"}.`);
-        fetchApprovedUsers(); // Refresh approved users list
-        fetchHoldBlockedUsers(); // Refresh hold/blocked users list
-      } catch (error) {
-        console.error(`Error updating user status to ${status}:`, error);
-        alert(`Error updating user status. Check console for details.`);
-      }
-    }
+        const usersRef = collection(db, "Users");
+        const querySnapshot = await getDocs(usersRef);
 
-    // Remove user from Firestore
-    async function removeUser(userId) {
-      try {
-        const userDoc = doc(db, "Users", userId);
-        await deleteDoc(userDoc);
-        alert(`User ${userId} removed.`);
-        fetchPendingUsers(); // Refresh pending users list
-        fetchApprovedUsers(); // Refresh approved users list
-        fetchHoldBlockedUsers(); // Refresh hold/blocked users list
-        fetchOnlineUsers(); // Refresh online users list
+        userLogsDiv.innerHTML = ""; // Clear previous content
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          if (user.loginLogs && user.loginLogs.length > 0) {
+            const logsDiv = document.createElement("div");
+            logsDiv.innerHTML = `<h3>${user.email} Logs:</h3>`;
+            user.loginLogs.forEach((log) => {
+              logsDiv.innerHTML += `
+                <p><strong>Activity:</strong> ${log.activity}</p>
+                <p><strong>Timestamp:</strong> ${new Date(log.timestamp).toLocaleString()}</p>
+              `;
+            });
+            userLogsDiv.appendChild(logsDiv);
+          }
+        });
+
+        if (userLogsDiv.innerHTML === "") {
+          userLogsDiv.innerHTML = "<p>No logs found.</p>";
+        }
       } catch (error) {
-        console.error("Error removing user:", error);
-        alert("Error removing user. Check console for details.");
+        console.error("Error fetching user logs:", error);
+        userLogsDiv.innerHTML = "<p>Error loading user logs. Check console for details.</p>";
       }
     }
 
     // Fetch users on page load
-    fetchPendingUsers();
-    fetchApprovedUsers();
-    fetchHoldBlockedUsers();
     fetchOnlineUsers();
+    fetchUserLogs();
 
-    // Expose functions globally
-    window.approveUser = approveUser;
-    window.updateUserStatus = updateUserStatus;
-    window.removeUser = removeUser;
+    // Expose functions globally (optional, for debugging)
+    window.fetchOnlineUsers = fetchOnlineUsers;
+    window.fetchUserLogs = fetchUserLogs;
   </script>
 </body>
 </html>
