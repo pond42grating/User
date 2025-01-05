@@ -19,6 +19,10 @@
   <!-- Hold/Blocked Users Section -->
   <h2>Hold/Blocked Users</h2>
   <div id="hold-blocked-users"></div>
+  
+  <!-- Online Users Section -->
+  <h2>Online Users</h2>
+  <div id="online-users"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
@@ -141,6 +145,42 @@
       }
     }
 
+    // Fetch and display online users
+    async function fetchOnlineUsers() {
+      const onlineUsersDiv = document.getElementById("online-users");
+      onlineUsersDiv.innerHTML = "<p>Loading...</p>"; // Loading indicator
+
+      try {
+        const usersRef = collection(db, "Users");
+        const q = query(usersRef, where("isOnline", "==", true));
+        const querySnapshot = await getDocs(q);
+
+        onlineUsersDiv.innerHTML = ""; // Clear previous content
+
+        if (querySnapshot.empty) {
+          onlineUsersDiv.innerHTML = "<p>No online users found.</p>";
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          const lastLogin = user.lastLogin ? new Date(user.lastLogin) : null;
+          const onlineDuration = lastLogin
+            ? `${Math.floor((Date.now() - lastLogin) / (1000 * 60 * 60))} hours online`
+            : "Unknown duration";
+          const userDiv = document.createElement("div");
+          userDiv.innerHTML = `
+            <p><strong>Email:</strong> ${user.email}</p>
+            <p><strong>Online Duration:</strong> ${onlineDuration}</p>
+          `;
+          onlineUsersDiv.appendChild(userDiv);
+        });
+      } catch (error) {
+        console.error("Error fetching online users:", error);
+        onlineUsersDiv.innerHTML = "<p>Error loading users. Check console for details.</p>";
+      }
+    }
+
     // Approve user by updating `isApproved` status
     async function approveUser(userId) {
       try {
@@ -178,6 +218,7 @@
         fetchPendingUsers(); // Refresh pending users list
         fetchApprovedUsers(); // Refresh approved users list
         fetchHoldBlockedUsers(); // Refresh hold/blocked users list
+        fetchOnlineUsers(); // Refresh online users list
       } catch (error) {
         console.error("Error removing user:", error);
         alert("Error removing user. Check console for details.");
@@ -188,6 +229,7 @@
     fetchPendingUsers();
     fetchApprovedUsers();
     fetchHoldBlockedUsers();
+    fetchOnlineUsers();
 
     // Expose functions globally
     window.approveUser = approveUser;
