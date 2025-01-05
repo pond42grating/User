@@ -1,127 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Save DWS Data</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        .container {
-            max-width: 400px;
-            margin: auto;
-            text-align: center;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-        }
-        button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        .error, .success {
-            font-size: 14px;
-            margin-top: 10px;
-        }
-        .error {
-            color: red;
-        }
-        .success {
-            color: green;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firestore Minimal Test</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Save DWS Data</h1>
-        <form id="dwsForm">
-            <label for="userId">User ID</label>
-            <input type="text" id="userId" placeholder="Enter User ID" required>
-            
-            <label for="dwsNo">DWS No.</label>
-            <input type="text" id="dwsNo" placeholder="Enter DWS No." required>
-            
-            <button type="submit">Save</button>
-        </form>
-        <p id="status" class="error"></p>
-    </div>
+  <h1>Firestore Minimal Test</h1>
+  <button onclick="writeData()">Write Data</button>
+  <p id="output"></p>
 
-    <script>
-        console.log("Initializing Firebase...");
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID",
+    };
 
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-            authDomain: "dws-management.firebaseapp.com",
-            projectId: "dws-management",
-            storageBucket: "dws-management.firebasestorage.app",
-            messagingSenderId: "23827231923",
-            appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-            measurementId: "G-L14GLJDYW7"
-        };
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
 
-        // Initialize Firebase
-        let app, db;
-        try {
-            app = firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore(app);
-            console.log("Firebase initialized successfully.");
-        } catch (error) {
-            console.error("Error initializing Firebase:", error);
-            document.getElementById("status").textContent = "Failed to initialize Firebase. Check console for details.";
-        }
-
-        // Form Handling
-        const dwsForm = document.getElementById("dwsForm");
-        const status = document.getElementById("status");
-
-        dwsForm.addEventListener("submit", async (e) => {
-            e.preventDefault(); // Prevent form reload
-
-            const userId = document.getElementById("userId").value.trim();
-            const dwsNo = document.getElementById("dwsNo").value.trim();
-
-            // Validate input
-            if (!userId || !dwsNo) {
-                status.textContent = "Please fill out all fields.";
-                console.log("Validation failed: Empty fields.");
-                return;
-            }
-
-            console.log("Attempting to save data...");
-            console.log("User ID:", userId);
-            console.log("DWS No.:", dwsNo);
-
-            try {
-                // Save to Firestore
-                await db.collection("DWS").doc(userId).set({
-                    dwsNo: dwsNo,
-                    timestamp: new Date().toISOString()
-                });
-                console.log("Data saved successfully to Firestore.");
-                status.className = "success";
-                status.textContent = "Data saved successfully!";
-                dwsForm.reset(); // Clear form
-            } catch (error) {
-                console.error("Error saving data to Firestore:", error);
-                status.className = "error";
-                status.textContent = "Failed to save data. Check console for details.";
-            }
+    async function writeData() {
+      const output = document.getElementById('output');
+      try {
+        // Write a test document to Firestore
+        await db.collection('TestCollection').doc('TestDoc').set({
+          name: 'Test User',
+          timestamp: new Date().toISOString()
         });
-
-        console.log("Form submission handler initialized.");
-    </script>
+        output.textContent = 'Data written successfully!';
+        output.style.color = 'green';
+      } catch (error) {
+        console.error('Error:', error);
+        output.textContent = `Error: ${error.message}`;
+        output.style.color = 'red';
+      }
+    }
+  </script>
 </body>
 </html>
