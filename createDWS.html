@@ -174,17 +174,18 @@
     const db = getFirestore(app);
 
 
-// 1. Function to Fetch and Display DWS No. (Initialization)
+   // 1. Function to Fetch and Display DWS No. (Initialization)
 async function initializeDwsNo() {
   const counterDocRef = doc(db, "Counters", "DWSCounter");
 
   try {
-    console.log("Initializing DWS No...");
+    console.log("Fetching DWS No...");
     const counterDoc = await getDoc(counterDocRef);
 
     if (!counterDoc.exists()) {
-      console.error("DWSCounter document does not exist. Please initialize it in Firestore.");
-      alert("DWSCounter document does not exist. Please contact admin.");
+      console.error("DWSCounter document does not exist. Initializing...");
+      await setDoc(counterDocRef, { counter: 1 }); // Initialize if missing
+      document.getElementById("dwsNo").value = "DWS-0001";
       return;
     }
 
@@ -195,7 +196,7 @@ async function initializeDwsNo() {
     console.log("DWS No initialized:", dwsNo);
   } catch (error) {
     console.error("Error initializing DWS No:", error);
-    alert("Failed to initialize DWS No. Please try again.");
+    alert("Failed to initialize DWS No. Please check Firestore and try again.");
   }
 }
 
@@ -225,10 +226,6 @@ async function incrementDwsNo() {
   }
 }
 
-// Call the initializeDwsNo function on page load
-
-// Example usage of incrementDwsNo (e.g., in saveDWS function after successful save)
-// await incrementDwsNo();
 
     document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
     document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
@@ -377,11 +374,10 @@ async function incrementDwsNo() {
 
       try {
         await setDoc(doc(db, "DWS", dwsNo), dwsData);
-        
-       await incrementDwsNo();
 
     // Clear fields and initialize the next DWS No.
     clearAllFields();
+    await incrementDwsNo();
     await initializeDwsNo();
       } catch (error) {
         console.error("Error saving DWS:", error);
@@ -406,7 +402,8 @@ async function incrementDwsNo() {
       while (consumableTable.rows.length > 1) consumableTable.deleteRow(1);
     }
 
-    initializeDwsNo();
+    // Initialize DWS Number on Page Load
+initializeDwsNo();
   </script>
 
 </body>
