@@ -170,4 +170,59 @@
       }
     }
 
-    // 3.
+        // 3. Save DWS Function
+    async function saveDWS() {
+      const dwsNo = document.getElementById("dwsNo").value.trim();
+      const dwsDate = document.getElementById("dwsDate").value.trim();
+      const structureName = document.getElementById("structureName").value.trim();
+      const siNo = document.getElementById("siNo").value.trim();
+      const workDescription = document.getElementById("workDescription").value.trim();
+      const location = document.getElementById("location").value.trim();
+
+      if (!dwsNo || !dwsDate || !structureName || !siNo || !workDescription || !location) {
+        alert("All fields are required before saving.");
+        return;
+      }
+
+      const dwsData = {
+        dwsNo,
+        dwsDate,
+        structureName,
+        siNo,
+        workDescription,
+        location,
+      };
+
+      try {
+        // Save DWS data to Firestore
+        await setDoc(doc(db, "DWS", dwsNo), dwsData);
+
+        // Increment DWS counter and reinitialize the next DWS No.
+        await incrementDwsNo();
+        await initializeDwsNo();
+
+        alert(`DWS ${dwsNo} saved successfully!`);
+        clearFields();
+      } catch (error) {
+        console.error("Error saving DWS:", error);
+        alert("Error saving DWS. Please try again.");
+      }
+    }
+
+    // 4. Clear Input Fields
+    function clearFields() {
+      document.getElementById("dwsDate").value = "";
+      document.getElementById("structureName").value = "";
+      document.getElementById("siNo").value = "";
+      document.getElementById("workDescription").value = "";
+      document.getElementById("location").value = "";
+    }
+
+    // Event Listeners
+    document.getElementById("saveDwsBtn").addEventListener("click", saveDWS);
+
+    // Initialize DWS No on Page Load
+    initializeDwsNo();
+  </script>
+</body>
+</html>
