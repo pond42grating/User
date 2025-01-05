@@ -3,15 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pending Users</title>
+  <title>User Management</title>
 </head>
 <body>
-  <h1>Pending User Approvals</h1>
-  <div id="pending-users"></div> <!-- Output Section -->
+  <h1>User Management</h1>
+  
+  <!-- Pending Users Section -->
+  <h2>Pending User Approvals</h2>
+  <div id="pending-users"></div>
+  
+  <!-- Approved Users Section -->
+  <h2>Approved Users</h2>
+  <div id="approved-users"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     // Firebase Config
     const firebaseConfig = {
@@ -51,6 +58,7 @@
           userDiv.innerHTML = `
             <p><strong>Email:</strong> ${user.email}</p>
             <button onclick="approveUser('${doc.id}')">Approve</button>
+            <button onclick="removeUser('${doc.id}')">Remove</button>
           `;
           pendingUsersDiv.appendChild(userDiv);
         });
@@ -60,24 +68,72 @@
       }
     }
 
+    // Fetch and display approved users
+    async function fetchApprovedUsers() {
+      const approvedUsersDiv = document.getElementById("approved-users");
+      approvedUsersDiv.innerHTML = "<p>Loading...</p>"; // Loading indicator
+
+      try {
+        const usersRef = collection(db, "Users");
+        const q = query(usersRef, where("isApproved", "==", true), where("status", "==", ""));
+        const querySnapshot = await getDocs(q);
+
+        approvedUsersDiv.innerHTML = ""; // Clear previous content
+
+        if (querySnapshot.empty) {
+          approvedUsersDiv.innerHTML = "<p>No approved users found.</p>";
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          const userDiv = document.createElement("div");
+          userDiv.innerHTML = `
+            <p><strong>Email:</strong> ${user.email}</p>
+            <p><strong>Status:</strong> ${user.status || "Active"}</p>
+          `;
+          approvedUsersDiv.appendChild(userDiv);
+        });
+      } catch (error) {
+        console.error("Error fetching approved users:", error);
+        approvedUsersDiv.innerHTML = "<p>Error loading users. Check console for details.</p>";
+      }
+    }
+
     // Approve user by updating `isApproved` status
     async function approveUser(userId) {
       try {
         const userDoc = doc(db, "Users", userId);
         await updateDoc(userDoc, { isApproved: true });
         alert(`User ${userId} approved.`);
-        fetchPendingUsers(); // Refresh the list
+        fetchPendingUsers(); // Refresh pending users list
+        fetchApprovedUsers(); // Refresh approved users list
       } catch (error) {
         console.error("Error approving user:", error);
         alert("Error approving user. Check console for details.");
       }
     }
 
-    // Fetch pending users on page load
-    fetchPendingUsers();
+    // Remove user from Firestore
+    async function removeUser(userId) {
+      try {
+        const userDoc = doc(db, "Users", userId);
+        await deleteDoc(userDoc);
+        alert(`User ${userId} removed.`);
+        fetchPendingUsers(); // Refresh pending users list
+      } catch (error) {
+        console.error("Error removing user:", error);
+        alert("Error removing user. Check console for details.");
+      }
+    }
 
-    // Expose approveUser function globally
+    // Fetch users on page load
+    fetchPendingUsers();
+    fetchApprovedUsers();
+
+    // Expose functions globally
     window.approveUser = approveUser;
+    window.removeUser = removeUser;
   </script>
 </body>
 </html>
