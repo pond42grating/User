@@ -173,12 +173,43 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let dwsCounter = parseInt(localStorage.getItem("dwsCounter")) || 1;
-    const existingBadgeNos = {};
+    // 1. Fetch and Display DWS No.
+    async function initializeDwsNo() {
+      const counterDocRef = doc(db, "Counters", "DWSCounter");
+      try {
+        const counterDoc = await getDoc(counterDocRef);
+        if (!counterDoc.exists()) {
+          console.log("DWSCounter does not exist. Initializing...");
+          await setDoc(counterDocRef, { counter: 1 });
+          document.getElementById("dwsNo").value = "DWS-0001";
+          return;
+        }
+        const currentCounter = counterDoc.data().counter || 1;
+        const dwsNo = `DWS-${String(currentCounter).padStart(4, "0")}`;
+        document.getElementById("dwsNo").value = dwsNo;
+      } catch (error) {
+        console.error("Error initializing DWS No:", error);
+        alert("Error fetching DWS No. Please try again.");
+      }
+    }
 
-    function generateDwsNo() {
-      const dwsNo = `DWS-${String(dwsCounter).padStart(4, "0")}`;
-      document.getElementById("dwsNo").value = dwsNo;
+    // 2. Increment DWS Counter
+    async function incrementDwsNo() {
+      const counterDocRef = doc(db, "Counters", "DWSCounter");
+      try {
+        await runTransaction(db, async (transaction) => {
+          const counterDoc = await transaction.get(counterDocRef);
+          if (!counterDoc.exists()) {
+            transaction.set(counterDocRef, { counter: 2 });
+            return;
+          }
+          const currentCounter = counterDoc.data().counter || 1;
+          transaction.update(counterDocRef, { counter: currentCounter + 1 });
+        });
+      } catch (error) {
+        console.error("Error incrementing DWS No:", error);
+        alert("Error incrementing DWS No. Please try again.");
+      }
     }
 
     document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
@@ -328,11 +359,11 @@
 
       try {
         await setDoc(doc(db, "DWS", dwsNo), dwsData);
+        await incrementDwsNo();
+        await initializeDwsNo();
         alert(`DWS ${dwsNo} saved successfully!`);
-        dwsCounter++;
-        localStorage.setItem("dwsCounter", dwsCounter);
         clearAllFields();
-        generateDwsNo();
+        
       } catch (error) {
         console.error("Error saving DWS:", error);
         alert("Failed to save DWS. Please try again.");
@@ -356,7 +387,8 @@
       while (consumableTable.rows.length > 1) consumableTable.deleteRow(1);
     }
 
-    generateDwsNo();
+    // Initialize DWS No on Page Load
+    initializeDwsNo();
   </script>
 
 </body>
