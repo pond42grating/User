@@ -18,7 +18,38 @@
       padding: 20px;
       background-color: #4CAF50;
       color: white;
-      margin-bottom: 20px;
+      margin: 0;
+      position: relative;
+    }
+
+    .settings {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      cursor: pointer;
+    }
+
+    .settings-dropdown {
+      display: none;
+      position: absolute;
+      top: 50px;
+      right: 10px;
+      background-color: white;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .settings-dropdown a {
+      display: block;
+      padding: 10px;
+      text-decoration: none;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .settings-dropdown a:hover {
+      background-color: #f4f4f4;
     }
 
     .button-container {
@@ -59,14 +90,6 @@
       display: block;
     }
 
-    .section h2 {
-      margin-bottom: 10px;
-    }
-
-    .section div {
-      margin-top: 10px;
-    }
-
     .footer {
       text-align: center;
       padding: 10px;
@@ -79,7 +102,14 @@
   </style>
 </head>
 <body>
-  <h1>User Management</h1>
+  <h1>
+    User Management
+    <div class="settings" onclick="toggleSettingsDropdown()">⚙️</div>
+    <div id="settingsDropdown" class="settings-dropdown">
+      <a href="adminprofile.html">Admin Profile</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </h1>
 
   <!-- Navigation Buttons -->
   <div class="button-container">
@@ -121,6 +151,34 @@
   </div>
 
   <script>
+    // Toggle Settings Dropdown
+    function toggleSettingsDropdown() {
+      const dropdown = document.getElementById("settingsDropdown");
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    }
+
+    // Close dropdown when clicking outside
+    window.addEventListener("click", function (e) {
+      const dropdown = document.getElementById("settingsDropdown");
+      if (!e.target.matches('.settings') && !e.target.closest('#settingsDropdown')) {
+        dropdown.style.display = "none";
+      }
+    });
+
+    // Logout Function
+    async function logout() {
+      try {
+        const { getAuth, signOut } = await import("https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js");
+        const auth = getAuth();
+        await signOut(auth);
+        alert("Logged out successfully!");
+        window.location.href = "index.html";
+      } catch (error) {
+        console.error("Error during logout:", error);
+        alert("Error during logout. Check the console for details.");
+      }
+    }
+
     // Toggle Section Visibility
     function toggleSection(sectionId) {
       const sections = document.querySelectorAll('.section');
