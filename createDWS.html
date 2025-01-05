@@ -157,106 +157,29 @@
   <!-- Save DWS -->
   <button type="button" onclick="saveDWS()">Save DWS</button>
 
-  <script>
-    let dwsCounter = parseInt(localStorage.getItem("dwsCounter")) || 1;
-    const existingBadgeNos = {}; // Object to track badge numbers for each date
+  <!-- Firebase -->
+  <script type="module">
+    // Import Firebase SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-    function generateDwsNo() {
-      const dwsNo = `DWS-${String(dwsCounter).padStart(4, "0")}`;
-      document.getElementById("dwsNo").value = dwsNo;
-    }
+    // Firebase configuration
+    const firebaseConfig = {
+    apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+    authDomain: "dws-management.firebaseapp.com",
+    projectId: "dws-management",
+    storageBucket: "dws-management.firebasestorage.app",
+    messagingSenderId: "23827231923",
+    appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+    measurementId: "G-L14GLJDYW7"
+  };
 
-    function addManpower() {
-      const badgeNo = document.getElementById("badgeNo").value.trim();
-      const name = document.getElementById("manpowerName").value.trim();
-      const trade = document.getElementById("trade").value.trim();
-      const normalHour = document.getElementById("normalHour").value.trim();
-      const otHour = document.getElementById("otHour").value.trim();
-      const holiday = document.getElementById("holiday").value.trim();
-      const dwsDate = document.getElementById("dwsDate").value;
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-      if (!badgeNo || !name || !trade) {
-        alert("Please fill out all required fields in the Manpower section.");
-        return;
-      }
-
-      if (!existingBadgeNos[dwsDate]) {
-        existingBadgeNos[dwsDate] = new Set();
-      }
-
-      if (existingBadgeNos[dwsDate].has(badgeNo)) {
-        const proceed = confirm(
-          `This badge number is already present on this date. Do you want to add it again?`
-        );
-        if (!proceed) return;
-      }
-
-      existingBadgeNos[dwsDate].add(badgeNo);
-
-      const manpowerTable = document.getElementById("manpowerTable");
-      const row = manpowerTable.insertRow();
-      row.innerHTML = `
-        <td>${badgeNo}</td>
-        <td>${name}</td>
-        <td>${trade}</td>
-        <td>${normalHour}</td>
-        <td>${otHour}</td>
-        <td>${holiday}</td>
-        <td><button onclick="deleteManpowerRow(this, '${badgeNo}', '${dwsDate}')">Delete</button></td>
-      `;
-    }
-
-    function deleteManpowerRow(button, badgeNo, dwsDate) {
-      const row = button.parentNode.parentNode;
-      row.parentNode.removeChild(row);
-
-      if (existingBadgeNos[dwsDate]) {
-        existingBadgeNos[dwsDate].delete(badgeNo);
-      }
-    }
-
-    function addEquipment() {
-      const equipmentName = document.getElementById("equipmentName").value.trim();
-      const workingHours = document.getElementById("workingHours").value.trim();
-
-      if (!equipmentName || !workingHours) {
-        alert("Please fill out all required fields in the Equipment section.");
-        return;
-      }
-
-      const equipmentTable = document.getElementById("equipmentTable");
-      const row = equipmentTable.insertRow();
-      row.innerHTML = `
-        <td>${equipmentName}</td>
-        <td>${workingHours}</td>
-        <td><button onclick="deleteRow(this)">Delete</button></td>
-      `;
-    }
-
-    function addConsumable() {
-      const consumableName = document.getElementById("consumableName").value.trim();
-      const quantity = document.getElementById("quantity").value.trim();
-
-      if (!consumableName || !quantity) {
-        alert("Please fill out all required fields in the Consumable section.");
-        return;
-      }
-
-      const consumableTable = document.getElementById("consumableTable");
-      const row = consumableTable.insertRow();
-      row.innerHTML = `
-        <td>${consumableName}</td>
-        <td>${quantity}</td>
-        <td><button onclick="deleteRow(this)">Delete</button></td>
-      `;
-    }
-
-    function deleteRow(button) {
-      const row = button.parentNode.parentNode;
-      row.parentNode.removeChild(row);
-    }
-
-    function saveDWS() {
+    // Save DWS Function
+    async function saveDWS() {
       const dwsNo = document.getElementById("dwsNo").value;
       const dwsDate = document.getElementById("dwsDate").value;
       const structureName = document.getElementById("structureName").value;
@@ -270,20 +193,69 @@
       }
 
       const manpowerTable = document.getElementById("manpowerTable");
-
       if (manpowerTable.rows.length <= 1) {
-        const proceed = confirm(
-          "No manpower added. Do you still want to save the DWS?"
-        );
+        const proceed = confirm("No manpower added. Do you still want to save the DWS?");
         if (!proceed) return;
       }
 
-      alert(`DWS ${dwsNo} saved successfully!`);
-      dwsCounter++;
-      localStorage.setItem("dwsCounter", dwsCounter);
+      // Gather Manpower Data
+      const manpower = [];
+      for (let i = 1; i < manpowerTable.rows.length; i++) {
+        const row = manpowerTable.rows[i];
+        manpower.push({
+          badgeNo: row.cells[0].textContent,
+          name: row.cells[1].textContent,
+          trade: row.cells[2].textContent,
+          normalHour: row.cells[3].textContent,
+          otHour: row.cells[4].textContent,
+          holiday: row.cells[5].textContent,
+        });
+      }
 
-      clearAllFields();
-      generateDwsNo();
+      // Gather Equipment Data
+      const equipmentTable = document.getElementById("equipmentTable");
+      const equipment = [];
+      for (let i = 1; i < equipmentTable.rows.length; i++) {
+        const row = equipmentTable.rows[i];
+        equipment.push({
+          name: row.cells[0].textContent,
+          workingHours: row.cells[1].textContent,
+        });
+      }
+
+      // Gather Consumable Data
+      const consumableTable = document.getElementById("consumableTable");
+      const consumables = [];
+      for (let i = 1; i < consumableTable.rows.length; i++) {
+        const row = consumableTable.rows[i];
+        consumables.push({
+          name: row.cells[0].textContent,
+          quantity: row.cells[1].textContent,
+        });
+      }
+
+      // Save to Firestore
+      try {
+        await addDoc(collection(db, "DWS"), {
+          dwsNo,
+          dwsDate,
+          structureName,
+          siNo,
+          workDescription,
+          location,
+          manpower,
+          equipment,
+          consumables,
+          timestamp: new Date().toISOString(),
+        });
+
+        alert(`DWS ${dwsNo} saved successfully to Firestore!`);
+        clearAllFields();
+        generateDwsNo();
+      } catch (error) {
+        console.error("Error saving DWS:", error);
+        alert("Error saving DWS. Please try again.");
+      }
     }
 
     function clearAllFields() {
@@ -292,17 +264,6 @@
       document.getElementById("siNo").value = "";
       document.getElementById("workDescription").value = "";
       document.getElementById("location").value = "";
-      document.getElementById("badgeNo").value = "";
-      document.getElementById("manpowerName").value = "";
-      document.getElementById("trade").value = "";
-      document.getElementById("normalHour").value = "";
-      document.getElementById("otHour").value = "";
-      document.getElementById("holiday").value = "";
-      document.getElementById("equipmentName").value = "";
-      document.getElementById("workingHours").value = "";
-      document.getElementById("consumableName").value = "";
-      document.getElementById("quantity").value = "";
-      
 
       // Clear Manpower Table
       const manpowerTable = document.getElementById("manpowerTable");
@@ -321,6 +282,13 @@
       while (consumableTable.rows.length > 1) {
         consumableTable.deleteRow(1);
       }
+    }
+
+    function generateDwsNo() {
+      const dwsNo = `DWS-${String(dwsCounter).padStart(4, "0")}`;
+      document.getElementById("dwsNo").value = dwsNo;
+      dwsCounter++;
+      localStorage.setItem("dwsCounter", dwsCounter);
     }
 
     generateDwsNo();
