@@ -158,40 +158,59 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
-    apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-    authDomain: "dws-management.firebaseapp.com",
-    projectId: "dws-management",
-    storageBucket: "dws-management.firebasestorage.app",
-    messagingSenderId: "23827231923",
-    appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-    measurementId: "G-L14GLJDYW7"
-  };
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+      projectId: "YOUR_FIREBASE_PROJECT_ID",
+      storageBucket: "YOUR_FIREBASE_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_FIREBASE_MESSAGING_SENDER_ID",
+      appId: "YOUR_FIREBASE_APP_ID"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     let dwsCounter = parseInt(localStorage.getItem("dwsCounter")) || 1;
+    const existingBadgeNos = {};
 
     function generateDwsNo() {
       const dwsNo = `DWS-${String(dwsCounter).padStart(4, "0")}`;
       document.getElementById("dwsNo").value = dwsNo;
     }
 
-    document.getElementById("addManpowerBtn").addEventListener("click", () => {
+    document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
+    document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
+    document.getElementById("addConsumableBtn").addEventListener("click", addConsumable);
+    document.getElementById("saveDwsBtn").addEventListener("click", saveDWS);
+
+    function addManpower() {
       const badgeNo = document.getElementById("badgeNo").value.trim();
       const name = document.getElementById("manpowerName").value.trim();
       const trade = document.getElementById("trade").value.trim();
       const normalHour = document.getElementById("normalHour").value.trim();
       const otHour = document.getElementById("otHour").value.trim();
       const holiday = document.getElementById("holiday").value.trim();
+      const dwsDate = document.getElementById("dwsDate").value.trim();
 
-      if (!badgeNo || !name || !trade) {
-        alert("All manpower fields are required.");
+      if (!badgeNo || !name || !trade || !dwsDate) {
+        alert("All fields in the Manpower section are required.");
         return;
       }
+
+      if (!existingBadgeNos[dwsDate]) {
+        existingBadgeNos[dwsDate] = new Set();
+      }
+
+      if (existingBadgeNos[dwsDate].has(badgeNo)) {
+        const proceed = confirm(
+          `Badge No. ${badgeNo} is already entered for the date ${dwsDate}. Do you want to add it again?`
+        );
+        if (!proceed) return;
+      }
+
+      existingBadgeNos[dwsDate].add(badgeNo);
 
       const manpowerTable = document.getElementById("manpowerTable");
       const row = manpowerTable.insertRow();
@@ -202,16 +221,25 @@
         <td>${normalHour}</td>
         <td>${otHour}</td>
         <td>${holiday}</td>
-        <td><button onclick="deleteRow(this)">Delete</button></td>
+        <td><button onclick="deleteManpowerRow(this, '${badgeNo}', '${dwsDate}')">Delete</button></td>
       `;
-    });
+    }
 
-    document.getElementById("addEquipmentBtn").addEventListener("click", () => {
-           const equipmentName = document.getElementById("equipmentName").value.trim();
+    function deleteManpowerRow(button, badgeNo, dwsDate) {
+      const row = button.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+
+      if (existingBadgeNos[dwsDate]) {
+        existingBadgeNos[dwsDate].delete(badgeNo);
+      }
+    }
+
+    function addEquipment() {
+      const equipmentName = document.getElementById("equipmentName").value.trim();
       const workingHours = document.getElementById("workingHours").value.trim();
 
       if (!equipmentName || !workingHours) {
-        alert("All equipment fields are required.");
+        alert("All fields in the Equipment section are required.");
         return;
       }
 
@@ -222,14 +250,14 @@
         <td>${workingHours}</td>
         <td><button onclick="deleteRow(this)">Delete</button></td>
       `;
-    });
+    }
 
-    document.getElementById("addConsumableBtn").addEventListener("click", () => {
+    function addConsumable() {
       const consumableName = document.getElementById("consumableName").value.trim();
       const quantity = document.getElementById("quantity").value.trim();
 
       if (!consumableName || !quantity) {
-        alert("All consumable fields are required.");
+        alert("All fields in the Consumable section are required.");
         return;
       }
 
@@ -240,10 +268,15 @@
         <td>${quantity}</td>
         <td><button onclick="deleteRow(this)">Delete</button></td>
       `;
-    });
+    }
 
-    document.getElementById("saveDwsBtn").addEventListener("click", async () => {
-      const dwsNo = document.getElementById("dwsNo").value;
+    function deleteRow(button) {
+      const row = button.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+    }
+
+    async function saveDWS() {
+      const dwsNo = document.getElementById("dwsNo").value.trim();
       const dwsDate = document.getElementById("dwsDate").value.trim();
       const structureName = document.getElementById("structureName").value.trim();
       const siNo = document.getElementById("siNo").value.trim();
@@ -293,7 +326,7 @@
       };
 
       try {
-        await addDoc(collection(db, "DWS"), dwsData);
+        await setDoc(doc(db, "DWS", dwsNo), dwsData);
         alert(`DWS ${dwsNo} saved successfully!`);
         dwsCounter++;
         localStorage.setItem("dwsCounter", dwsCounter);
@@ -303,11 +336,6 @@
         console.error("Error saving DWS:", error);
         alert("Failed to save DWS. Please try again.");
       }
-    });
-
-    function deleteRow(button) {
-      const row = button.parentNode.parentNode;
-      row.parentNode.removeChild(row);
     }
 
     function clearAllFields() {
