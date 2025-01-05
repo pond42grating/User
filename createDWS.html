@@ -284,17 +284,8 @@
         <td>${normalHour}</td>
         <td>${otHour}</td>
         <td>${holiday}</td>
-        <td><button onclick="deleteManpowerRow(this, '${badgeNo}', '${dwsDate}')">Delete</button></td>
+        ><button onclick="deleteRow(this)">Delete</button></td>
       `;
-    }
-
-    function deleteManpowerRow(button, badgeNo, dwsDate) {
-      const row = button.parentNode.parentNode;
-      row.parentNode.removeChild(row);
-
-      if (existingBadgeNos[dwsDate]) {
-        existingBadgeNos[dwsDate].delete(badgeNo);
-      }
     }
 
     function addEquipment() {
