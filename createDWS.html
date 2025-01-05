@@ -9,11 +9,11 @@
 </head>
 <body>
   <h1>Firestore Write Test</h1>
-  <button onclick="writeTestData()">Save Test Data</button>
+  <button id="saveButton">Save Test Data</button>
   <p id="status"></p>
 
   <script>
-    // Updated Firebase Configuration
+    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
@@ -24,14 +24,25 @@
       measurementId: "G-L14GLJDYW7"
     };
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
+    // Initialize Firebase App and Firestore
+    let app, db;
+    try {
+      app = firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore(app);
+    } catch (error) {
+      console.error("Error initializing Firebase:", error);
+    }
 
+    // Function to Write Data
     async function writeTestData() {
       const statusElement = document.getElementById('status');
       try {
-        // Write a test document to Firestore
+        // Ensure Firestore is initialized
+        if (!db) {
+          throw new Error("Firestore is not initialized properly.");
+        }
+
+        // Write a simple document to Firestore
         await db.collection("TestCollection").doc("TestDocument").set({
           message: "Hello, Firestore!",
           timestamp: new Date().toISOString()
@@ -45,6 +56,9 @@
         statusElement.style.color = "red";
       }
     }
+
+    // Attach Event Listener
+    document.getElementById("saveButton").addEventListener("click", writeTestData);
   </script>
 </body>
 </html>
