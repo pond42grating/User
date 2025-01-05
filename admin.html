@@ -19,6 +19,7 @@
       display: flex;
       justify-content: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .section-button {
@@ -33,6 +34,20 @@
 
     .section-button:hover {
       background-color: #e0e0e0;
+    }
+
+    .refresh-button {
+      margin-top: 10px;
+      padding: 5px 10px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .refresh-button:hover {
+      background-color: #0056b3;
     }
 
     .section {
@@ -61,12 +76,41 @@
   <!-- Buttons -->
   <div class="button-container">
     <div class="section-button" onclick="toggleSection('pending-users-section', fetchPendingUsers)">Pending</div>
+    <div class="section-button" onclick="toggleSection('approved-users-section', fetchApprovedUsers)">Approved</div>
+    <div class="section-button" onclick="toggleSection('hold-blocked-users-section', fetchHoldBlockedUsers)">Hold/Blocked</div>
+    <div class="section-button" onclick="toggleSection('online-users-section', fetchOnlineUsers)">Online</div>
+    <div class="section-button" onclick="toggleSection('user-logs-section', fetchUserLogs)">Logs</div>
   </div>
 
   <!-- Sections -->
   <div id="pending-users-section" class="section">
     <h2>Pending User Approvals</h2>
+    <button class="refresh-button" onclick="fetchPendingUsers()">Refresh</button>
     <div id="pending-users"></div>
+  </div>
+
+  <div id="approved-users-section" class="section">
+    <h2>Approved Users</h2>
+    <button class="refresh-button" onclick="fetchApprovedUsers()">Refresh</button>
+    <div id="approved-users"></div>
+  </div>
+
+  <div id="hold-blocked-users-section" class="section">
+    <h2>Hold/Blocked Users</h2>
+    <button class="refresh-button" onclick="fetchHoldBlockedUsers()">Refresh</button>
+    <div id="hold-blocked-users"></div>
+  </div>
+
+  <div id="online-users-section" class="section">
+    <h2>Online Users</h2>
+    <button class="refresh-button" onclick="fetchOnlineUsers()">Refresh</button>
+    <div id="online-users"></div>
+  </div>
+
+  <div id="user-logs-section" class="section">
+    <h2>User Logs</h2>
+    <button class="refresh-button" onclick="fetchUserLogs()">Refresh</button>
+    <div id="user-logs"></div>
   </div>
 
   <script type="module">
@@ -161,6 +205,12 @@
         alert("Error removing user. Check console for details.`);
       }
     }
+
+    // Similar functions for approved users, hold/blocked users, online users, and logs
+    async function fetchApprovedUsers() { /* Logic for fetching approved users */ }
+    async function fetchHoldBlockedUsers() { /* Logic for fetching hold/blocked users */ }
+    async function fetchOnlineUsers() { /* Logic for fetching online users */ }
+    async function fetchUserLogs() { /* Logic for fetching user logs */ }
   </script>
 </body>
 </html>
