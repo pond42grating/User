@@ -3,44 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firestore Minimal Test</title>
+  <title>Firestore Write Test</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 </head>
 <body>
-  <h1>Firestore Minimal Test</h1>
-  <button onclick="writeData()">Write Data</button>
-  <p id="output"></p>
+  <h1>Firestore Write Test</h1>
+  <button onclick="writeTestData()">Save Test Data</button>
+  <p id="status"></p>
 
   <script>
-    // Firebase Configuration
+    // Updated Firebase Configuration
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID",
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
     };
 
     // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore(app);
 
-    async function writeData() {
-      const output = document.getElementById('output');
+    async function writeTestData() {
+      const statusElement = document.getElementById('status');
       try {
         // Write a test document to Firestore
-        await db.collection('TestCollection').doc('TestDoc').set({
-          name: 'Test User',
+        await db.collection("TestCollection").doc("TestDocument").set({
+          message: "Hello, Firestore!",
           timestamp: new Date().toISOString()
         });
-        output.textContent = 'Data written successfully!';
-        output.style.color = 'green';
+
+        statusElement.textContent = "Data saved successfully!";
+        statusElement.style.color = "green";
       } catch (error) {
-        console.error('Error:', error);
-        output.textContent = `Error: ${error.message}`;
-        output.style.color = 'red';
+        console.error("Error writing data:", error);
+        statusElement.textContent = `Error: ${error.message}`;
+        statusElement.style.color = "red";
       }
     }
   </script>
