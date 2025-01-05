@@ -52,11 +52,50 @@
     button:hover {
       background-color: #45a049;
     }
+    .settings {
+      position: relative;
+      display: inline-block;
+    }
+    .settings-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: white;
+      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+      min-width: 150px;
+    }
+    .settings-content button {
+      width: 100%;
+      padding: 8px;
+      text-align: left;
+      background-color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .settings-content button:hover {
+      background-color: #ddd;
+    }
+    .settings:hover .settings-content {
+      display: block;
+    }
   </style>
 </head>
 <body>
 
   <h1>Create DWS</h1>
+
+  <!-- Back Button -->
+  <button onclick="goBack()">Back</button>
+
+  <!-- Settings Button -->
+  <div class="settings">
+    <button>Settings</button>
+    <div class="settings-content">
+      <button onclick="viewProfile()">Profile</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
 
   <!-- DWS No. and Date -->
   <div class="form-section">
@@ -159,6 +198,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
     apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
@@ -172,7 +212,29 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
+    // Back Button Function
+    function goBack() {
+      window.location.href = "login.html";
+    }
+
+    // Logout Function
+    function logout() {
+      signOut(auth)
+        .then(() => {
+          alert("Logged out successfully!");
+          window.location.href = "login.html";
+        })
+        .catch(error => {
+          console.error("Logout error:", error);
+        });
+    }
+
+    // Example Profile Function (you can expand this later)
+    function viewProfile() {
+      alert("Profile feature coming soon!");
+    }
     let dwsCounter = parseInt(localStorage.getItem("dwsCounter")) || 1;
     const existingBadgeNos = {};
 
@@ -357,6 +419,8 @@
     }
 
     generateDwsNo();
+    // Add other functions here (manpower, equipment, consumables, save, etc.)
+    // Refer to the previous code for those parts.
   </script>
 
 </body>
