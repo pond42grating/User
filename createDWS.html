@@ -229,19 +229,6 @@
         return;
       }
 
-      if (!existingBadgeNos[dwsDate]) {
-        existingBadgeNos[dwsDate] = new Set();
-      }
-
-      if (existingBadgeNos[dwsDate].has(badgeNo)) {
-        const proceed = confirm(
-          `Badge No. ${badgeNo} is already entered for the date ${dwsDate}. Do you want to add it again?`
-        );
-        if (!proceed) return;
-      }
-
-      existingBadgeNos[dwsDate].add(badgeNo);
-
       const manpowerTable = document.getElementById("manpowerTable");
       const row = manpowerTable.insertRow();
       row.innerHTML = `
@@ -251,18 +238,10 @@
         <td>${normalHour}</td>
         <td>${otHour}</td>
         <td>${holiday}</td>
-        <td><button onclick="deleteManpowerRow(this, '${badgeNo}', '${dwsDate}')">Delete</button></td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
       `;
     }
 
-    function deleteManpowerRow(button, badgeNo, dwsDate) {
-      const row = button.parentNode.parentNode;
-      row.parentNode.removeChild(row);
-
-      if (existingBadgeNos[dwsDate]) {
-        existingBadgeNos[dwsDate].delete(badgeNo);
-      }
-    }
 
     function addEquipment() {
       const equipmentName = document.getElementById("equipmentName").value.trim();
