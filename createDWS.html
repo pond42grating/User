@@ -3,87 +3,253 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create DWS Entry</title>
+  <title>Create DWS</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f7f6;
+      color: #333;
+    }
+    .form-section {
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 8px;
+    }
+    input[type="text"], input[type="number"], input[type="date"] {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .preview-section table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .preview-section table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    .error {
+      color: red;
+      font-size: 12px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
 </head>
 <body>
-  <h2>Create and View DWS Entry</h2>
-  
-  <!-- Form to Add DWS Entry -->
-  <div>
-    <input type="text" id="dwsID" placeholder="DWS ID">
-    <input type="text" id="dwsName" placeholder="DWS Name">
-    <button onclick="addDWSEntry()">Add Entry</button>
+
+  <h1>Create DWS</h1>
+
+  <!-- Manpower Section -->
+  <div class="form-section">
+    <h3>Manpower</h3>
+    <label for="badgeNo">Badge No.</label>
+    <input type="text" id="badgeNo">
+    <div class="error" id="badgeNoError"></div>
+
+    <label for="manpowerName">Name</label>
+    <input type="text" id="manpowerName">
+    <div class="error" id="manpowerNameError"></div>
+
+    <label for="trade">Trade</label>
+    <input type="text" id="trade">
+    <div class="error" id="tradeError"></div>
+
+    <label for="normalHour">Normal Hour</label>
+    <input type="number" id="normalHour">
+    <div class="error" id="normalHourError"></div>
+
+    <label for="otHour">OT Hour</label>
+    <input type="number" id="otHour">
+    <div class="error" id="otHourError"></div>
+
+    <label for="holiday">Holiday</label>
+    <input type="text" id="holiday">
+    <div class="error" id="holidayError"></div>
+
+    <button type="button" onclick="addManpower()">Add Manpower</button>
+
+    <div class="preview-section" id="manpowerPreview">
+      <h4>Manpower Preview:</h4>
+      <table id="manpowerTable">
+        <tr>
+          <th>Badge No.</th>
+          <th>Name</th>
+          <th>Trade</th>
+          <th>Normal Hour</th>
+          <th>OT Hour</th>
+          <th>Holiday</th>
+          <th>Actions</th>
+        </tr>
+      </table>
+    </div>
   </div>
 
-  <br>
+  <!-- Equipment Section -->
+  <div class="form-section">
+    <h3>Equipment</h3>
+    <label for="equipmentName">Equipment Name</label>
+    <input type="text" id="equipmentName">
+    <div class="error" id="equipmentNameError"></div>
 
-  <!-- Button to Read Entries -->
-  <div>
-    <button onclick="getDWSEntries()">View All Entries</button>
-    <ul id="dwsList"></ul>
+    <label for="workingHours">Working Hours</label>
+    <input type="number" id="workingHours">
+    <div class="error" id="workingHoursError"></div>
+
+    <button type="button" onclick="addEquipment()">Add Equipment</button>
+
+    <div class="preview-section" id="equipmentPreview">
+      <h4>Equipment Preview:</h4>
+      <table id="equipmentTable">
+        <tr>
+          <th>Equipment Name</th>
+          <th>Working Hours</th>
+          <th>Actions</th>
+        </tr>
+      </table>
+    </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+  <!-- Consumables Section -->
+  <div class="form-section">
+    <h3>Consumables</h3>
+    <label for="consumableName">Consumable Name</label>
+    <input type="text" id="consumableName">
+    <div class="error" id="consumableNameError"></div>
 
-    // Firebase Configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-      authDomain: "dws-management.firebaseapp.com",
-      projectId: "dws-management",
-      storageBucket: "dws-management.appspot.com",
-      messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-    };
+    <label for="quantity">Quantity (Nos/ML)</label>
+    <input type="number" id="quantity">
+    <div class="error" id="quantityError"></div>
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    <button type="button" onclick="addConsumable()">Add Consumable</button>
 
-    // Function to Add a DWS Entry
-    async function addDWSEntry() {
-      const dwsID = document.getElementById("dwsID").value.trim();
-      const dwsName = document.getElementById("dwsName").value.trim();
+    <div class="preview-section" id="consumablePreview">
+      <h4>Consumable Preview:</h4>
+      <table id="consumableTable">
+        <tr>
+          <th>Consumable Name</th>
+          <th>Quantity</th>
+          <th>Actions</th>
+        </tr>
+      </table>
+    </div>
+  </div>
 
-      if (!dwsID || !dwsName) {
-        alert("Please provide both DWS ID and Name.");
+  <script>
+    // Global object to track badge numbers for validation
+    const existingManpower = {};
+
+    // Add Manpower
+    function addManpower() {
+      const badgeNo = document.getElementById("badgeNo").value.trim();
+      const name = document.getElementById("manpowerName").value.trim();
+      const trade = document.getElementById("trade").value.trim();
+      const normalHour = document.getElementById("normalHour").value.trim();
+      const otHour = document.getElementById("otHour").value.trim();
+      const holiday = document.getElementById("holiday").value.trim();
+
+      if (!badgeNo || !name || !trade) {
+        alert("Please fill out all required fields in the Manpower section.");
         return;
       }
 
-      try {
-        const dwsDocRef = doc(db, "DWS", dwsID); // Create/Update a document in "DWS" collection
-        await setDoc(dwsDocRef, { name: dwsName }, { merge: true }); // Merge data to avoid overwriting
-        alert("DWS Entry Added!");
-      } catch (error) {
-        console.error("Error adding DWS entry:", error);
-        alert("Error: " + error.message);
+      // Check for duplicate badge number
+      if (existingManpower[badgeNo]) {
+        alert(`Badge No. ${badgeNo} is already added.`);
+        return;
       }
+
+      // Add badgeNo to existingManpower
+      existingManpower[badgeNo] = true;
+
+      const manpowerTable = document.getElementById("manpowerTable");
+      const row = manpowerTable.insertRow();
+      row.innerHTML = `
+        <td>${badgeNo}</td>
+        <td>${name}</td>
+        <td>${trade}</td>
+        <td>${normalHour}</td>
+        <td>${otHour}</td>
+        <td>${holiday}</td>
+        <td><button onclick="deleteRow(this, '${badgeNo}')">Delete</button></td>
+      `;
+
+      // Clear inputs
+      document.getElementById("badgeNo").value = "";
+      document.getElementById("manpowerName").value = "";
+      document.getElementById("trade").value = "";
+      document.getElementById("normalHour").value = "";
+      document.getElementById("otHour").value = "";
+      document.getElementById("holiday").value = "";
     }
 
-    // Function to Read All DWS Entries
-    async function getDWSEntries() {
-      try {
-        const dwsCollectionRef = collection(db, "DWS"); // Reference the "DWS" collection
-        const querySnapshot = await getDocs(dwsCollectionRef); // Fetch all documents
+    // Add Equipment
+    function addEquipment() {
+      const equipmentName = document.getElementById("equipmentName").value.trim();
+      const workingHours = document.getElementById("workingHours").value.trim();
 
-        const dwsList = document.getElementById("dwsList");
-        dwsList.innerHTML = ""; // Clear the list
-
-        querySnapshot.forEach((doc) => {
-          const listItem = document.createElement("li");
-          listItem.textContent = `ID: ${doc.id}, Name: ${doc.data().name}`;
-          dwsList.appendChild(listItem);
-        });
-      } catch (error) {
-        console.error("Error fetching DWS entries:", error);
-        alert("Error: " + error.message);
+      if (!equipmentName || !workingHours) {
+        alert("Please fill out all required fields in the Equipment section.");
+        return;
       }
+
+      const equipmentTable = document.getElementById("equipmentTable");
+      const row = equipmentTable.insertRow();
+      row.innerHTML = `
+        <td>${equipmentName}</td>
+        <td>${workingHours}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
     }
 
-    // Export functions to global scope
-    window.addDWSEntry = addDWSEntry;
-    window.getDWSEntries = getDWSEntries;
+    // Add Consumable
+    function addConsumable() {
+      const consumableName = document.getElementById("consumableName").value.trim();
+      const quantity = document.getElementById("quantity").value.trim();
+
+      if (!consumableName || !quantity) {
+        alert("Please fill out all required fields in the Consumable section.");
+        return;
+      }
+
+      const consumableTable = document.getElementById("consumableTable");
+      const row = consumableTable.insertRow();
+      row.innerHTML = `
+        <td>${consumableName}</td>
+        <td>${quantity}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
+    }
+
+    // Delete Row
+    function deleteRow(button, badgeNo = null) {
+      const row = button.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+
+      // Remove badge number from existingManpower
+      if (badgeNo) {
+        delete existingManpower[badgeNo];
+      }
+    }
   </script>
+
 </body>
 </html>
