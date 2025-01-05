@@ -215,6 +215,47 @@
       }
     }
 
+    function addEquipment() {
+      const equipmentName = document.getElementById("equipmentName").value.trim();
+      const workingHours = document.getElementById("workingHours").value.trim();
+
+      if (!equipmentName || !workingHours) {
+        alert("Please fill out all required fields in the Equipment section.");
+        return;
+      }
+
+      const equipmentTable = document.getElementById("equipmentTable");
+      const row = equipmentTable.insertRow();
+      row.innerHTML = `
+        <td>${equipmentName}</td>
+        <td>${workingHours}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
+    }
+
+    function addConsumable() {
+      const consumableName = document.getElementById("consumableName").value.trim();
+      const quantity = document.getElementById("quantity").value.trim();
+
+      if (!consumableName || !quantity) {
+        alert("Please fill out all required fields in the Consumable section.");
+        return;
+      }
+
+      const consumableTable = document.getElementById("consumableTable");
+      const row = consumableTable.insertRow();
+      row.innerHTML = `
+        <td>${consumableName}</td>
+        <td>${quantity}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
+    }
+
+    function deleteRow(button) {
+      const row = button.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+    }
+
     function saveDWS() {
       const dwsNo = document.getElementById("dwsNo").value;
       const dwsDate = document.getElementById("dwsDate").value;
@@ -248,7 +289,7 @@
     function clearAllFields() {
       document.getElementById("dwsDate").value = "";
       document.getElementById("structureName").value = "";
-      document.getElementById("siNo").value = "";
+            document.getElementById("siNo").value = "";
       document.getElementById("workDescription").value = "";
       document.getElementById("location").value = "";
 
