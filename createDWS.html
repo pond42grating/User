@@ -48,50 +48,11 @@
     button:hover {
       background-color: #45a049;
     }
-    .settings {
-      position: relative;
-      display: inline-block;
-    }
-    .settings-content {
-      display: none;
-      position: absolute;
-      right: 0;
-      background-color: white;
-      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
-      z-index: 1;
-      min-width: 150px;
-    }
-    .settings-content button {
-      width: 100%;
-      padding: 8px;
-      text-align: left;
-      background-color: white;
-      border: none;
-      cursor: pointer;
-    }
-    .settings-content button:hover {
-      background-color: #ddd;
-    }
-    .settings:hover .settings-content {
-      display: block;
-    }
   </style>
 </head>
 <body>
 
   <h1>Create DWS</h1>
-
-  <!-- Back Button -->
-  <button onclick="goBack()">Back</button>
-
-  <!-- Settings Button -->
-  <div class="settings">
-    <button>Settings</button>
-    <div class="settings-content">
-      <button onclick="viewProfile()">Profile</button>
-      <button onclick="logout()">Logout</button>
-    </div>
-  </div>
 
   <!-- DWS No. and Date -->
   <div class="form-section">
@@ -194,40 +155,20 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import { getFirestore, setDoc, doc, runTransaction, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
-    apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-    authDomain: "dws-management.firebaseapp.com",
-    projectId: "dws-management",
-    storageBucket: "dws-management.firebasestorage.app",
-    messagingSenderId: "23827231923",
-    appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-    measurementId: "G-L14GLJDYW7"
-  };
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app);
 
-    // Back Button
-    function goBack() {
-      window.location.href = "login.html";
-    }
-
-    // Logout Function
-    function logout() {
-      signOut(auth)
-        .then(() => {
-          alert("Logged out successfully!");
-          window.location.href = "login.html";
-        })
-        .catch((error) => {
-          console.error("Logout error:", error);
-        });
-    }
-
-    // Generate DWS No.
     async function generateDwsNo() {
       const counterDocRef = doc(db, "Counters", "DWSCounter");
 
@@ -239,9 +180,7 @@
             return "DWS-0001";
           }
           const currentCounter = counterDoc.data().counter || 1;
-          const newCounter = currentCounter + 1;
-          transaction.update(counterDocRef, { counter: newCounter });
-          return `DWS-${String(newCounter).padStart(4, "0")}`;
+          return `DWS-${String(currentCounter).padStart(4, "0")}`;
         });
 
         document.getElementById("dwsNo").value = dwsNo;
@@ -251,61 +190,28 @@
       }
     }
 
-    // Add Manpower
     async function addManpower() {
-  const badgeNo = document.getElementById("badgeNo").value.trim();
-  const manpowerName = document.getElementById("manpowerName").value.trim();
-  const trade = document.getElementById("trade").value.trim();
-  const normalHour = document.getElementById("normalHour").value.trim();
-  const otHour = document.getElementById("otHour").value.trim();
-  const holiday = document.getElementById("holiday").value.trim();
-  const dwsDate = document.getElementById("dwsDate").value.trim();
+      const badgeNo = document.getElementById("badgeNo").value.trim();
+      const dwsDate = document.getElementById("dwsDate").value.trim();
 
-  if (!badgeNo || !manpowerName || !trade || !dwsDate) {
-    alert("Badge No., Name, Trade, and DWS Date are required.");
-    return;
-  }
+      if (!badgeNo || !dwsDate) {
+        alert("Badge No. and DWS Date are required.");
+        return;
+      }
 
-  // Check for duplicate badge numbers in Firestore
-  const dwsCollectionRef = collection(db, "DWS");
-  const querySnapshot = await getDocs(query(dwsCollectionRef, where("dwsDate", "==", dwsDate)));
-
-  let duplicateFound = false;
-  let duplicateDwsNo = "";
-
-  querySnapshot.forEach((doc) => {
-    const manpower = doc.data().manpower || [];
-    if (manpower.some((mp) => mp.badgeNo === badgeNo)) {
-      duplicateFound = true;
-      duplicateDwsNo = doc.id; // Capture the DWS No. where the badge was found
+      const manpowerTable = document.getElementById("manpowerTable");
+      const row = manpowerTable.insertRow();
+      row.innerHTML = `
+        <td>${badgeNo}</td>
+        <td>${document.getElementById("manpowerName").value}</td>
+        <td>${document.getElementById("trade").value}</td>
+        <td>${document.getElementById("normalHour").value}</td>
+        <td>${document.getElementById("otHour").value}</td>
+        <td>${document.getElementById("holiday").value}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
     }
-  });
 
-  if (duplicateFound) {
-    const proceed = confirm(
-      `Badge No. ${badgeNo} already exists in DWS ${duplicateDwsNo} for the date ${dwsDate}. Do you still want to add it?`
-    );
-    if (!proceed) return; // Stop if the user doesn't want to proceed
-  }
-
-  // Add the manpower entry to the preview table
-  const manpowerTable = document.getElementById("manpowerTable");
-  const row = manpowerTable.insertRow();
-  row.innerHTML = `
-    <td>${badgeNo}</td>
-    <td>${manpowerName}</td>
-    <td>${trade}</td>
-    <td>${normalHour}</td>
-    <td>${otHour}</td>
-    <td>${holiday}</td>
-    <td><button onclick="deleteRow(this)">Delete</button></td>
-  `;
-
-  // Clear the fields after adding manpower
-  clearFields(["badgeNo", "manpowerName", "trade", "normalHour", "otHour", "holiday"]);
-}
-
-    // Add Equipment
     function addEquipment() {
       const equipmentTable = document.getElementById("equipmentTable");
       const row = equipmentTable.insertRow();
@@ -316,7 +222,6 @@
       `;
     }
 
-    // Add Consumable
     function addConsumable() {
       const consumableTable = document.getElementById("consumableTable");
       const row = consumableTable.insertRow();
@@ -327,13 +232,11 @@
       `;
     }
 
-    // Delete Row
     function deleteRow(button) {
       const row = button.parentNode.parentNode;
       row.remove();
     }
 
-    // Save DWS
     async function saveDWS() {
       const dwsNo = document.getElementById("dwsNo").value;
       const dwsDate = document.getElementById("dwsDate").value.trim();
@@ -377,6 +280,7 @@
       try {
         await setDoc(doc(db, "DWS", dwsNo), dwsData);
         alert(`DWS ${dwsNo} saved successfully!`);
+        await incrementDwsCounter();
         clearAllFields();
         generateDwsNo();
       } catch (error) {
@@ -385,7 +289,20 @@
       }
     }
 
-    // Clear All Fields
+    async function incrementDwsCounter() {
+      const counterDocRef = doc(db, "Counters", "DWSCounter");
+
+      try {
+        await runTransaction(db, async (transaction) => {
+          const counterDoc = await transaction.get(counterDocRef);
+          const currentCounter = counterDoc.data().counter || 1;
+          transaction.update(counterDocRef, { counter: currentCounter + 1 });
+        });
+      } catch (error) {
+        console.error("Error incrementing DWS counter:", error);
+      }
+    }
+
     function clearAllFields() {
       const inputs = document.querySelectorAll("input");
       inputs.forEach((input) => (input.value = ""));
