@@ -173,13 +173,58 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let dwsCounter = parseInt(localStorage.getItem("dwsCounter")) || 1;
-    const existingBadgeNos = {};
+    async function fetchDwsNo() {
+  const counterDocRef = doc(db, "Counters", "DWSCounter");
 
-    function generateDwsNo() {
-      const dwsNo = `DWS-${String(dwsCounter).padStart(4, "0")}`;
-      document.getElementById("dwsNo").value = dwsNo;
+  try {
+    const counterDoc = await getDoc(counterDocRef);
+
+    if (!counterDoc.exists()) {
+      console.error("DWS Counter document does not exist. Please initialize it in Firestore.");
+      return null;
     }
+
+    const currentCounter = counterDoc.data().counter || 1;
+    return `DWS-${String(currentCounter).padStart(4, "0")}`;
+  } catch (error) {
+    console.error("Error fetching DWS No:", error);
+    alert("Failed to fetch DWS No. Please try again.");
+    return null;
+  }
+}
+    
+    async function incrementDwsNo() {
+  const counterDocRef = doc(db, "Counters", "DWSCounter");
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const counterDoc = await transaction.get(counterDocRef);
+
+      if (!counterDoc.exists()) {
+        console.error("DWS Counter document does not exist. Initializing...");
+        transaction.set(counterDocRef, { counter: 1 });
+        return;
+      }
+
+      const currentCounter = counterDoc.data().counter || 1;
+      transaction.update(counterDocRef, { counter: currentCounter + 1 });
+    });
+
+    console.log("DWS No. incremented successfully.");
+  } catch (error) {
+    console.error("Error incrementing DWS No:", error);
+    alert("Failed to increment DWS No. Please try again.");
+  }
+}
+
+    async function initializeDwsNo() {
+  const dwsNo = await fetchDwsNo();
+  if (dwsNo) {
+    document.getElementById("dwsNo").value = dwsNo;
+  }
+}
+
+initializeDwsNo();
 
     document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
     document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
@@ -332,7 +377,8 @@
         dwsCounter++;
         localStorage.setItem("dwsCounter", dwsCounter);
         clearAllFields();
-        generateDwsNo();
+        await incrementDwsNo();
+       await initializeDwsNo();
       } catch (error) {
         console.error("Error saving DWS:", error);
         alert("Failed to save DWS. Please try again.");
