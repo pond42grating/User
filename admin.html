@@ -3,103 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
+    <title>Save DWS Data</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
     <style>
-        /* General Styles */
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
         }
-
-        h1, h2 {
-            color: #333;
+        .container {
+            max-width: 400px;
+            margin: auto;
+            text-align: center;
         }
-
-        .button {
-            padding: 10px 15px;
-            background-color: #007BFF;
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #28a745;
             color: white;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
-            margin: 5px;
         }
-
-        .button:hover {
-            background-color: #0056b3;
+        button:hover {
+            background-color: #218838;
         }
-
-        .settings {
-            position: absolute;
-            top: 10px;
-            right: 20px;
+        .error, .success {
+            font-size: 14px;
+            margin-top: 10px;
         }
-
-        .dropdown {
-            display: none;
-            position: absolute;
-            background-color: white;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            right: 0;
-            top: 40px;
-            z-index: 1000;
+        .error {
+            color: red;
         }
-
-        .dropdown a {
-            display: block;
-            padding: 10px;
-            text-decoration: none;
-            color: black;
-        }
-
-        .dropdown a:hover {
-            background-color: #f0f0f0;
-        }
-
-        .section {
-            display: none;
-            margin-top: 20px;
-        }
-
-        .visible {
-            display: block;
+        .success {
+            color: green;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <h1>Admin Panel</h1>
-
-    <!-- Settings Dropdown -->
-    <div class="settings">
-        <button class="button" onclick="toggleSettings()">Settings</button>
-        <div class="dropdown" id="settings-dropdown">
-            <a href="adminProfile.html">Admin Profile</a>
-            <a href="#" onclick="logout()">Logout</a>
-        </div>
+    <div class="container">
+        <h1>Save DWS Data</h1>
+        <form id="dwsForm">
+            <label for="userId">User ID</label>
+            <input type="text" id="userId" placeholder="Enter User ID" required>
+            
+            <label for="dwsNo">DWS No.</label>
+            <input type="text" id="dwsNo" placeholder="Enter DWS No." required>
+            
+            <button type="submit">Save</button>
+        </form>
+        <p id="status" class="error"></p>
     </div>
 
-    <!-- Section Navigation -->
-    <div>
-        <button class="button" onclick="showSection('approval')">User Approval</button>
-    </div>
-
-    <!-- Sections -->
-    <!-- User Approval Section -->
-    <div id="approval" class="section">
-        <h2>User Approval</h2>
-        <div id="approval-list">
-            <p>Loading unapproved users...</p>
-        </div>
-    </div>
-
-    <!-- JavaScript -->
     <script>
+        console.log("Initializing Firebase...");
+
         // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
@@ -112,96 +73,55 @@
         };
 
         // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore(app);
-
-        // Toggle Settings Dropdown
-        function toggleSettings() {
-            const dropdown = document.getElementById("settings-dropdown");
-            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        let app, db;
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore(app);
+            console.log("Firebase initialized successfully.");
+        } catch (error) {
+            console.error("Error initializing Firebase:", error);
+            document.getElementById("status").textContent = "Failed to initialize Firebase. Check console for details.";
         }
 
-        // Logout Function
-        function logout() {
-            auth.signOut().then(() => {
-                alert("Logged out successfully!");
-                window.location.href = "index.html";
-            }).catch((error) => {
-                alert("Logout failed: " + error.message);
-            });
-        }
+        // Form Handling
+        const dwsForm = document.getElementById("dwsForm");
+        const status = document.getElementById("status");
 
-        // Show Section
-        function showSection(sectionId) {
-            const sections = document.querySelectorAll(".section");
-            sections.forEach((section) => {
-                section.classList.remove("visible");
-            });
-            document.getElementById(sectionId).classList.add("visible");
-        }
+        dwsForm.addEventListener("submit", async (e) => {
+            e.preventDefault(); // Prevent form reload
 
-        // User Approval Section
-        db.collection("Users")
-          .where("isApproved", "==", false) // Filter for unapproved users
-          .onSnapshot((snapshot) => {
-              const approvalList = document.getElementById("approval-list");
-              approvalList.innerHTML = ""; // Clear the list before re-rendering
+            const userId = document.getElementById("userId").value.trim();
+            const dwsNo = document.getElementById("dwsNo").value.trim();
 
-              if (snapshot.empty) {
-                  console.log("No unapproved users found in Firestore.");
-                  approvalList.innerHTML = "<p>No unapproved users found.</p>";
-                  return;
-              }
-
-              console.log("Snapshot triggered. Unapproved users found:", snapshot.docs.length);
-
-              snapshot.forEach((doc) => {
-                  const data = doc.data();
-                  console.log("User Data:", data); // Log each user's data
-
-                  approvalList.innerHTML += `
-                      <div style="margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                          <p><strong>Email:</strong> ${data.email}</p>
-                          <p><strong>Last Login:</strong> ${new Date(data.lastLogin).toLocaleString()}</p>
-                          <button class="button" onclick="approveUser('${doc.id}')">Approve</button>
-                          <button class="button" style="background-color: red;" onclick="rejectUser('${doc.id}')">Reject</button>
-                      </div>
-                  `;
-              });
-          }, (error) => {
-              console.error("Error fetching unapproved users:", error);
-              const approvalList = document.getElementById("approval-list");
-              approvalList.innerHTML = `<p>Error loading users: ${error.message}</p>`;
-          });
-
-        // Approve User Function
-        function approveUser(userId) {
-            db.collection("Users")
-              .doc(userId)
-              .update({ isApproved: true })
-              .then(() => {
-                  alert("User approved successfully!");
-              })
-              .catch((error) => {
-                  alert("Error approving user: " + error.message);
-              });
-        }
-
-        // Reject User Function
-        function rejectUser(userId) {
-            if (confirm("Are you sure you want to reject this user? This action cannot be undone.")) {
-                db.collection("Users")
-                  .doc(userId)
-                  .delete()
-                  .then(() => {
-                      alert("User rejected and deleted successfully!");
-                  })
-                  .catch((error) => {
-                      alert("Error rejecting user: " + error.message);
-                  });
+            // Validate input
+            if (!userId || !dwsNo) {
+                status.textContent = "Please fill out all fields.";
+                console.log("Validation failed: Empty fields.");
+                return;
             }
-        }
+
+            console.log("Attempting to save data...");
+            console.log("User ID:", userId);
+            console.log("DWS No.:", dwsNo);
+
+            try {
+                // Save to Firestore
+                await db.collection("DWS").doc(userId).set({
+                    dwsNo: dwsNo,
+                    timestamp: new Date().toISOString()
+                });
+                console.log("Data saved successfully to Firestore.");
+                status.className = "success";
+                status.textContent = "Data saved successfully!";
+                dwsForm.reset(); // Clear form
+            } catch (error) {
+                console.error("Error saving data to Firestore:", error);
+                status.className = "error";
+                status.textContent = "Failed to save data. Check console for details.";
+            }
+        });
+
+        console.log("Form submission handler initialized.");
     </script>
 </body>
 </html>
