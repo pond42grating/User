@@ -158,11 +158,12 @@
   <button type="button" onclick="saveDWS()">Save DWS</button>
 
   <script>
-    let dwsCounter = parseInt(localStorage.getItem('dwsCounter')) || 1;
+    let dwsCounter = parseInt(localStorage.getItem("dwsCounter")) || 1;
+    const existingBadgeNos = {}; // Object to track badge numbers for each date
 
     function generateDwsNo() {
-      const dwsNo = `DWS-${String(dwsCounter).padStart(4, '0')}`;
-      document.getElementById('dwsNo').value = dwsNo;
+      const dwsNo = `DWS-${String(dwsCounter).padStart(4, "0")}`;
+      document.getElementById("dwsNo").value = dwsNo;
     }
 
     function addManpower() {
@@ -172,11 +173,23 @@
       const normalHour = document.getElementById("normalHour").value.trim();
       const otHour = document.getElementById("otHour").value.trim();
       const holiday = document.getElementById("holiday").value.trim();
+      const dwsDate = document.getElementById("dwsDate").value;
 
       if (!badgeNo || !name || !trade) {
         alert("Please fill out all required fields in the Manpower section.");
         return;
       }
+
+      if (!existingBadgeNos[dwsDate]) {
+        existingBadgeNos[dwsDate] = new Set();
+      }
+
+      if (existingBadgeNos[dwsDate].has(badgeNo)) {
+        alert(`Badge No. ${badgeNo} is already present for this date.`);
+        return;
+      }
+
+      existingBadgeNos[dwsDate].add(badgeNo);
 
       const manpowerTable = document.getElementById("manpowerTable");
       const row = manpowerTable.insertRow();
@@ -187,8 +200,17 @@
         <td>${normalHour}</td>
         <td>${otHour}</td>
         <td>${holiday}</td>
-        <td><button onclick="deleteRow(this)">Delete</button></td>
+        <td><button onclick="deleteManpowerRow(this, '${badgeNo}', '${dwsDate}')">Delete</button></td>
       `;
+    }
+
+    function deleteManpowerRow(button, badgeNo, dwsDate) {
+      const row = button.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+
+      if (existingBadgeNos[dwsDate]) {
+        existingBadgeNos[dwsDate].delete(badgeNo);
+      }
     }
 
     function addEquipment() {
@@ -247,8 +269,36 @@
 
       alert(`DWS ${dwsNo} saved successfully!`);
       dwsCounter++;
-      localStorage.setItem('dwsCounter', dwsCounter);
+      localStorage.setItem("dwsCounter", dwsCounter);
+
+      clearAllFields();
       generateDwsNo();
+    }
+
+    function clearAllFields() {
+      document.getElementById("dwsDate").value = "";
+      document.getElementById("structureName").value = "";
+      document.getElementById("siNo").value = "";
+      document.getElementById("workDescription").value = "";
+      document.getElementById("location").value = "";
+
+      // Clear Manpower Table
+      const manpowerTable = document.getElementById("manpowerTable");
+      while (manpowerTable.rows.length > 1) {
+        manpowerTable.deleteRow(1);
+      }
+
+      // Clear Equipment Table
+      const equipmentTable = document.getElementById("equipmentTable");
+      while (equipmentTable.rows.length > 1) {
+        equipmentTable.deleteRow(1);
+      }
+
+      // Clear Consumable Table
+      const consumableTable = document.getElementById("consumableTable");
+      while (consumableTable.rows.length > 1) {
+        consumableTable.deleteRow(1);
+      }
     }
 
     generateDwsNo();
