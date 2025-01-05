@@ -212,11 +212,7 @@
       }
     }
 
-    document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
-    document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
-    document.getElementById("addConsumableBtn").addEventListener("click", addConsumable);
-    document.getElementById("saveDwsBtn").addEventListener("click", saveDWS);
-
+    
     function addManpower() {
       const badgeNo = document.getElementById("badgeNo").value.trim();
       const name = document.getElementById("manpowerName").value.trim();
@@ -386,7 +382,13 @@
       const consumableTable = document.getElementById("consumableTable");
       while (consumableTable.rows.length > 1) consumableTable.deleteRow(1);
     }
+    
+    document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
+    document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
+    document.getElementById("addConsumableBtn").addEventListener("click", addConsumable);
+    document.getElementById("saveDwsBtn").addEventListener("click", saveDWS);
 
+    
     // Initialize DWS No on Page Load
     initializeDwsNo();
   </script>
