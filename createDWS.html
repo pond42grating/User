@@ -83,7 +83,6 @@
     <h3>Manpower</h3>
     <label for="badgeNo">Badge No.</label>
     <input type="text" id="badgeNo">
-    <div class="error" id="badgeNoError"></div>
     <label for="manpowerName">Name</label>
     <input type="text" id="manpowerName">
     <label for="trade">Trade</label>
@@ -94,7 +93,7 @@
     <input type="number" id="otHour">
     <label for="holiday">Holiday</label>
     <input type="text" id="holiday">
-    <button type="button" onclick="addManpower()">Add Manpower</button>
+    <button type="button" id="addManpowerBtn">Add Manpower</button>
 
     <div class="preview-section">
       <h4>Manpower Preview:</h4>
@@ -119,7 +118,7 @@
     <input type="text" id="equipmentName">
     <label for="workingHours">Working Hours</label>
     <input type="number" id="workingHours">
-    <button type="button" onclick="addEquipment()">Add Equipment</button>
+    <button type="button" id="addEquipmentBtn">Add Equipment</button>
 
     <div class="preview-section">
       <h4>Equipment Preview:</h4>
@@ -140,7 +139,7 @@
     <input type="text" id="consumableName">
     <label for="quantity">Quantity (Nos/ML)</label>
     <input type="number" id="quantity">
-    <button type="button" onclick="addConsumable()">Add Consumable</button>
+    <button type="button" id="addConsumableBtn">Add Consumable</button>
 
     <div class="preview-section">
       <h4>Consumable Preview:</h4>
@@ -155,32 +154,86 @@
   </div>
 
   <!-- Save DWS -->
-  <button type="button" onclick="saveDWS()">Save DWS</button>
+  <button type="button" id="saveDwsBtn">Save DWS</button>
 
   <!-- Firebase -->
   <script type="module">
-    // Import Firebase SDKs
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-    // Firebase configuration
     const firebaseConfig = {
-    apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-    authDomain: "dws-management.firebaseapp.com",
-    projectId: "dws-management",
-    storageBucket: "dws-management.firebasestorage.app",
-    messagingSenderId: "23827231923",
-    appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-    measurementId: "G-L14GLJDYW7"
-  };
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+      projectId: "YOUR_FIREBASE_PROJECT_ID",
+      storageBucket: "YOUR_FIREBASE_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_FIREBASE_MESSAGING_SENDER_ID",
+      appId: "YOUR_FIREBASE_APP_ID"
+    };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Save DWS Function
+    document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
+    document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
+    document.getElementById("addConsumableBtn").addEventListener("click", addConsumable);
+    document.getElementById("saveDwsBtn").addEventListener("click", saveDWS);
+
+    let dwsCounter = parseInt(localStorage.getItem("dwsCounter")) || 1;
+
+    function addManpower() {
+      const badgeNo = document.getElementById("badgeNo").value;
+      const name = document.getElementById("manpowerName").value;
+      const trade = document.getElementById("trade").value;
+      const normalHour = document.getElementById("normalHour").value;
+      const otHour = document.getElementById("otHour").value;
+      const holiday = document.getElementById("holiday").value;
+
+      const table = document.getElementById("manpowerTable");
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>${badgeNo}</td>
+        <td>${name}</td>
+        <td>${trade}</td>
+        <td>${normalHour}</td>
+        <td>${otHour}</td>
+        <td>${holiday}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
+    }
+
+    function addEquipment() {
+      const equipmentName = document.getElementById("equipmentName").value;
+      const workingHours = document.getElementById("workingHours").value;
+
+      const table = document.getElementById("equipmentTable");
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>${equipmentName}</td>
+        <td>${workingHours}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
+    }
+
+    function addConsumable() {
+      const consumableName = document.getElementById("consumableName").value;
+      const quantity = document.getElementById("quantity").value;
+
+      const table = document.getElementById("consumableTable");
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>${consumableName}</td>
+        <td>${quantity}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
+    }
+
+    function deleteRow(button) {
+      const row = button.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+    }
+
     async function saveDWS() {
-      const dwsNo = document.getElementById("dwsNo").value;
+      const dwsNo = `DWS-${String(dwsCounter).padStart(4, "0")}`;
       const dwsDate = document.getElementById("dwsDate").value;
       const structureName = document.getElementById("structureName").value;
       const siNo = document.getElementById("siNo").value;
@@ -188,70 +241,53 @@
       const location = document.getElementById("location").value;
 
       if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
-        alert("Structure Name, Date, SI/TQ No., Work, and Location are mandatory before saving.");
+        alert("All fields are required before saving.");
         return;
       }
 
-      const manpowerTable = document.getElementById("manpowerTable");
-      if (manpowerTable.rows.length <= 1) {
-        const proceed = confirm("No manpower added. Do you still want to save the DWS?");
-        if (!proceed) return;
-      }
-
-      // Gather Manpower Data
-      const manpower = [];
-      for (let i = 1; i < manpowerTable.rows.length; i++) {
-        const row = manpowerTable.rows[i];
-        manpower.push({
+      const manpower = Array.from(document.querySelectorAll("#manpowerTable tr"))
+        .slice(1)
+        .map(row => ({
           badgeNo: row.cells[0].textContent,
           name: row.cells[1].textContent,
           trade: row.cells[2].textContent,
           normalHour: row.cells[3].textContent,
           otHour: row.cells[4].textContent,
-          holiday: row.cells[5].textContent,
-        });
-      }
+          holiday: row.cells[5].textContent
+        }));
 
-      // Gather Equipment Data
-      const equipmentTable = document.getElementById("equipmentTable");
-      const equipment = [];
-      for (let i = 1; i < equipmentTable.rows.length; i++) {
-        const row = equipmentTable.rows[i];
-        equipment.push({
+      const equipment = Array.from(document.querySelectorAll("#equipmentTable tr"))
+        .slice(1)
+        .map(row => ({
           name: row.cells[0].textContent,
-          workingHours: row.cells[1].textContent,
-        });
-      }
+          workingHours: row.cells[1].textContent
+        }));
 
-      // Gather Consumable Data
-      const consumableTable = document.getElementById("consumableTable");
-      const consumables = [];
-      for (let i = 1; i < consumableTable.rows.length; i++) {
-        const row = consumableTable.rows[i];
-        consumables.push({
+      const consumables = Array.from(document.querySelectorAll("#consumableTable tr"))
+        .slice(1)
+        .map(row => ({
           name: row.cells[0].textContent,
-          quantity: row.cells[1].textContent,
-        });
-      }
+          quantity: row.cells[1].textContent
+        }));
 
-      // Save to Firestore
+      const dwsData = {
+        dwsNo,
+        dwsDate,
+        structureName,
+        siNo,
+        workDescription,
+        location,
+        manpower,
+        equipment,
+        consumables
+      };
+
       try {
-        await addDoc(collection(db, "DWS"), {
-          dwsNo,
-          dwsDate,
-          structureName,
-          siNo,
-          workDescription,
-          location,
-          manpower,
-          equipment,
-          consumables,
-          timestamp: new Date().toISOString(),
-        });
-
-        alert(`DWS ${dwsNo} saved successfully to Firestore!`);
+        await addDoc(collection(db, "DWS"), dwsData);
+        alert("DWS saved successfully!");
+        dwsCounter++;
+        localStorage.setItem("dwsCounter", dwsCounter);
         clearAllFields();
-        generateDwsNo();
       } catch (error) {
         console.error("Error saving DWS:", error);
         alert("Error saving DWS. Please try again.");
@@ -265,30 +301,14 @@
       document.getElementById("workDescription").value = "";
       document.getElementById("location").value = "";
 
-      // Clear Manpower Table
       const manpowerTable = document.getElementById("manpowerTable");
-      while (manpowerTable.rows.length > 1) {
-        manpowerTable.deleteRow(1);
-      }
+      while (manpowerTable.rows.length > 1) manpowerTable.deleteRow(1);
 
-      // Clear Equipment Table
       const equipmentTable = document.getElementById("equipmentTable");
-      while (equipmentTable.rows.length > 1) {
-        equipmentTable.deleteRow(1);
-      }
+      while (equipmentTable.rows.length > 1) equipmentTable.deleteRow(1);
 
-      // Clear Consumable Table
       const consumableTable = document.getElementById("consumableTable");
-      while (consumableTable.rows.length > 1) {
-        consumableTable.deleteRow(1);
-      }
-    }
-
-    function generateDwsNo() {
-      const dwsNo = `DWS-${String(dwsCounter).padStart(4, "0")}`;
-      document.getElementById("dwsNo").value = dwsNo;
-      dwsCounter++;
-      localStorage.setItem("dwsCounter", dwsCounter);
+      while (consumableTable.rows.length > 1) consumableTable.deleteRow(1);
     }
 
     generateDwsNo();
