@@ -178,7 +178,6 @@
         const counterDoc = await transaction.get(counterDocRef);
 
         if (!counterDoc.exists()) {
-          console.log("Counter document does not exist. Initializing...");
           transaction.set(counterDocRef, { counter: 1 });
           return "DWS-0001";
         }
@@ -189,7 +188,6 @@
         return `DWS-${String(currentCounter).padStart(4, "0")}`;
       });
 
-      console.log("Generated DWS No:", dwsNo);
       document.getElementById("dwsNo").value = dwsNo;
     } catch (error) {
       console.error("Error generating DWS No:", error);
@@ -197,7 +195,7 @@
     }
   }
 
-  // Add Manpower
+   //Add Manpower
   async function addManpower() {
     const badgeNo = document.getElementById("badgeNo").value.trim();
     const name = document.getElementById("manpowerName").value.trim();
@@ -330,8 +328,15 @@
   generateDwsNo();
 
   // Event Listeners
+
+  // Event Listeners
   document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
+  document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
+  document.getElementById("addConsumableBtn").addEventListener("click", addConsumable);
   document.getElementById("saveDwsBtn").addEventListener("click", saveDWS);
+
+  // On Page Load
+  generateDwsNo();
 </script>
 
 </body>
