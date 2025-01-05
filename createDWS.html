@@ -226,7 +226,6 @@ async function incrementDwsNo() {
 }
 
 // Call the initializeDwsNo function on page load
-initializeDwsNo();
 
 // Example usage of incrementDwsNo (e.g., in saveDWS function after successful save)
 // await incrementDwsNo();
@@ -407,7 +406,7 @@ initializeDwsNo();
       while (consumableTable.rows.length > 1) consumableTable.deleteRow(1);
     }
 
-    generateDwsNo();
+    initializeDwsNo();
   </script>
 
 </body>
