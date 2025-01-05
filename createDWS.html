@@ -37,10 +37,6 @@
       padding: 8px;
       text-align: left;
     }
-    .error {
-      color: red;
-      font-size: 12px;
-    }
     button {
       padding: 10px 15px;
       background-color: #4CAF50;
@@ -137,7 +133,7 @@
     <h3>Consumables</h3>
     <label for="consumableName">Consumable Name</label>
     <input type="text" id="consumableName">
-    <label for="quantity">Quantity (Nos/ML)</label>
+    <label for="quantity">Quantity</label>
     <input type="number" id="quantity">
     <button type="button" id="addConsumableBtn">Add Consumable</button>
 
@@ -158,35 +154,43 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, setDoc, doc, runTransaction, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
-    apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-    authDomain: "dws-management.firebaseapp.com",
-    projectId: "dws-management",
-    storageBucket: "dws-management.firebasestorage.app",
-    messagingSenderId: "23827231923",
-    appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-    measurementId: "G-L14GLJDYW7"
-  };
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let dwsCounter = parseInt(localStorage.getItem("dwsCounter")) || 1;
-    const existingBadgeNos = {};
+    async function generateDwsNo() {
+      const counterDocRef = doc(db, "Counters", "DWSCounter");
 
-    function generateDwsNo() {
-      const dwsNo = `DWS-${String(dwsCounter).padStart(4, "0")}`;
-      document.getElementById("dwsNo").value = dwsNo;
+      try {
+        const dwsNo = await runTransaction(db, async (transaction) => {
+          const counterDoc = await transaction.get(counterDocRef);
+          if (!counterDoc.exists()) {
+            transaction.set(counterDocRef, { counter: 1 });
+            return "DWS-0001";
+          }
+          const currentCounter = counterDoc.data().counter || 1;
+          return `DWS-${String(currentCounter).padStart(4, "0")}`;
+        });
+
+        document.getElementById("dwsNo").value = dwsNo;
+      } catch (error) {
+        console.error("Error generating DWS No:", error);
+        alert("Failed to generate DWS No.");
+      }
     }
 
-    document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
-    document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
-    document.getElementById("addConsumableBtn").addEventListener("click", addConsumable);
-    document.getElementById("saveDwsBtn").addEventListener("click", saveDWS);
-
-    function addManpower() {
+    async function addManpower() {
       const badgeNo = document.getElementById("badgeNo").value.trim();
       const name = document.getElementById("manpowerName").value.trim();
       const trade = document.getElementById("trade").value.trim();
@@ -200,18 +204,22 @@
         return;
       }
 
-      if (!existingBadgeNos[dwsDate]) {
-        existingBadgeNos[dwsDate] = new Set();
-      }
+      // Centralized badge number detection
+      const dwsCollectionRef = collection(db, "DWS");
+      const querySnapshot = await getDocs(query(dwsCollectionRef, where("dwsDate", "==", dwsDate)));
 
-      if (existingBadgeNos[dwsDate].has(badgeNo)) {
-        const proceed = confirm(
-          `Badge No. ${badgeNo} is already entered for the date ${dwsDate}. Do you want to add it again?`
-        );
+      let duplicateFound = false;
+      querySnapshot.forEach((doc) => {
+        const manpower = doc.data().manpower || [];
+        if (manpower.some((mp) => mp.badgeNo === badgeNo)) {
+          duplicateFound = true;
+        }
+      });
+
+      if (duplicateFound) {
+        const proceed = confirm(`Badge No. ${badgeNo} already exists for the date ${dwsDate}. Do you still want to add it?`);
         if (!proceed) return;
       }
-
-      existingBadgeNos[dwsDate].add(badgeNo);
 
       const manpowerTable = document.getElementById("manpowerTable");
       const row = manpowerTable.insertRow();
@@ -222,51 +230,6 @@
         <td>${normalHour}</td>
         <td>${otHour}</td>
         <td>${holiday}</td>
-        <td><button onclick="deleteManpowerRow(this, '${badgeNo}', '${dwsDate}')">Delete</button></td>
-      `;
-    }
-
-    function deleteManpowerRow(button, badgeNo, dwsDate) {
-      const row = button.parentNode.parentNode;
-      row.parentNode.removeChild(row);
-
-      if (existingBadgeNos[dwsDate]) {
-        existingBadgeNos[dwsDate].delete(badgeNo);
-      }
-    }
-
-    function addEquipment() {
-      const equipmentName = document.getElementById("equipmentName").value.trim();
-      const workingHours = document.getElementById("workingHours").value.trim();
-
-      if (!equipmentName || !workingHours) {
-        alert("All fields in the Equipment section are required.");
-        return;
-      }
-
-      const equipmentTable = document.getElementById("equipmentTable");
-      const row = equipmentTable.insertRow();
-      row.innerHTML = `
-        <td>${equipmentName}</td>
-        <td>${workingHours}</td>
-        <td><button onclick="deleteRow(this)">Delete</button></td>
-      `;
-    }
-
-    function addConsumable() {
-      const consumableName = document.getElementById("consumableName").value.trim();
-      const quantity = document.getElementById("quantity").value.trim();
-
-      if (!consumableName || !quantity) {
-        alert("All fields in the Consumable section are required.");
-        return;
-      }
-
-      const consumableTable = document.getElementById("consumableTable");
-      const row = consumableTable.insertRow();
-      row.innerHTML = `
-        <td>${consumableName}</td>
-        <td>${quantity}</td>
         <td><button onclick="deleteRow(this)">Delete</button></td>
       `;
     }
@@ -291,7 +254,7 @@
 
       const manpower = Array.from(document.querySelectorAll("#manpowerTable tr"))
         .slice(1)
-        .map(row => ({
+        .map((row) => ({
           badgeNo: row.cells[0].textContent,
           name: row.cells[1].textContent,
           trade: row.cells[2].textContent,
@@ -302,14 +265,14 @@
 
       const equipment = Array.from(document.querySelectorAll("#equipmentTable tr"))
         .slice(1)
-        .map(row => ({
+        .map((row) => ({
           name: row.cells[0].textContent,
           workingHours: row.cells[1].textContent,
         }));
 
       const consumables = Array.from(document.querySelectorAll("#consumableTable tr"))
         .slice(1)
-        .map(row => ({
+        .map((row) => ({
           name: row.cells[0].textContent,
           quantity: row.cells[1].textContent,
         }));
@@ -329,8 +292,7 @@
       try {
         await setDoc(doc(db, "DWS", dwsNo), dwsData);
         alert(`DWS ${dwsNo} saved successfully!`);
-        dwsCounter++;
-        localStorage.setItem("dwsCounter", dwsCounter);
+        await incrementDwsCounter();
         clearAllFields();
         generateDwsNo();
       } catch (error) {
@@ -339,21 +301,28 @@
       }
     }
 
+    async function incrementDwsCounter() {
+      const counterDocRef = doc(db, "Counters", "DWSCounter");
+
+      try {
+        await runTransaction(db, async (transaction) => {
+          const counterDoc = await transaction.get(counterDocRef);
+          const currentCounter = counterDoc.data().counter || 1;
+          transaction.update(counterDocRef, { counter: currentCounter + 1 });
+        });
+      } catch (error) {
+        console.error("Error incrementing DWS counter:", error);
+      }
+    }
+
     function clearAllFields() {
-      document.getElementById("dwsDate").value = "";
-      document.getElementById("structureName").value = "";
-      document.getElementById("siNo").value = "";
-      document.getElementById("workDescription").value = "";
-      document.getElementById("location").value = "";
-
-      const manpowerTable = document.getElementById("manpowerTable");
-      while (manpowerTable.rows.length > 1) manpowerTable.deleteRow(1);
-
-      const equipmentTable = document.getElementById("equipmentTable");
-      while (equipmentTable.rows.length > 1) equipmentTable.deleteRow(1);
-
-      const consumableTable = document.getElementById("consumableTable");
-      while (consumableTable.rows.length > 1) consumableTable.deleteRow(1);
+      const inputs = document.querySelectorAll("input");
+      inputs.forEach((input) => (input.value = ""));
+      const tables = ["manpowerTable", "equipmentTable", "consumableTable"];
+      tables.forEach((id) => {
+        const table = document.getElementById(id);
+        while (table.rows.length > 1) table.deleteRow(1);
+      });
     }
 
     generateDwsNo();
