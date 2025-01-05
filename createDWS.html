@@ -223,6 +223,11 @@
       const workDescription = document.getElementById("workDescription").value;
       const location = document.getElementById("location").value;
 
+      if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
+        alert("Structure Name, Date, SI/TQ No., Work, and Location are mandatory before saving.");
+        return;
+      }
+
       const manpowerTable = document.getElementById("manpowerTable");
 
       if (manpowerTable.rows.length <= 1) {
