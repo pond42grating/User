@@ -158,7 +158,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, setDoc, doc, runTransaction }from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
     apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
@@ -173,35 +173,43 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    async function fetchDwsNo() {
+
+// 1. Function to Fetch and Display DWS No. (Initialization)
+async function initializeDwsNo() {
   const counterDocRef = doc(db, "Counters", "DWSCounter");
 
   try {
+    console.log("Initializing DWS No...");
     const counterDoc = await getDoc(counterDocRef);
 
     if (!counterDoc.exists()) {
-      console.error("DWS Counter document does not exist. Please initialize it in Firestore.");
-      return null;
+      console.error("DWSCounter document does not exist. Please initialize it in Firestore.");
+      alert("DWSCounter document does not exist. Please contact admin.");
+      return;
     }
 
     const currentCounter = counterDoc.data().counter || 1;
-    return `DWS-${String(currentCounter).padStart(4, "0")}`;
+    const dwsNo = `DWS-${String(currentCounter).padStart(4, "0")}`;
+    document.getElementById("dwsNo").value = dwsNo;
+
+    console.log("DWS No initialized:", dwsNo);
   } catch (error) {
-    console.error("Error fetching DWS No:", error);
-    alert("Failed to fetch DWS No. Please try again.");
-    return null;
+    console.error("Error initializing DWS No:", error);
+    alert("Failed to initialize DWS No. Please try again.");
   }
 }
-    
-    async function incrementDwsNo() {
+
+// 2. Function to Increment DWS Counter
+async function incrementDwsNo() {
   const counterDocRef = doc(db, "Counters", "DWSCounter");
 
   try {
+    console.log("Incrementing DWS No...");
     await runTransaction(db, async (transaction) => {
       const counterDoc = await transaction.get(counterDocRef);
 
       if (!counterDoc.exists()) {
-        console.error("DWS Counter document does not exist. Initializing...");
+        console.error("DWSCounter document does not exist. Initializing...");
         transaction.set(counterDocRef, { counter: 1 });
         return;
       }
@@ -210,21 +218,18 @@
       transaction.update(counterDocRef, { counter: currentCounter + 1 });
     });
 
-    console.log("DWS No. incremented successfully.");
+    console.log("DWS No incremented successfully.");
   } catch (error) {
     console.error("Error incrementing DWS No:", error);
     alert("Failed to increment DWS No. Please try again.");
   }
 }
 
-    async function initializeDwsNo() {
-  const dwsNo = await fetchDwsNo();
-  if (dwsNo) {
-    document.getElementById("dwsNo").value = dwsNo;
-  }
-}
-
+// Call the initializeDwsNo function on page load
 initializeDwsNo();
+
+// Example usage of incrementDwsNo (e.g., in saveDWS function after successful save)
+// await incrementDwsNo();
 
     document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
     document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
@@ -373,12 +378,12 @@ initializeDwsNo();
 
       try {
         await setDoc(doc(db, "DWS", dwsNo), dwsData);
-        alert(`DWS ${dwsNo} saved successfully!`);
-        dwsCounter++;
-        localStorage.setItem("dwsCounter", dwsCounter);
-        clearAllFields();
-        await incrementDwsNo();
-       await initializeDwsNo();
+        
+       await incrementDwsNo();
+
+    // Clear fields and initialize the next DWS No.
+    clearAllFields();
+    await initializeDwsNo();
       } catch (error) {
         console.error("Error saving DWS:", error);
         alert("Failed to save DWS. Please try again.");
