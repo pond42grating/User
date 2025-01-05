@@ -3,95 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create DWS</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
-      padding: 20px;
-    }
-
-    h1 {
-      text-align: center;
-      color: #333;
-    }
-
-    .form-container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .form-container label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-
-    .form-container input {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    .form-container button {
-      width: 100%;
-      padding: 10px;
-      background: #4CAF50;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .form-container button:hover {
-      background: #45a049;
-    }
-
-    .message {
-      text-align: center;
-      margin-top: 15px;
-      color: red;
-    }
-  </style>
+  <title>Create DWS Entry</title>
 </head>
 <body>
-  <h1>Create DWS</h1>
-  <div class="form-container">
-    <form id="dwsForm">
-      <label for="dwsNo">DWS No.</label>
-      <input type="text" id="dwsNo" readonly />
-
-      <label for="dwsDate">Date</label>
-      <input type="date" id="dwsDate" required />
-
-      <label for="structureName">Structure Name</label>
-      <input type="text" id="structureName" required />
-
-      <label for="siNo">SI No.</label>
-      <input type="text" id="siNo" required />
-
-      <label for="workDescription">Work Description</label>
-      <input type="text" id="workDescription" required />
-
-      <label for="location">Location</label>
-      <input type="text" id="location" required />
-
-      <button type="button" onclick="saveDws()">Save</button>
-    </form>
-    <p class="message" id="message"></p>
+  <h2>Create and View DWS Entry</h2>
+  
+  <!-- Form to Add DWS Entry -->
+  <div>
+    <input type="text" id="dwsID" placeholder="DWS ID">
+    <input type="text" id="dwsName" placeholder="DWS Name">
+    <button onclick="addDWSEntry()">Add Entry</button>
   </div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+  <br>
 
-  <script>
+  <!-- Button to Read Entries -->
+  <div>
+    <button onclick="getDWSEntries()">View All Entries</button>
+    <ul id="dwsList"></ul>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
     // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
@@ -103,54 +38,52 @@
     };
 
     // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    // Generate incremental DWS No.
-    let dwsCounter = 1;
-    function generateDwsNo() {
-      const dwsNo = `DWS-${String(dwsCounter).padStart(4, '0')}`;
-      document.getElementById("dwsNo").value = dwsNo;
-    }
+    // Function to Add a DWS Entry
+    async function addDWSEntry() {
+      const dwsID = document.getElementById("dwsID").value.trim();
+      const dwsName = document.getElementById("dwsName").value.trim();
 
-    generateDwsNo(); // Set initial DWS No.
-
-    async function saveDws() {
-      const dwsNo = document.getElementById("dwsNo").value;
-      const dwsDate = document.getElementById("dwsDate").value;
-      const structureName = document.getElementById("structureName").value;
-      const siNo = document.getElementById("siNo").value;
-      const workDescription = document.getElementById("workDescription").value;
-      const location = document.getElementById("location").value;
-      const message = document.getElementById("message");
-
-      if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
-        message.textContent = "Please fill in all required fields!";
+      if (!dwsID || !dwsName) {
+        alert("Please provide both DWS ID and Name.");
         return;
       }
 
-      const dwsData = {
-        dwsNo,
-        dwsDate,
-        structureName,
-        siNo,
-        workDescription,
-        location,
-      };
-
       try {
-        // Save data to Firestore
-        await db.collection("DWSRecords").doc(dwsNo).set(dwsData);
-        message.style.color = "green";
-        message.textContent = "DWS saved successfully!";
-        dwsCounter++; // Increment DWS No.
-        generateDwsNo(); // Generate next DWS No.
+        const dwsDocRef = doc(db, "DWS", dwsID); // Create/Update a document in "DWS" collection
+        await setDoc(dwsDocRef, { name: dwsName }, { merge: true }); // Merge data to avoid overwriting
+        alert("DWS Entry Added!");
       } catch (error) {
-        console.error("Error saving DWS: ", error);
-        message.style.color = "red";
-        message.textContent = "Failed to save DWS. Check console for details.";
+        console.error("Error adding DWS entry:", error);
+        alert("Error: " + error.message);
       }
     }
+
+    // Function to Read All DWS Entries
+    async function getDWSEntries() {
+      try {
+        const dwsCollectionRef = collection(db, "DWS"); // Reference the "DWS" collection
+        const querySnapshot = await getDocs(dwsCollectionRef); // Fetch all documents
+
+        const dwsList = document.getElementById("dwsList");
+        dwsList.innerHTML = ""; // Clear the list
+
+        querySnapshot.forEach((doc) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = `ID: ${doc.id}, Name: ${doc.data().name}`;
+          dwsList.appendChild(listItem);
+        });
+      } catch (error) {
+        console.error("Error fetching DWS entries:", error);
+        alert("Error: " + error.message);
+      }
+    }
+
+    // Export functions to global scope
+    window.addDWSEntry = addDWSEntry;
+    window.getDWSEntries = getDWSEntries;
   </script>
 </body>
 </html>
