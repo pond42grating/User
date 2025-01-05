@@ -4,29 +4,52 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Management</title>
+  <style>
+    .section {
+      display: none; /* Hide sections initially */
+      margin-top: 10px;
+    }
+    .toggle-button {
+      cursor: pointer;
+      color: blue;
+      text-decoration: underline;
+      margin: 5px 0;
+    }
+  </style>
 </head>
 <body>
   <h1>User Management</h1>
   
-  <!-- Pending Users Section -->
-  <h2>Pending User Approvals</h2>
-  <div id="pending-users"></div>
-  
-  <!-- Approved Users Section -->
-  <h2>Approved Users</h2>
-  <div id="approved-users"></div>
-  
-  <!-- Hold/Blocked Users Section -->
-  <h2>Hold/Blocked Users</h2>
-  <div id="hold-blocked-users"></div>
-  
-  <!-- Online Users Section -->
-  <h2>Online Users</h2>
-  <div id="online-users"></div>
-  
-  <!-- User Logs Section -->
-  <h2>User Logs</h2>
-  <div id="user-logs"></div>
+  <!-- Section Toggles -->
+  <p class="toggle-button" onclick="toggleSection('pending-users-section')">Pending User Approvals</p>
+  <div id="pending-users-section" class="section">
+    <h2>Pending User Approvals</h2>
+    <div id="pending-users"></div>
+  </div>
+
+  <p class="toggle-button" onclick="toggleSection('approved-users-section')">Approved Users</p>
+  <div id="approved-users-section" class="section">
+    <h2>Approved Users</h2>
+    <div id="approved-users"></div>
+  </div>
+
+  <p class="toggle-button" onclick="toggleSection('hold-blocked-users-section')">Hold/Blocked Users</p>
+  <div id="hold-blocked-users-section" class="section">
+    <h2>Hold/Blocked Users</h2>
+    <div id="hold-blocked-users"></div>
+  </div>
+
+  <p class="toggle-button" onclick="toggleSection('online-users-section')">Online Users</p>
+  <div id="online-users-section" class="section">
+    <h2>Online Users</h2>
+    <div id="online-users"></div>
+  </div>
+
+  <p class="toggle-button" onclick="toggleSection('user-logs-section')">User Logs</p>
+  <div id="user-logs-section" class="section">
+    <h2>User Logs</h2>
+    <div id="user-logs"></div>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
@@ -46,6 +69,18 @@
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    // Function to toggle sections
+    function toggleSection(sectionId) {
+      const sections = document.querySelectorAll('.section');
+      sections.forEach(section => {
+        if (section.id === sectionId) {
+          section.style.display = section.style.display === 'none' || section.style.display === '' ? 'block' : 'none';
+        } else {
+          section.style.display = 'none'; // Hide all other sections
+        }
+      });
+    }
 
     // Fetch and display pending users
     async function fetchPendingUsers() {
