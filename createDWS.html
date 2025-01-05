@@ -383,14 +383,17 @@
       while (consumableTable.rows.length > 1) consumableTable.deleteRow(1);
     }
     
+    
+    // Initialize DWS No on Page Load
+    initializeDwsNo();
+    
     document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
     document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
     document.getElementById("addConsumableBtn").addEventListener("click", addConsumable);
     document.getElementById("saveDwsBtn").addEventListener("click", saveDWS);
 
+  
     
-    // Initialize DWS No on Page Load
-    initializeDwsNo();
   </script>
 
 </body>
