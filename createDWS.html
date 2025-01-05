@@ -37,10 +37,6 @@
       padding: 8px;
       text-align: left;
     }
-    .error {
-      color: red;
-      font-size: 12px;
-    }
     button {
       padding: 10px 15px;
       background-color: #4CAF50;
@@ -52,11 +48,50 @@
     button:hover {
       background-color: #45a049;
     }
+    .settings {
+      position: relative;
+      display: inline-block;
+    }
+    .settings-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: white;
+      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+      min-width: 150px;
+    }
+    .settings-content button {
+      width: 100%;
+      padding: 8px;
+      text-align: left;
+      background-color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .settings-content button:hover {
+      background-color: #ddd;
+    }
+    .settings:hover .settings-content {
+      display: block;
+    }
   </style>
 </head>
 <body>
 
   <h1>Create DWS</h1>
+
+  <!-- Back Button -->
+  <button onclick="goBack()">Back</button>
+
+  <!-- Settings Button -->
+  <div class="settings">
+    <button>Settings</button>
+    <div class="settings-content">
+      <button onclick="viewProfile()">Profile</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
 
   <!-- DWS No. and Date -->
   <div class="form-section">
@@ -93,7 +128,7 @@
     <input type="number" id="otHour">
     <label for="holiday">Holiday</label>
     <input type="text" id="holiday">
-    <button type="button" id="addManpowerBtn">Add Manpower</button>
+    <button type="button" onclick="addManpower()">Add Manpower</button>
 
     <div class="preview-section">
       <h4>Manpower Preview:</h4>
@@ -111,118 +146,227 @@
     </div>
   </div>
 
+  <!-- Equipment Section -->
+  <div class="form-section">
+    <h3>Equipment</h3>
+    <label for="equipmentName">Equipment Name</label>
+    <input type="text" id="equipmentName">
+    <label for="workingHours">Working Hours</label>
+    <input type="number" id="workingHours">
+    <button type="button" onclick="addEquipment()">Add Equipment</button>
+
+    <div class="preview-section">
+      <h4>Equipment Preview:</h4>
+      <table id="equipmentTable">
+        <tr>
+          <th>Equipment Name</th>
+          <th>Working Hours</th>
+          <th>Actions</th>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Consumables Section -->
+  <div class="form-section">
+    <h3>Consumables</h3>
+    <label for="consumableName">Consumable Name</label>
+    <input type="text" id="consumableName">
+    <label for="quantity">Quantity</label>
+    <input type="number" id="quantity">
+    <button type="button" onclick="addConsumable()">Add Consumable</button>
+
+    <div class="preview-section">
+      <h4>Consumable Preview:</h4>
+      <table id="consumableTable">
+        <tr>
+          <th>Consumable Name</th>
+          <th>Quantity</th>
+          <th>Actions</th>
+        </tr>
+      </table>
+    </div>
+  </div>
+
   <!-- Save DWS -->
-  <button type="button" id="saveDwsBtn">Save DWS</button>
+  <button type="button" onclick="saveDWS()">Save DWS</button>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, setDoc, doc, runTransaction, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-      authDomain: "dws-management.firebaseapp.com",
-      projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
-      messagingSenderId: "23827231923",
-      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7",
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID",
+      measurementId: "YOUR_MEASUREMENT_ID"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    // 1. Fetch and Display DWS No.
-    async function initializeDwsNo() {
-      const counterDocRef = doc(db, "Counters", "DWSCounter");
-      try {
-        const counterDoc = await getDoc(counterDocRef);
-        if (!counterDoc.exists()) {
-          console.log("DWSCounter does not exist. Initializing...");
-          await setDoc(counterDocRef, { counter: 1 });
-          document.getElementById("dwsNo").value = "DWS-0001";
-          return;
-        }
-        const currentCounter = counterDoc.data().counter || 1;
-        const dwsNo = `DWS-${String(currentCounter).padStart(4, "0")}`;
-        document.getElementById("dwsNo").value = dwsNo;
-      } catch (error) {
-        console.error("Error initializing DWS No:", error);
-        alert("Error fetching DWS No. Please try again.");
-      }
+    // Back Button
+    function goBack() {
+      window.location.href = "login.html";
     }
 
-    // 2. Increment DWS Counter
-    async function incrementDwsNo() {
+    // Logout Function
+    function logout() {
+      signOut(auth)
+        .then(() => {
+          alert("Logged out successfully!");
+          window.location.href = "login.html";
+        })
+        .catch((error) => {
+          console.error("Logout error:", error);
+        });
+    }
+
+    // Generate DWS No.
+    async function generateDwsNo() {
       const counterDocRef = doc(db, "Counters", "DWSCounter");
+
       try {
-        await runTransaction(db, async (transaction) => {
+        const dwsNo = await runTransaction(db, async (transaction) => {
           const counterDoc = await transaction.get(counterDocRef);
           if (!counterDoc.exists()) {
-            transaction.set(counterDocRef, { counter: 2 });
-            return;
+            transaction.set(counterDocRef, { counter: 1 });
+            return "DWS-0001";
           }
           const currentCounter = counterDoc.data().counter || 1;
-          transaction.update(counterDocRef, { counter: currentCounter + 1 });
+          const newCounter = currentCounter + 1;
+          transaction.update(counterDocRef, { counter: newCounter });
+          return `DWS-${String(newCounter).padStart(4, "0")}`;
         });
+
+        document.getElementById("dwsNo").value = dwsNo;
       } catch (error) {
-        console.error("Error incrementing DWS No:", error);
-        alert("Error incrementing DWS No. Please try again.");
+        console.error("Error generating DWS No:", error);
+        alert("Failed to generate DWS No.");
       }
     }
 
-        // 3. Save DWS Function
+    // Add Manpower
+    async function addManpower() {
+      const badgeNo = document.getElementById("badgeNo").value.trim();
+      const dwsDate = document.getElementById("dwsDate").value.trim();
+
+      if (!badgeNo || !dwsDate) {
+        alert("Badge No. and DWS Date are required.");
+        return;
+      }
+
+      const manpowerTable = document.getElementById("manpowerTable");
+      const row = manpowerTable.insertRow();
+      row.innerHTML = `
+        <td>${badgeNo}</td>
+        <td>${document.getElementById("manpowerName").value}</td>
+        <td>${document.getElementById("trade").value}</td>
+        <td>${document.getElementById("normalHour").value}</td>
+        <td>${document.getElementById("otHour").value}</td>
+        <td>${document.getElementById("holiday").value}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
+    }
+
+    // Add Equipment
+    function addEquipment() {
+      const equipmentTable = document.getElementById("equipmentTable");
+      const row = equipmentTable.insertRow();
+      row.innerHTML = `
+        <td>${document.getElementById("equipmentName").value}</td>
+        <td>${document.getElementById("workingHours").value}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
+    }
+
+    // Add Consumable
+    function addConsumable() {
+      const consumableTable = document.getElementById("consumableTable");
+      const row = consumableTable.insertRow();
+      row.innerHTML = `
+        <td>${document.getElementById("consumableName").value}</td>
+        <td>${document.getElementById("quantity").value}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
+    }
+
+    // Delete Row
+    function deleteRow(button) {
+      const row = button.parentNode.parentNode;
+      row.remove();
+    }
+
+    // Save DWS
     async function saveDWS() {
-      const dwsNo = document.getElementById("dwsNo").value.trim();
+      const dwsNo = document.getElementById("dwsNo").value;
       const dwsDate = document.getElementById("dwsDate").value.trim();
       const structureName = document.getElementById("structureName").value.trim();
       const siNo = document.getElementById("siNo").value.trim();
       const workDescription = document.getElementById("workDescription").value.trim();
       const location = document.getElementById("location").value.trim();
 
-      if (!dwsNo || !dwsDate || !structureName || !siNo || !workDescription || !location) {
+      if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
         alert("All fields are required before saving.");
         return;
       }
 
-      const dwsData = {
-        dwsNo,
-        dwsDate,
-        structureName,
-        siNo,
-        workDescription,
-        location,
-      };
+      const manpower = Array.from(document.querySelectorAll("#manpowerTable tr"))
+        .slice(1)
+        .map((row) => ({
+          badgeNo: row.cells[0].textContent,
+          name: row.cells[1].textContent,
+          trade: row.cells[2].textContent,
+          normalHour: row.cells[3].textContent,
+          otHour: row.cells[4].textContent,
+          holiday: row.cells[5].textContent,
+        }));
+
+      const equipment = Array.from(document.querySelectorAll("#equipmentTable tr"))
+        .slice(1)
+        .map((row) => ({
+          name: row.cells[0].textContent,
+          workingHours: row.cells[1].textContent,
+        }));
+
+      const consumables = Array.from(document.querySelectorAll("#consumableTable tr"))
+        .slice(1)
+        .map((row) => ({
+          name: row.cells[0].textContent,
+          quantity: row.cells[1].textContent,
+        }));
+
+      const dwsData = { dwsNo, dwsDate, structureName, siNo, workDescription, location, manpower, equipment, consumables };
 
       try {
-        // Save DWS data to Firestore
         await setDoc(doc(db, "DWS", dwsNo), dwsData);
-
-        // Increment DWS counter and reinitialize the next DWS No.
-        await incrementDwsNo();
-        await initializeDwsNo();
-
         alert(`DWS ${dwsNo} saved successfully!`);
-        clearFields();
+        clearAllFields();
+        generateDwsNo();
       } catch (error) {
         console.error("Error saving DWS:", error);
-        alert("Error saving DWS. Please try again.");
+        alert("Failed to save DWS. Please try again.");
       }
     }
 
-    // 4. Clear Input Fields
-    function clearFields() {
-      document.getElementById("dwsDate").value = "";
-      document.getElementById("structureName").value = "";
-      document.getElementById("siNo").value = "";
-      document.getElementById("workDescription").value = "";
-      document.getElementById("location").value = "";
+    // Clear All Fields
+    function clearAllFields() {
+      const inputs = document.querySelectorAll("input");
+      inputs.forEach((input) => (input.value = ""));
+      const tables = ["manpowerTable", "equipmentTable", "consumableTable"];
+      tables.forEach((id) => {
+        const table = document.getElementById(id);
+        while (table.rows.length > 1) table.deleteRow(1);
+      });
     }
 
-    // Event Listeners
-    document.getElementById("saveDwsBtn").addEventListener("click", saveDWS);
-
-    // Initialize DWS No on Page Load
-    initializeDwsNo();
+    generateDwsNo();
   </script>
+
 </body>
 </html>
