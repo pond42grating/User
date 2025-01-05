@@ -70,30 +70,47 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Function to toggle sections
+    // Toggle section visibility
     function toggleSection(sectionId) {
       const sections = document.querySelectorAll('.section');
       sections.forEach(section => {
         if (section.id === sectionId) {
-          section.style.display = section.style.display === 'none' || section.style.display === '' ? 'block' : 'none';
+          section.style.display = section.style.display === 'block' ? 'none' : 'block';
         } else {
-          section.style.display = 'none'; // Hide all other sections
+          section.style.display = 'none';
         }
       });
+
+      // Trigger data fetch for the opened section
+      switch (sectionId) {
+        case 'pending-users-section':
+          fetchPendingUsers();
+          break;
+        case 'approved-users-section':
+          fetchApprovedUsers();
+          break;
+        case 'hold-blocked-users-section':
+          fetchHoldBlockedUsers();
+          break;
+        case 'online-users-section':
+          fetchOnlineUsers();
+          break;
+        case 'user-logs-section':
+          fetchUserLogs();
+          break;
+      }
     }
 
     // Fetch and display pending users
     async function fetchPendingUsers() {
       const pendingUsersDiv = document.getElementById("pending-users");
       pendingUsersDiv.innerHTML = "<p>Loading...</p>";
-
       try {
         const usersRef = collection(db, "Users");
         const q = query(usersRef, where("isApproved", "==", false));
         const querySnapshot = await getDocs(q);
 
         pendingUsersDiv.innerHTML = "";
-
         if (querySnapshot.empty) {
           pendingUsersDiv.innerHTML = "<p>No pending users found.</p>";
           return;
@@ -119,14 +136,12 @@
     async function fetchApprovedUsers() {
       const approvedUsersDiv = document.getElementById("approved-users");
       approvedUsersDiv.innerHTML = "<p>Loading...</p>";
-
       try {
         const usersRef = collection(db, "Users");
         const q = query(usersRef, where("isApproved", "==", true), where("status", "==", ""));
         const querySnapshot = await getDocs(q);
 
         approvedUsersDiv.innerHTML = "";
-
         if (querySnapshot.empty) {
           approvedUsersDiv.innerHTML = "<p>No approved users found.</p>";
           return;
@@ -154,14 +169,12 @@
     async function fetchHoldBlockedUsers() {
       const holdBlockedUsersDiv = document.getElementById("hold-blocked-users");
       holdBlockedUsersDiv.innerHTML = "<p>Loading...</p>";
-
       try {
         const usersRef = collection(db, "Users");
         const q = query(usersRef, where("status", "in", ["Hold", "Blocked"]));
         const querySnapshot = await getDocs(q);
 
         holdBlockedUsersDiv.innerHTML = "";
-
         if (querySnapshot.empty) {
           holdBlockedUsersDiv.innerHTML = "<p>No hold/blocked users found.</p>";
           return;
@@ -188,14 +201,12 @@
     async function fetchOnlineUsers() {
       const onlineUsersDiv = document.getElementById("online-users");
       onlineUsersDiv.innerHTML = "<p>Loading...</p>";
-
       try {
         const usersRef = collection(db, "Users");
         const q = query(usersRef, where("isOnline", "==", true));
         const querySnapshot = await getDocs(q);
 
         onlineUsersDiv.innerHTML = "";
-
         if (querySnapshot.empty) {
           onlineUsersDiv.innerHTML = "<p>No online users found.</p>";
           return;
@@ -225,13 +236,11 @@
     async function fetchUserLogs() {
       const userLogsDiv = document.getElementById("user-logs");
       userLogsDiv.innerHTML = "<p>Loading...</p>";
-
       try {
         const usersRef = collection(db, "Users");
         const querySnapshot = await getDocs(usersRef);
 
         userLogsDiv.innerHTML = "";
-
         querySnapshot.forEach((doc) => {
           const user = doc.data();
           if (user.loginLogs && user.loginLogs.length > 0) {
@@ -299,18 +308,6 @@
         alert("Error removing user. Check console for details.");
       }
     }
-
-    // Fetch all sections on page load
-    fetchPendingUsers();
-    fetchApprovedUsers();
-    fetchHoldBlockedUsers();
-    fetchOnlineUsers();
-    fetchUserLogs();
-
-    // Expose functions globally (optional, for debugging)
-    window.approveUser = approveUser;
-    window.updateUserStatus = updateUserStatus;
-    window.removeUser = removeUser;
   </script>
 </body>
 </html>
