@@ -211,6 +211,8 @@
         alert("Error incrementing DWS No. Please try again.");
       }
     }
+    
+    initializeDwsNo();
 
     
     function addManpower() {
@@ -385,7 +387,7 @@
     
     
     // Initialize DWS No on Page Load
-    initializeDwsNo();
+    
     
     document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
     document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
