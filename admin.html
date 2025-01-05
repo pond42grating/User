@@ -16,6 +16,9 @@
     .button-container {
       margin: 20px auto;
       padding: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
     }
 
     .section-button {
@@ -55,12 +58,12 @@
 <body>
   <h1>User Management</h1>
 
-  <!-- Button for Pending Users -->
+  <!-- Buttons -->
   <div class="button-container">
-    <div class="section-button" onclick="showSection('pending-users-section')">Pending</div>
+    <div class="section-button" onclick="toggleSection('pending-users-section', fetchPendingUsers)">Pending</div>
   </div>
 
-  <!-- Pending Users Section -->
+  <!-- Sections -->
   <div id="pending-users-section" class="section">
     <h2>Pending User Approvals</h2>
     <div id="pending-users"></div>
@@ -85,13 +88,19 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Show the selected section
-    function showSection(sectionId) {
+    // Toggle sections
+    function toggleSection(sectionId, fetchFunction) {
       const sections = document.querySelectorAll('.section');
       sections.forEach(section => {
         section.classList.remove('active');
       });
-      document.getElementById(sectionId).classList.add('active');
+      const selectedSection = document.getElementById(sectionId);
+      selectedSection.classList.add('active');
+
+      // Call the data-fetching function for the selected section
+      if (fetchFunction) {
+        fetchFunction();
+      }
     }
 
     // Fetch and display pending users
@@ -152,9 +161,6 @@
         alert("Error removing user. Check console for details.`);
       }
     }
-
-    // Fetch pending users on page load
-    fetchPendingUsers();
   </script>
 </body>
 </html>
