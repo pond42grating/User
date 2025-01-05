@@ -3,14 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firestore Write Test</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+  <title>Create DWS</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .form-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-container label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .form-container input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .form-container button {
+      width: 100%;
+      padding: 10px;
+      background: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .form-container button:hover {
+      background: #45a049;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 15px;
+      color: red;
+    }
+  </style>
 </head>
 <body>
-  <h1>Firestore Write Test</h1>
-  <button id="saveButton">Save Test Data</button>
-  <p id="status"></p>
+  <h1>Create DWS</h1>
+  <div class="form-container">
+    <form id="dwsForm">
+      <label for="dwsNo">DWS No.</label>
+      <input type="text" id="dwsNo" readonly />
+
+      <label for="dwsDate">Date</label>
+      <input type="date" id="dwsDate" required />
+
+      <label for="structureName">Structure Name</label>
+      <input type="text" id="structureName" required />
+
+      <label for="siNo">SI No.</label>
+      <input type="text" id="siNo" required />
+
+      <label for="workDescription">Work Description</label>
+      <input type="text" id="workDescription" required />
+
+      <label for="location">Location</label>
+      <input type="text" id="location" required />
+
+      <button type="button" onclick="saveDws()">Save</button>
+    </form>
+    <p class="message" id="message"></p>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 
   <script>
     // Firebase Configuration
@@ -18,47 +97,60 @@
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
       authDomain: "dws-management.firebaseapp.com",
       projectId: "dws-management",
-      storageBucket: "dws-management.firebasestorage.app",
+      storageBucket: "dws-management.appspot.com",
       messagingSenderId: "23827231923",
       appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-      measurementId: "G-L14GLJDYW7"
     };
 
-    // Initialize Firebase App and Firestore
-    let app, db;
-    try {
-      app = firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore(app);
-    } catch (error) {
-      console.error("Error initializing Firebase:", error);
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+
+    // Generate incremental DWS No.
+    let dwsCounter = 1;
+    function generateDwsNo() {
+      const dwsNo = `DWS-${String(dwsCounter).padStart(4, '0')}`;
+      document.getElementById("dwsNo").value = dwsNo;
     }
 
-    // Function to Write Data
-    async function writeTestData() {
-      const statusElement = document.getElementById('status');
+    generateDwsNo(); // Set initial DWS No.
+
+    async function saveDws() {
+      const dwsNo = document.getElementById("dwsNo").value;
+      const dwsDate = document.getElementById("dwsDate").value;
+      const structureName = document.getElementById("structureName").value;
+      const siNo = document.getElementById("siNo").value;
+      const workDescription = document.getElementById("workDescription").value;
+      const location = document.getElementById("location").value;
+      const message = document.getElementById("message");
+
+      if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
+        message.textContent = "Please fill in all required fields!";
+        return;
+      }
+
+      const dwsData = {
+        dwsNo,
+        dwsDate,
+        structureName,
+        siNo,
+        workDescription,
+        location,
+      };
+
       try {
-        // Ensure Firestore is initialized
-        if (!db) {
-          throw new Error("Firestore is not initialized properly.");
-        }
-
-        // Write a simple document to Firestore
-        await db.collection("TestCollection").doc("TestDocument").set({
-          message: "Hello, Firestore!",
-          timestamp: new Date().toISOString()
-        });
-
-        statusElement.textContent = "Data saved successfully!";
-        statusElement.style.color = "green";
+        // Save data to Firestore
+        await db.collection("DWSRecords").doc(dwsNo).set(dwsData);
+        message.style.color = "green";
+        message.textContent = "DWS saved successfully!";
+        dwsCounter++; // Increment DWS No.
+        generateDwsNo(); // Generate next DWS No.
       } catch (error) {
-        console.error("Error writing data:", error);
-        statusElement.textContent = `Error: ${error.message}`;
-        statusElement.style.color = "red";
+        console.error("Error saving DWS: ", error);
+        message.style.color = "red";
+        message.textContent = "Failed to save DWS. Check console for details.";
       }
     }
-
-    // Attach Event Listener
-    document.getElementById("saveButton").addEventListener("click", writeTestData);
   </script>
 </body>
 </html>
