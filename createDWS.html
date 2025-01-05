@@ -154,7 +154,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, setDoc, doc, runTransaction, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, setDoc, doc, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
     apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
@@ -169,182 +169,63 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Generate DWS No.
     async function generateDwsNo() {
       const counterDocRef = doc(db, "Counters", "DWSCounter");
-
       try {
         const dwsNo = await runTransaction(db, async (transaction) => {
           const counterDoc = await transaction.get(counterDocRef);
-
           if (!counterDoc.exists()) {
             transaction.set(counterDocRef, { counter: 1 });
             return "DWS-0001";
           }
-
-          const currentCounter = counterDoc.data().counter || 1;
+          const currentCounter = counterDoc.data().counter;
           const newCounter = currentCounter + 1;
           transaction.update(counterDocRef, { counter: newCounter });
-
           return `DWS-${String(newCounter).padStart(4, "0")}`;
         });
-
-        document.getElementById("dwsNo").value = dwsNo; // Display the generated DWS No.
+        document.getElementById("dwsNo").value = dwsNo;
       } catch (error) {
         console.error("Error generating DWS No:", error);
-        alert("Failed to generate DWS No. Please try again.”);
-return null;
-}
-}
-      // Add Manpower
-function addManpower() {
-  const badgeNo = document.getElementById("badgeNo").value.trim();
-  const manpowerName = document.getElementById("manpowerName").value.trim();
-  const trade = document.getElementById("trade").value.trim();
-  const normalHour = document.getElementById("normalHour").value.trim();
-  const otHour = document.getElementById("otHour").value.trim();
-  const holiday = document.getElementById("holiday").value.trim();
+        alert("Failed to generate DWS No.");
+      }
+    }
 
-  if (!badgeNo || !manpowerName || !trade || !normalHour || !otHour || !holiday) {
-    alert("Please fill out all manpower fields.");
-    return;
-  }
+    function addManpower() {
+      const manpowerTable = document.getElementById("manpowerTable");
+      const row = manpowerTable.insertRow();
+      row.innerHTML = `
+        <td>${document.getElementById("badgeNo").value}</td>
+        <td>${document.getElementById("manpowerName").value}</td>
+        <td>${document.getElementById("trade").value}</td>
+        <td>${document.getElementById("normalHour").value}</td>
+        <td>${document.getElementById("otHour").value}</td>
+        <td>${document.getElementById("holiday").value}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
+    }
 
-  const manpowerTable = document.getElementById("manpowerTable");
-  const row = manpowerTable.insertRow();
-  row.innerHTML = `
-    <td>${badgeNo}</td>
-    <td>${manpowerName}</td>
-    <td>${trade}</td>
-    <td>${normalHour}</td>
-    <td>${otHour}</td>
-    <td>${holiday}</td>
-    <td><button onclick="deleteRow(this)">Delete</button></td>
-  `;
+    function deleteRow(button) {
+      const row = button.parentNode.parentNode;
+      row.remove();
+    }
 
-  clearFields(["badgeNo", "manpowerName", "trade", "normalHour", "otHour", "holiday"]);
-}
+    async function saveDWS() {
+      const dwsNo = document.getElementById("dwsNo").value;
+      const dwsData = {
+        dwsDate: document.getElementById("dwsDate").value,
+        structureName: document.getElementById("structureName").value,
+        manpower: Array.from(document.querySelectorAll("#manpowerTable tr")).slice(1).map(row => ({
+          badgeNo: row.cells[0].textContent,
+          name: row.cells[1].textContent
+        }))
+      };
+      await setDoc(doc(db, "DWS", dwsNo), dwsData);
+      alert("DWS saved successfully!");
+      generateDwsNo();
+    }
 
-// Add Equipment
-function addEquipment() {
-  const equipmentName = document.getElementById("equipmentName").value.trim();
-  const workingHours = document.getElementById("workingHours").value.trim();
-
-  if (!equipmentName || !workingHours) {
-    alert("Please fill out all equipment fields.");
-    return;
-  }
-
-  const equipmentTable = document.getElementById("equipmentTable");
-  const row = equipmentTable.insertRow();
-  row.innerHTML = `
-    <td>${equipmentName}</td>
-    <td>${workingHours}</td>
-    <td><button onclick="deleteRow(this)">Delete</button></td>
-  `;
-
-  clearFields(["equipmentName", "workingHours"]);
-}
-
-// Add Consumable
-function addConsumable() {
-  const consumableName = document.getElementById("consumableName").value.trim();
-  const quantity = document.getElementById("quantity").value.trim();
-
-  if (!consumableName || !quantity) {
-    alert("Please fill out all consumable fields.");
-    return;
-  }
-
-  const consumableTable = document.getElementById("consumableTable");
-  const row = consumableTable.insertRow();
-  row.innerHTML = `
-    <td>${consumableName}</td>
-    <td>${quantity}</td>
-    <td><button onclick="deleteRow(this)">Delete</button></td>
-  `;
-
-  clearFields(["consumableName", "quantity"]);
-}
-
-// Delete Row
-function deleteRow(button) {
-  const row = button.parentNode.parentNode;
-  row.parentNode.removeChild(row);
-}
-
-// Save DWS
-async function saveDWS() {
-  const dwsNo = document.getElementById("dwsNo").value.trim();
-  const dwsDate = document.getElementById("dwsDate").value.trim();
-  const structureName = document.getElementById("structureName").value.trim();
-  const siNo = document.getElementById("siNo").value.trim();
-  const workDescription = document.getElementById("workDescription").value.trim();
-  const location = document.getElementById("location").value.trim();
-
-  if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
-    alert("All fields are required before saving.");
-    return;
-  }
-
-  const manpower = Array.from(document.querySelectorAll("#manpowerTable tr"))
-    .slice(1)
-    .map((row) => ({
-      badgeNo: row.cells[0].textContent,
-      name: row.cells[1].textContent,
-      trade: row.cells[2].textContent,
-      normalHour: row.cells[3].textContent,
-      otHour: row.cells[4].textContent,
-      holiday: row.cells[5].textContent,
-    }));
-
-  const equipment = Array.from(document.querySelectorAll("#equipmentTable tr"))
-    .slice(1)
-    .map((row) => ({
-      name: row.cells[0].textContent,
-      workingHours: row.cells[1].textContent,
-    }));
-
-  const consumables = Array.from(document.querySelectorAll("#consumableTable tr"))
-    .slice(1)
-    .map((row) => ({
-      name: row.cells[0].textContent,
-      quantity: row.cells[1].textContent,
-    }));
-
-  const dwsData = { dwsNo, dwsDate, structureName, siNo, workDescription, location, manpower, equipment, consumables };
-
-  try {
-    await setDoc(doc(db, "DWS", dwsNo), dwsData);
-    alert(`DWS ${dwsNo} saved successfully!`);
-    clearAllFields();
     generateDwsNo();
-  } catch (error) {
-    console.error("Error saving DWS:", error);
-    alert("Failed to save DWS. Please try again.");
-  }
-}
-
-// Clear All Fields
-function clearAllFields() {
-  ["dwsDate", "structureName", "siNo", "workDescription", "location", "badgeNo", "manpowerName", "trade", "normalHour", "otHour", "holiday", "equipmentName", "workingHours", "consumableName", "quantity"].forEach((id) => {
-    document.getElementById(id).value = "";
-  });
-
-  ["manpowerTable", "equipmentTable", "consumableTable"].forEach((id) => {
-    const table = document.getElementById(id);
-    while (table.rows.length > 1) table.deleteRow(1);
-  });
-}
-
-// Clear Specific Fields
-function clearFields(fieldIds) {
-  fieldIds.forEach((id) => {
-    document.getElementById(id).value = "";
-  });
-}
-
-generateDwsNo();
   </script>
+
 </body>
 </html>
