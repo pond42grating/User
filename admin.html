@@ -5,47 +5,117 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Management</title>
   <style>
-    .section {
-      display: none; /* Hide sections initially */
-      margin-top: 10px;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .toggle-button {
+
+    .button-container {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .section-button {
+      position: relative;
+      padding: 10px 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f0f0f0;
       cursor: pointer;
-      color: blue;
-      text-decoration: underline;
-      margin: 5px 0;
+      text-align: center;
+    }
+
+    .section-button:hover {
+      background-color: #e0e0e0;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background-color: red;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .section {
+      display: none;
+      margin-top: 20px;
+      width: 90%;
+      max-width: 800px;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 5px;
+      background-color: #fff;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    h2 {
+      margin-top: 0;
     }
   </style>
 </head>
 <body>
-  <h1>User Management</h1>
-  
-  <!-- Section Toggles -->
-  <p class="toggle-button" onclick="toggleSection('pending-users-section')">Pending User Approvals</p>
+  <!-- Top Buttons -->
+  <div class="button-container">
+    <div class="section-button" onclick="showSection('pending-users-section')">
+      Pending
+      <span id="pending-badge" class="notification-badge">0</span>
+    </div>
+    <div class="section-button" onclick="showSection('approved-users-section')">
+      Approved
+      <span id="approved-badge" class="notification-badge">0</span>
+    </div>
+    <div class="section-button" onclick="showSection('hold-blocked-users-section')">
+      Hold/Blocked
+      <span id="hold-blocked-badge" class="notification-badge">0</span>
+    </div>
+    <div class="section-button" onclick="showSection('online-users-section')">
+      Online
+      <span id="online-badge" class="notification-badge">0</span>
+    </div>
+    <div class="section-button" onclick="showSection('user-logs-section')">
+      Logs
+      <span id="logs-badge" class="notification-badge">0</span>
+    </div>
+  </div>
+
+  <!-- Sections -->
   <div id="pending-users-section" class="section">
     <h2>Pending User Approvals</h2>
     <div id="pending-users"></div>
   </div>
 
-  <p class="toggle-button" onclick="toggleSection('approved-users-section')">Approved Users</p>
   <div id="approved-users-section" class="section">
     <h2>Approved Users</h2>
     <div id="approved-users"></div>
   </div>
 
-  <p class="toggle-button" onclick="toggleSection('hold-blocked-users-section')">Hold/Blocked Users</p>
   <div id="hold-blocked-users-section" class="section">
     <h2>Hold/Blocked Users</h2>
     <div id="hold-blocked-users"></div>
   </div>
 
-  <p class="toggle-button" onclick="toggleSection('online-users-section')">Online Users</p>
   <div id="online-users-section" class="section">
     <h2>Online Users</h2>
     <div id="online-users"></div>
   </div>
 
-  <p class="toggle-button" onclick="toggleSection('user-logs-section')">User Logs</p>
   <div id="user-logs-section" class="section">
     <h2>User Logs</h2>
     <div id="user-logs"></div>
@@ -70,35 +140,20 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Toggle section visibility
-    function toggleSection(sectionId) {
+    // Show selected section
+    function showSection(sectionId) {
       const sections = document.querySelectorAll('.section');
       sections.forEach(section => {
-        if (section.id === sectionId) {
-          section.style.display = section.style.display === 'block' ? 'none' : 'block';
-        } else {
-          section.style.display = 'none';
-        }
+        section.classList.remove('active');
       });
+      document.getElementById(sectionId).classList.add('active');
+    }
 
-      // Trigger data fetch for the opened section
-      switch (sectionId) {
-        case 'pending-users-section':
-          fetchPendingUsers();
-          break;
-        case 'approved-users-section':
-          fetchApprovedUsers();
-          break;
-        case 'hold-blocked-users-section':
-          fetchHoldBlockedUsers();
-          break;
-        case 'online-users-section':
-          fetchOnlineUsers();
-          break;
-        case 'user-logs-section':
-          fetchUserLogs();
-          break;
-      }
+    // Update notification badges
+    function updateBadge(badgeId, count) {
+      const badge = document.getElementById(badgeId);
+      badge.textContent = count > 0 ? count : '';
+      badge.style.display = count > 0 ? 'flex' : 'none';
     }
 
     // Fetch and display pending users
@@ -111,6 +166,9 @@
         const querySnapshot = await getDocs(q);
 
         pendingUsersDiv.innerHTML = "";
+        const count = querySnapshot.size;
+        updateBadge("pending-badge", count);
+
         if (querySnapshot.empty) {
           pendingUsersDiv.innerHTML = "<p>No pending users found.</p>";
           return;
@@ -142,6 +200,9 @@
         const querySnapshot = await getDocs(q);
 
         approvedUsersDiv.innerHTML = "";
+        const count = querySnapshot.size;
+        updateBadge("approved-badge", count);
+
         if (querySnapshot.empty) {
           approvedUsersDiv.innerHTML = "<p>No approved users found.</p>";
           return;
@@ -175,6 +236,9 @@
         const querySnapshot = await getDocs(q);
 
         holdBlockedUsersDiv.innerHTML = "";
+        const count = querySnapshot.size;
+        updateBadge("hold-blocked-badge", count);
+
         if (querySnapshot.empty) {
           holdBlockedUsersDiv.innerHTML = "<p>No hold/blocked users found.</p>";
           return;
@@ -207,6 +271,9 @@
         const querySnapshot = await getDocs(q);
 
         onlineUsersDiv.innerHTML = "";
+        const count = querySnapshot.size;
+        updateBadge("online-badge", count);
+
         if (querySnapshot.empty) {
           onlineUsersDiv.innerHTML = "<p>No online users found.</p>";
           return;
@@ -241,6 +308,9 @@
         const querySnapshot = await getDocs(usersRef);
 
         userLogsDiv.innerHTML = "";
+        const count = querySnapshot.docs.reduce((acc, doc) => acc + (doc.data().loginLogs?.length || 0), 0);
+        updateBadge("logs-badge", count);
+
         querySnapshot.forEach((doc) => {
           const user = doc.data();
           if (user.loginLogs && user.loginLogs.length > 0) {
@@ -308,6 +378,13 @@
         alert("Error removing user. Check console for details.");
       }
     }
+
+    // Initial Fetch
+    fetchPendingUsers();
+    fetchApprovedUsers();
+    fetchHoldBlockedUsers();
+    fetchOnlineUsers();
+    fetchUserLogs();
   </script>
 </body>
 </html>
