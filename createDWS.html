@@ -224,7 +224,82 @@
     }
 
     // Initialize DWS Number on Page Load
-    generateDwsNo();
+    // Save DWS
+  async function saveDWS() {
+    const dwsNo = document.getElementById("dwsNo").value.trim();
+    const dwsDate = document.getElementById("dwsDate").value.trim();
+    const structureName = document.getElementById("structureName").value.trim();
+    const siNo = document.getElementById("siNo").value.trim();
+    const workDescription = document.getElementById("workDescription").value.trim();
+    const location = document.getElementById("location").value.trim();
+
+    if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
+      alert("All fields are required before saving.");
+      return;
+    }
+
+    const manpower = Array.from(document.querySelectorAll("#manpowerTable tr"))
+      .slice(1)
+      .map((row) => ({
+        badgeNo: row.cells[0].textContent,
+        name: row.cells[1].textContent,
+        trade: row.cells[2].textContent,
+        normalHour: row.cells[3].textContent,
+        otHour: row.cells[4].textContent,
+        holiday: row.cells[5].textContent,
+      }));
+
+    const equipment = Array.from(document.querySelectorAll("#equipmentTable tr"))
+      .slice(1)
+      .map((row) => ({
+        name: row.cells[0].textContent,
+        workingHours: row.cells[1].textContent,
+      }));
+
+    const consumables = Array.from(document.querySelectorAll("#consumableTable tr"))
+      .slice(1)
+      .map((row) => ({
+        name: row.cells[0].textContent,
+        quantity: row.cells[1].textContent,
+      }));
+
+    const dwsData = {
+      dwsNo,
+      dwsDate,
+      structureName,
+      siNo,
+      workDescription,
+      location,
+      manpower,
+      equipment,
+      consumables,
+    };
+
+    try {
+      await setDoc(doc(db, "DWS", dwsNo), dwsData);
+      alert(`DWS ${dwsNo} saved successfully!`);
+      clearAllFields();
+      generateDwsNo();
+    } catch (error) {
+      console.error("Error saving DWS:", error);
+      alert("Failed to save DWS. Please try again.");
+    }
+  }
+
+  // Clear All Fields
+  function clearAllFields() {
+    const inputs = document.querySelectorAll("input");
+    inputs.forEach((input) => (input.value = ""));
+    const tables = ["manpowerTable", "equipmentTable", "consumableTable"];
+    tables.forEach((id) => {
+      const table = document.getElementById(id);
+      while (table.rows.length > 1) table.deleteRow(1);
+    });
+  }
+
+  // Initialize DWS Number on Page Load
+
+
 
   </script>
 
