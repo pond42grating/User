@@ -37,10 +37,23 @@
       padding: 8px;
       text-align: left;
     }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
     .settings-container {
       position: fixed;
       top: 10px;
       right: 10px;
+      z-index: 1000;
     }
     .settings-button {
       background-color: #4CAF50;
@@ -79,6 +92,9 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
+    }
+    #backButton:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
