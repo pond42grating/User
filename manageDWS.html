@@ -2,87 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simple Export Function</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f4f7f6;
-      color: #333;
-    }
-    h1 {
-      text-align: center;
-    }
-    .form-section, .table-section {
-      margin-bottom: 20px;
-    }
-    input[type="text"] {
-      padding: 8px;
-      margin: 5px 0 5px;
-      width: 100%;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    button {
-      padding: 10px 15px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #f4f7f6;
-    }
-    .feedback {
-      margin-top: 10px;
-      font-style: italic;
-      color: #333;
-    }
-  </style>
+  <title>Simple DWS Export</title>
 </head>
 <body>
-
-  <h1>Simple DWS Export</h1>
-
-  <!-- Search Section -->
-  <div class="form-section">
-    <h3>Search and Export Individual DWS</h3>
-    <input type="text" id="searchQuery" placeholder="Enter DWS No. (e.g., DWS-0001)">
-    <button id="searchBtn">Search</button>
-    <div class="feedback" id="feedbackMessage"></div>
-  </div>
-
-  <!-- Results Table -->
-  <div class="table-section">
-    <h3>Search Results</h3>
-    <table id="resultsTable">
-      <tr>
-        <th>DWS No.</th>
-        <th>Date</th>
-        <th>SI/TQ No.</th>
-        <th>Work</th>
-        <th>Location</th>
-        <th>Actions</th>
-      </tr>
-    </table>
-  </div>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
@@ -100,26 +22,26 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Function to search DWS records
+    // Function to search for a DWS record
     async function searchDWS(dwsNo) {
       const dwsCollection = collection(db, "DWS");
       const searchQuery = query(dwsCollection, where("dwsNo", "==", dwsNo));
-
       const querySnapshot = await getDocs(searchQuery);
+
       const results = [];
       querySnapshot.forEach((doc) => results.push({ id: doc.id, ...doc.data() }));
       return results;
     }
 
-    // Function to export individual DWS record to CSV
+    // Function to export a DWS record to CSV
     function exportToCSV(record) {
-      // Define CSV headers
+      // CSV headers
       let csvContent = "DWS No.,Date,SI/TQ No.,Work,Location\n";
 
-      // Add record details
+      // Append record details
       csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}"\n`;
 
-      // Create downloadable CSV
+      // Create and trigger the CSV download
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -129,40 +51,26 @@
       URL.revokeObjectURL(url);
     }
 
-    // Event listener for search button
-    document.getElementById("searchBtn").addEventListener("click", async () => {
-      const dwsNo = document.getElementById("searchQuery").value.trim();
-      if (!dwsNo) {
-        alert("Please enter a valid DWS No.");
-        return;
-      }
+    // Example execution
+    const dwsNo = prompt("Enter DWS No. to search and export (e.g., DWS-0001):");
 
-      const results = await searchDWS(dwsNo);
-      const resultsTable = document.getElementById("resultsTable");
-      resultsTable.innerHTML = "<tr><th>DWS No.</th><th>Date</th><th>SI/TQ No.</th><th>Work</th><th>Location</th><th>Actions</th></tr>";
-
-      if (results.length === 0) {
-        document.getElementById("feedbackMessage").textContent = "No results found.";
-        return;
-      }
-
-      document.getElementById("feedbackMessage").textContent = `Found ${results.length} record(s) for DWS No. ${dwsNo}.`;
-
-      results.forEach((record) => {
-        const row = resultsTable.insertRow();
-        row.innerHTML = `
-          <td>${record.dwsNo}</td>
-          <td>${record.dwsDate}</td>
-          <td>${record.siNo}</td>
-          <td>${record.workDescription}</td>
-          <td>${record.location}</td>
-          <td>
-            <button onclick='exportToCSV(${JSON.stringify(record)})'>Export</button>
-          </td>
-        `;
-      });
-    });
+    if (dwsNo) {
+      searchDWS(dwsNo)
+        .then((results) => {
+          if (results.length > 0) {
+            console.log("Found DWS record:", results[0]);
+            exportToCSV(results[0]);
+          } else {
+            console.log("No DWS record found for:", dwsNo);
+            alert(`No record found for DWS No. ${dwsNo}`);
+          }
+        })
+        .catch((error) => {
+          console.error("Error searching for DWS:", error);
+        });
+    } else {
+      alert("DWS No. is required!");
+    }
   </script>
-
 </body>
 </html>
