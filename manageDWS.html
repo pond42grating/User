@@ -1,1 +1,217 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage DWS</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f7f6;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+    }
+    .form-section, .table-section {
+      margin-bottom: 20px;
+    }
+    input[type="text"], input[type="date"] {
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f7f6;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #editSection {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Manage DWS</h1>
+
+  <!-- Search Section -->
+  <div class="form-section">
+    <h3>Search DWS</h3>
+    <label for="searchDwsNo">DWS No.</label>
+    <input type="text" id="searchDwsNo">
+    <label for="searchDwsDate">DWS Date</label>
+    <input type="date" id="searchDwsDate">
+    <button id="searchBtn">Search</button>
+  </div>
+
+  <!-- Records Table -->
+  <div class="table-section">
+    <h3>DWS Records</h3>
+    <table id="recordsTable">
+      <tr>
+        <th>DWS No.</th>
+        <th>DWS Date</th>
+        <th>Structure Name</th>
+        <th>Actions</th>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Edit Section -->
+  <div id="editSection" class="form-section">
+    <h3>Edit DWS</h3>
+    <label for="editDwsNo">DWS No.</label>
+    <input type="text" id="editDwsNo" readonly>
+    <label for="editDwsDate">DWS Date</label>
+    <input type="date" id="editDwsDate">
+    <label for="editStructureName">Structure Name</label>
+    <input type="text" id="editStructureName">
+    <button id="updateBtn">Update</button>
+    <button id="cancelEditBtn">Cancel</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Populate DWS records
+    async function fetchDwsRecords(filters = {}) {
+      const { dwsNo, dwsDate } = filters;
+      const recordsTable = document.getElementById("recordsTable");
+      // Clear existing records except the header row
+      while (recordsTable.rows.length > 1) recordsTable.deleteRow(1);
+
+      try {
+        let dwsQuery = collection(db, "DWS");
+        if (dwsNo || dwsDate) {
+          dwsQuery = query(dwsQuery, where("dwsNo", "==", dwsNo || ""), where("dwsDate", "==", dwsDate || ""));
+        }
+        const querySnapshot = await getDocs(dwsQuery);
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const row = recordsTable.insertRow();
+          row.innerHTML = `
+            <td>${data.dwsNo}</td>
+            <td>${data.dwsDate}</td>
+            <td>${data.structureName}</td>
+            <td>
+              <button onclick="editDws('${data.dwsNo}')">Edit</button>
+              <button onclick="deleteDws('${data.dwsNo}')">Delete</button>
+            </td>
+          `;
+        });
+      } catch (error) {
+        console.error("Error fetching DWS records:", error);
+        alert("Failed to fetch records. Please try again.");
+      }
+    }
+
+    // Edit DWS
+    window.editDws = async function (dwsNo) {
+      try {
+        const docRef = doc(db, "DWS", dwsNo);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          document.getElementById("editDwsNo").value = data.dwsNo;
+          document.getElementById("editDwsDate").value = data.dwsDate;
+          document.getElementById("editStructureName").value = data.structureName;
+          document.getElementById("editSection").style.display = "block";
+        } else {
+          alert("DWS not found!");
+        }
+      } catch (error) {
+        console.error("Error editing DWS:", error);
+        alert("Failed to load DWS for editing.");
+      }
+    };
+
+    // Update DWS
+    document.getElementById("updateBtn").addEventListener("click", async () => {
+      const dwsNo = document.getElementById("editDwsNo").value.trim();
+      const dwsDate = document.getElementById("editDwsDate").value.trim();
+      const structureName = document.getElementById("editStructureName").value.trim();
+
+      if (!dwsNo || !dwsDate || !structureName) {
+        alert("All fields are required.");
+        return;
+      }
+
+      try {
+        await setDoc(doc(db, "DWS", dwsNo), { dwsNo, dwsDate, structureName }, { merge: true });
+        alert(`DWS ${dwsNo} updated successfully.`);
+        document.getElementById("editSection").style.display = "none";
+        fetchDwsRecords(); // Refresh records
+      } catch (error) {
+        console.error("Error updating DWS:", error);
+        alert("Failed to update DWS.");
+      }
+    });
+
+    // Delete DWS
+    window.deleteDws = async function (dwsNo) {
+      if (!confirm(`Are you sure you want to delete DWS ${dwsNo}?`)) return;
+
+      try {
+        await deleteDoc(doc(db, "DWS", dwsNo));
+        alert(`DWS ${dwsNo} deleted successfully.`);
+        fetchDwsRecords(); // Refresh records
+      } catch (error) {
+        console.error("Error deleting DWS:", error);
+        alert("Failed to delete DWS.");
+      }
+    };
+
+    // Search DWS
+    document.getElementById("searchBtn").addEventListener("click", () => {
+      const dwsNo = document.getElementById("searchDwsNo").value.trim();
+      const dwsDate = document.getElementById("searchDwsDate").value.trim();
+      fetchDwsRecords({ dwsNo, dwsDate });
+    });
+
+    // Cancel Edit
+    document.getElementById("cancelEditBtn").addEventListener("click", () => {
+      document.getElementById("editSection").style.display = "none";
+    });
+
+    // Fetch records on page load
+    fetchDwsRecords();
+  </script>
+</body>
+</html>
