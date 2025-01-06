@@ -251,21 +251,21 @@ async function checkDuplicateBadge(dwsDate, badgeNo) {
 }
 
     
-    function addManpower() {
-      const badgeNo = document.getElementById("badgeNo").value.trim();
-      const name = document.getElementById("manpowerName").value.trim();
-      const trade = document.getElementById("trade").value.trim();
-      const normalHour = document.getElementById("normalHour").value.trim();
-      const otHour = document.getElementById("otHour").value.trim();
-      const holiday = document.getElementById("holiday").value.trim();
-      const dwsDate = document.getElementById("dwsDate").value.trim();
+    async function addManpower() {
+  const badgeNo = document.getElementById("badgeNo").value.trim();
+  const name = document.getElementById("manpowerName").value.trim();
+  const trade = document.getElementById("trade").value.trim();
+  const normalHour = document.getElementById("normalHour").value.trim();
+  const otHour = document.getElementById("otHour").value.trim();
+  const holiday = document.getElementById("holiday").value.trim();
+  const dwsDate = document.getElementById("dwsDate").value.trim();
 
-      if (!badgeNo || !name || !trade || !dwsDate) {
-        alert("All fields in the Manpower section are required.");
-        return;
-      }
-      
-      const isDuplicate = await checkDuplicateBadge(dwsDate, badgeNo);
+  if (!badgeNo || !name || !trade || !dwsDate) {
+    alert("All fields in the Manpower section are required.");
+    return;
+  }
+
+  const isDuplicate = await checkDuplicateBadge(dwsDate, badgeNo);
   if (isDuplicate) {
     const proceed = confirm(
       `Badge No. ${badgeNo} is already found in Firestore for the same date ${dwsDate}. Do you still want to add it?`
@@ -273,25 +273,26 @@ async function checkDuplicateBadge(dwsDate, badgeNo) {
     if (!proceed) return; // Stop if the user cancels
   }
 
+  const manpowerTable = document.getElementById("manpowerTable");
+  const row = manpowerTable.insertRow();
+  row.innerHTML = `
+    <td>${badgeNo}</td>
+    <td>${name}</td>
+    <td>${trade}</td>
+    <td>${normalHour}</td>
+    <td>${otHour}</td>
+    <td>${holiday}</td>
+    <td><button>Delete</button></td>
+  `;
 
-      const manpowerTable = document.getElementById("manpowerTable");
-      const row = manpowerTable.insertRow();
-      row.innerHTML = `
-        <td>${badgeNo}</td>
-        <td>${name}</td>
-        <td>${trade}</td>
-        <td>${normalHour}</td>
-        <td>${otHour}</td>
-        <td>${holiday}</td>
-        <td><button>Delete</button></td>
-      `;
-      document.getElementById("manpowerTable").addEventListener("click", function (event) {
-  if (event.target.tagName === "BUTTON") {
-    const row = event.target.parentNode.parentNode;
-    row.parentNode.removeChild(row);
-  }
-});
+  // Add delete functionality for newly added rows
+  manpowerTable.addEventListener("click", function (event) {
+    if (event.target.tagName === "BUTTON") {
+      const row = event.target.parentNode.parentNode;
+      row.parentNode.removeChild(row);
     }
+  });
+}
 
 
     function addEquipment() {
