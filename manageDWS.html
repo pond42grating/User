@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manage DWS - Dynamic Search</title>
+  <title>Manage DWS - Export and Consolidated Export</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -36,11 +36,6 @@
     button:hover {
       background-color: #45a049;
     }
-    .feedback {
-      margin-top: 10px;
-      font-style: italic;
-      color: #333;
-    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -63,7 +58,7 @@
 </head>
 <body>
 
-  <h1>Manage DWS - Dynamic Search</h1>
+  <h1>Manage DWS - Export Options</h1>
 
   <!-- Search Section -->
   <div class="form-section">
@@ -89,8 +84,9 @@
       <tr>
         <th>DWS No.</th>
         <th>Date</th>
-        <th>Structure Name</th>
         <th>SI/TQ No.</th>
+        <th>Work</th>
+        <th>Location</th>
         <th>Actions</th>
       </tr>
     </table>
@@ -98,7 +94,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
@@ -113,118 +109,73 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Function to determine search type
-    function detectSearchType(input) {
-      const dwsNoPattern = /^DWS-\d{4}$/; // Pattern for DWS No.
-      const datePattern = /^\d{4}-\d{2}-\d{2}$/; // Pattern for Date (YYYY-MM-DD)
-      const siNoPattern = /^SI-\d+$/; // Pattern for SI No. (e.g., SI-123)
-      const tqNoPattern = /^TQ-\d+$/; // Pattern for TQ No. (e.g., TQ-123)
-
-      if (dwsNoPattern.test(input)) return "dwsNo";
-      if (datePattern.test(input)) return "date";
-      if (siNoPattern.test(input)) return "siNo";
-      if (tqNoPattern.test(input)) return "tqNo";
-      return "structureName"; // Default to Structure Name
-    }
-
     // Function to search DWS records
     async function searchDWS(input) {
-      const searchType = detectSearchType(input);
       const dwsCollection = collection(db, "DWS");
-      let searchQuery;
-
-      try {
-        if (searchType === "dwsNo") {
-          searchQuery = query(dwsCollection, where("dwsNo", "==", input));
-        } else if (searchType === "date") {
-          searchQuery = query(dwsCollection, where("dwsDate", "==", input));
-        } else if (searchType === "siNo") {
-          searchQuery = query(dwsCollection, where("siNo", "==", input));
-        } else if (searchType === "tqNo") {
-          searchQuery = query(dwsCollection, where("siNo", "==", input)); // Assuming SI/TQ is stored in the same field
-        } else {
-          searchQuery = query(dwsCollection, where("structureName", "==", input));
-        }
-
-        const querySnapshot = await getDocs(searchQuery);
-        const results = [];
-        querySnapshot.forEach((doc) => {
-          results.push({ id: doc.id, ...doc.data() });
-        });
-
-        return { results, searchType };
-      } catch (error) {
-        console.error("Error searching DWS:", error);
-        return { results: [], searchType };
-      }
+      const querySnapshot = await getDocs(query(dwsCollection, where("dwsNo", "==", input)));
+      const results = [];
+      querySnapshot.forEach((doc) => results.push({ id: doc.id, ...doc.data() }));
+      return results;
     }
 
-    // Function to update feedback message
-    function updateFeedbackMessage(searchType, resultsCount) {
-      const feedbackMessage = document.getElementById("feedbackMessage");
+    // Function to export individual DWS to CSV
+    function exportToCSV(record) {
+      let csvContent = "Sl No,DWS No,Date,SI/TQ No,Work,Location,Manpower,Equipment,Consumables\n";
+      csvContent += `1,${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}","${JSON.stringify(record.manpower)}","${JSON.stringify(record.equipment)}","${JSON.stringify(record.consumables)}"\n`;
 
-      if (resultsCount === 0) {
-        feedbackMessage.textContent = "No results found for your query.";
-      } else {
-        const typeMessage =
-          searchType === "dwsNo"
-            ? "DWS No."
-            : searchType === "date"
-            ? "Date"
-            : searchType === "siNo" || searchType === "tqNo"
-            ? "SI/TQ No."
-            : "Structure Name";
-        feedbackMessage.textContent = `Your query for ${typeMessage} is found below.`;
-      }
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${record.dwsNo}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
-    // Function to update the results table
-    function updateResultsTable(results) {
+    // Function to export consolidated CSV
+    function exportConsolidatedCSV(records) {
+      let csvContent = "Sl No,DWS No,Date,SI/TQ No,Work,Location,Manpower,Equipment,Consumables\n";
+      records.forEach((record, index) => {
+        csvContent += `${index + 1},${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}","${JSON.stringify(record.manpower)}","${JSON.stringify(record.equipment)}","${JSON.stringify(record.consumables)}"\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Consolidated_DWS.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Event listeners for search and export
+    document.getElementById("searchBtn").addEventListener("click", async () => {
+      const input = document.getElementById("searchQuery").value.trim();
+      const results = await searchDWS(input);
       const resultsTable = document.getElementById("resultsTable");
-
-      // Clear previous results (except header)
-      while (resultsTable.rows.length > 1) resultsTable.deleteRow(1);
+      resultsTable.innerHTML = "<tr><th>DWS No.</th><th>Date</th><th>SI/TQ No.</th><th>Work</th><th>Location</th><th>Actions</th></tr>";
 
       results.forEach((record) => {
         const row = resultsTable.insertRow();
         row.innerHTML = `
           <td>${record.dwsNo}</td>
           <td>${record.dwsDate}</td>
-          <td>${record.structureName}</td>
           <td>${record.siNo}</td>
+          <td>${record.workDescription}</td>
+          <td>${record.location}</td>
           <td>
-            <button onclick="viewDetails('${record.id}')">View</button>
-            <button onclick="deleteDws('${record.id}')">Delete</button>
+            <button onclick="exportToCSV(${JSON.stringify(record)})">Export</button>
           </td>
         `;
       });
-    }
 
-    // Function to delete a DWS record
-    window.deleteDws = async function (id) {
-      if (!confirm("Are you sure you want to delete this DWS?")) return;
-
-      try {
-        await deleteDoc(doc(db, "DWS", id));
-        alert("DWS deleted successfully.");
-        document.getElementById("searchBtn").click(); // Refresh results
-      } catch (error) {
-        console.error("Error deleting DWS:", error);
-        alert("Failed to delete DWS. Please try again.");
+      // Add a consolidated export button if multiple records are found
+      if (results.length > 1) {
+        const exportButton = document.createElement("button");
+        exportButton.textContent = "Export Consolidated";
+        exportButton.onclick = () => exportConsolidatedCSV(results);
+        resultsTable.parentNode.appendChild(exportButton);
       }
-    };
-
-    // Handle Search Button Click
-    document.getElementById("searchBtn").addEventListener("click", async () => {
-      const input = document.getElementById("searchQuery").value.trim();
-      if (!input) {
-        alert("Please enter a search query.");
-        return;
-      }
-
-      const { results, searchType } = await searchDWS(input);
-      updateFeedbackMessage(searchType, results.length);
-      updateResultsTable(results);
     });
   </script>
 
