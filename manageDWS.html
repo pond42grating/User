@@ -87,6 +87,7 @@
       <tr>
         <th>DWS No.</th>
         <th>Date</th>
+        <th>Structure Name</th>
         <th>SI/TQ No.</th>
         <th>Work</th>
         <th>Location</th>
@@ -153,64 +154,28 @@
     // Function to export a single DWS record to CSV
     function exportToCSV(record) {
       let csvContent =
-        "DWS No.,Date,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
+        "DWS No.,Date,Structure Name,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
 
       const manpower = record.manpower || [];
       manpower.forEach((person) => {
-        csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,,\n`;
+        csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,,\n`;
       });
 
       const equipment = record.equipment || [];
       equipment.forEach((item) => {
-        csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},,,\n`;
+        csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},,,\n`;
       });
 
       const consumables = record.consumables || [];
       consumables.forEach((material) => {
-        csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit}\n`;
-      });
-
-            const blob = new Blob([csvContent], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${record.dwsNo}_details.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // Function to export all DWS records to a consolidated CSV
-    async function exportConsolidatedCSV() {
-      const dwsCollection = collection(db, "DWS");
-      const querySnapshot = await getDocs(dwsCollection);
-      const records = [];
-      querySnapshot.forEach((doc) => records.push({ id: doc.id, ...doc.data() }));
-
-      let csvContent =
-        "DWS No.,Date,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
-
-      records.forEach((record) => {
-        const manpower = record.manpower || [];
-        manpower.forEach((person) => {
-          csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,,\n`;
-        });
-
-        const equipment = record.equipment || [];
-        equipment.forEach((item) => {
-          csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},,,\n`;
-        });
-
-        const consumables = record.consumables || [];
-        consumables.forEach((material) => {
-          csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit}\n`;
-        });
+        csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit}\n`;
       });
 
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "Consolidated_DWS.csv";
+      a.download = `${record.dwsNo}_details.csv`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -226,7 +191,7 @@
       const results = await searchDWS(input);
       const resultsTable = document.getElementById("resultsTable");
       resultsTable.innerHTML =
-        "<tr><th>DWS No.</th><th>Date</th><th>SI/TQ No.</th><th>Work</th><th>Location</th><th>Actions</th></tr>";
+        "<tr><th>DWS No.</th><th>Date</th><th>Structure Name</th><th>SI/TQ No.</th><th>Work</th><th>Location</th><th>Actions</th></tr>";
 
       if (results.length === 0) {
         document.getElementById("feedbackMessage").textContent = "No results found.";
@@ -238,20 +203,13 @@
       results.forEach((record) => {
         const row = resultsTable.insertRow();
 
-        // Create cells for the row
-        const dwsNoCell = row.insertCell(0);
-        const dateCell = row.insertCell(1);
-        const siNoCell = row.insertCell(2);
-        const workCell = row.insertCell(3);
-        const locationCell = row.insertCell(4);
-        const actionsCell = row.insertCell(5);
-
-        // Fill the cells with data
-        dwsNoCell.textContent = record.dwsNo;
-        dateCell.textContent = record.dwsDate;
-        siNoCell.textContent = record.siNo;
-        workCell.textContent = record.workDescription;
-        locationCell.textContent = record.location;
+        // Populate row cells
+        row.insertCell(0).textContent = record.dwsNo;
+        row.insertCell(1).textContent = record.dwsDate;
+        row.insertCell(2).textContent = record.structureName;
+        row.insertCell(3).textContent = record.siNo;
+        row.insertCell(4).textContent = record.workDescription;
+        row.insertCell(5).textContent = record.location;
 
         // Create and append the Export button
         const exportButton = document.createElement("button");
@@ -260,15 +218,45 @@
         exportButton.addEventListener("click", () => {
           exportToCSV(record);
         });
-
-        // Append the Export button to the Actions cell
-        actionsCell.appendChild(exportButton);
+        row.insertCell(6).appendChild(exportButton);
       });
     });
 
-    // Event listener for consolidated export
-    document.getElementById("exportAllBtn").addEventListener("click", exportConsolidatedCSV);
-  </script>
+    // Consolidated Export (existing functionality remains unchanged)
+    document.getElementById("exportAllBtn").addEventListener("click", async () => {
+      const dwsCollection = collection(db, "DWS");
+      const querySnapshot = await getDocs(dwsCollection);
+      const records = [];
+      querySnapshot.forEach((doc) => records.push({ id: doc.id, ...doc.data() }));
+      // Call export function for all records
+            let csvContent =
+        "DWS No.,Date,Structure Name,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
 
+      records.forEach((record) => {
+        const manpower = record.manpower || [];
+        manpower.forEach((person) => {
+          csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,,\n`;
+        });
+
+        const equipment = record.equipment || [];
+        equipment.forEach((item) => {
+          csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},,,\n`;
+        });
+
+        const consumables = record.consumables || [];
+        consumables.forEach((material) => {
+          csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit}\n`;
+        });
+      });
+
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Consolidated_DWS.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
 </body>
 </html>
