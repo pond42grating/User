@@ -62,9 +62,65 @@
     button:hover {
       background-color: #45a049;
     }
+      .settings-container {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+    }
+     .settings-button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+     .settings-dropdown {
+      display: none;
+      position: absolute;
+      top: 40px;
+      right: 0;
+      background-color: white;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+    }
+    .settings-dropdown a {
+      display: block;
+      padding: 10px;
+      text-decoration: none;
+      color: #333;
+    }
+    .settings-dropdown a:hover {
+      background-color: #f4f7f6;
+    }
+    #backButton {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #backButton:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
+
+  <!-- Settings Dropdown -->
+  <div class="settings-container">
+    <button class="settings-button">Settings</button>
+    <div class="settings-dropdown">
+      <a href="userprofile.html">User Profile</a>
+      <a id="logoutButton" href="#">Log Out</a>
+    </div>
+  </div>
 
   <h1>Create DWS</h1>
 
@@ -165,23 +221,27 @@
 
   <!-- Save DWS -->
   <button type="button" id="saveDwsBtn">Save DWS</button>
-
+  <!-- Back Button -->
+  <button id="backButton">Back</button>
+  
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, runTransaction, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
-    apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-    authDomain: "dws-management.firebaseapp.com",
-    projectId: "dws-management",
-    storageBucket: "dws-management.firebasestorage.app",
-    messagingSenderId: "23827231923",
-    appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-    measurementId: "G-L14GLJDYW7"
-  };
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     // 1. Fetch and Display DWS No.
     async function initializeDwsNo() {
@@ -224,7 +284,35 @@
     
     initializeDwsNo();
     
-    
+    document.getElementById("backButton").addEventListener("click", () => {
+      window.location.href = "login.html"; // Redirect to login page
+    });
+
+    // Settings Dropdown Toggle
+    const settingsButton = document.querySelector('.settings-button');
+    const settingsDropdown = document.querySelector('.settings-dropdown');
+
+    settingsButton.addEventListener('click', () => {
+      settingsDropdown.style.display = settingsDropdown.style.display === 'block' ? 'none' : 'block';
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!settingsButton.contains(event.target) && !settingsDropdown.contains(event.target)) {
+        settingsDropdown.style.display = 'none';
+      }
+    });
+
+    // Logout Functionality
+    document.getElementById("logoutButton").addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        alert("Logged out successfully!");
+        window.location.href = "index.html";
+      } catch (error) {
+        console.error("Error logging out:", error);
+        alert("Failed to log out. Please try again.");
+      }
+    });
 
 // Function to check Firestore for duplicate badge number
 async function checkDuplicateBadge(dwsDate, badgeNo) {
