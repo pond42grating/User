@@ -170,7 +170,7 @@
         csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit}\n`;
       });
 
-      const blob = new Blob([csvContent], { type: "text/csv" });
+            const blob = new Blob([csvContent], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -237,15 +237,32 @@
 
       results.forEach((record) => {
         const row = resultsTable.insertRow();
-        const recordString = JSON.stringify(record).replace(/"/g, "&quot;");
-        row.innerHTML = `
-          <td>${record.dwsNo}</td>
-          <td>${record.dwsDate}</td>
-          <td>${record.siNo}</td>
-          <td>${record.workDescription}</td>
-          <td>${record.location}</td>
-          <td><button onclick="exportToCSV(${recordString})">Export</button></td>
-        `;
+
+        // Create cells for the row
+        const dwsNoCell = row.insertCell(0);
+        const dateCell = row.insertCell(1);
+        const siNoCell = row.insertCell(2);
+        const workCell = row.insertCell(3);
+        const locationCell = row.insertCell(4);
+        const actionsCell = row.insertCell(5);
+
+        // Fill the cells with data
+        dwsNoCell.textContent = record.dwsNo;
+        dateCell.textContent = record.dwsDate;
+        siNoCell.textContent = record.siNo;
+        workCell.textContent = record.workDescription;
+        locationCell.textContent = record.location;
+
+        // Create and append the Export button
+        const exportButton = document.createElement("button");
+        exportButton.textContent = "Export";
+        exportButton.className = "export-btn";
+        exportButton.addEventListener("click", () => {
+          exportToCSV(record);
+        });
+
+        // Append the Export button to the Actions cell
+        actionsCell.appendChild(exportButton);
       });
     });
 
