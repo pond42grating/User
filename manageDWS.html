@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manage DWS</title>
+  <title>Manage DWS - Dynamic Search</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -17,7 +17,7 @@
     .form-section, .table-section {
       margin-bottom: 20px;
     }
-    input[type="text"], input[type="date"] {
+    input[type="text"] {
       padding: 8px;
       margin: 5px 0 15px;
       width: 100%;
@@ -36,6 +36,11 @@
     button:hover {
       background-color: #45a049;
     }
+    .feedback {
+      margin-top: 10px;
+      font-style: italic;
+      color: #333;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -53,20 +58,14 @@
 </head>
 <body>
 
-  <h1>Manage DWS</h1>
+  <h1>Manage DWS - Dynamic Search</h1>
 
   <!-- Search Section -->
   <div class="form-section">
     <h3>Search DWS</h3>
-    <label for="searchDwsNo">DWS No.</label>
-    <input type="text" id="searchDwsNo">
-    <label for="searchStructureName">Structure Name</label>
-    <input type="text" id="searchStructureName">
-    <label for="searchSiNo">SI/TQ No.</label>
-    <input type="text" id="searchSiNo">
-    <label for="searchDate">DWS Date</label>
-    <input type="date" id="searchDate">
+    <input type="text" id="searchQuery" placeholder="Enter DWS No., Structure Name, SI/TQ No., or Date">
     <button id="searchBtn">Search</button>
+    <div class="feedback" id="feedbackMessage"></div>
   </div>
 
   <!-- Results Table -->
@@ -100,23 +99,32 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Function to determine search type
+    function detectSearchType(input) {
+      const dwsNoPattern = /^DWS-\d{4}$/; // Pattern for DWS No.
+      const datePattern = /^\d{4}-\d{2}-\d{2}$/; // Pattern for Date (YYYY-MM-DD)
+
+      if (dwsNoPattern.test(input)) return "dwsNo";
+      if (datePattern.test(input)) return "date";
+      return "general"; // Assume general search (e.g., Structure Name or SI/TQ No.)
+    }
+
     // Function to search DWS records
-    async function searchDWS({ dwsNo, structureName, siNo, date }) {
+    async function searchDWS(input) {
+      const searchType = detectSearchType(input);
       const dwsCollection = collection(db, "DWS");
-      let searchQuery = dwsCollection;
+      let searchQuery;
 
       try {
-        if (dwsNo) {
-          searchQuery = query(dwsCollection, where("dwsNo", "==", dwsNo));
-        } else if (structureName) {
-          searchQuery = query(dwsCollection, where("structureName", "==", structureName));
-        } else if (siNo) {
-          searchQuery = query(dwsCollection, where("siNo", "==", siNo));
-        } else if (date) {
-          searchQuery = query(dwsCollection, where("dwsDate", "==", date));
+        if (searchType === "dwsNo") {
+          searchQuery = query(dwsCollection, where("dwsNo", "==", input));
+        } else if (searchType === "date") {
+          searchQuery = query(dwsCollection, where("dwsDate", "==", input));
         } else {
-          alert("Please provide at least one search criterion.");
-          return [];
+          searchQuery = query(
+            dwsCollection,
+            where("structureName", "==", input)
+          );
         }
 
         const querySnapshot = await getDocs(searchQuery);
@@ -125,12 +133,27 @@
           results.push({ id: doc.id, ...doc.data() });
         });
 
-        return results;
-
+        return { results, searchType };
       } catch (error) {
         console.error("Error searching DWS:", error);
-        alert("Failed to fetch records. Please try again.");
-        return [];
+        return { results: [], searchType };
+      }
+    }
+
+    // Function to update feedback message
+    function updateFeedbackMessage(searchType, resultsCount) {
+      const feedbackMessage = document.getElementById("feedbackMessage");
+
+      if (resultsCount === 0) {
+        feedbackMessage.textContent = "No results found for your query.";
+      } else {
+        const typeMessage =
+          searchType === "dwsNo"
+            ? "DWS No."
+            : searchType === "date"
+            ? "Date"
+            : "Structure Name or SI/TQ No.";
+        feedbackMessage.textContent = `Your query for ${typeMessage} is found below.`;
       }
     }
 
@@ -140,11 +163,6 @@
 
       // Clear previous results (except header)
       while (resultsTable.rows.length > 1) resultsTable.deleteRow(1);
-
-      if (results.length === 0) {
-        alert("No records found.");
-        return;
-      }
 
       results.forEach((record) => {
         const row = resultsTable.insertRow();
@@ -175,14 +193,16 @@
       }
     };
 
-    // Search button functionality
+    // Handle Search Button Click
     document.getElementById("searchBtn").addEventListener("click", async () => {
-      const dwsNo = document.getElementById("searchDwsNo").value.trim();
-      const structureName = document.getElementById("searchStructureName").value.trim();
-      const siNo = document.getElementById("searchSiNo").value.trim();
-      const date = document.getElementById("searchDate").value.trim();
+      const input = document.getElementById("searchQuery").value.trim();
+      if (!input) {
+        alert("Please enter a search query.");
+        return;
+      }
 
-      const results = await searchDWS({ dwsNo, structureName, siNo, date });
+      const { results, searchType } = await searchDWS(input);
+      updateFeedbackMessage(searchType, results.length);
       updateResultsTable(results);
     });
   </script>
