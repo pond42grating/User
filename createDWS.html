@@ -196,17 +196,18 @@
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, runTransaction, collection, query, where, getDocs, getAuth, signOut} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
-    apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
-    authDomain: "dws-management.firebaseapp.com",
-    projectId: "dws-management",
-    storageBucket: "dws-management.firebasestorage.app",
-    messagingSenderId: "23827231923",
-    appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
-    measurementId: "G-L14GLJDYW7"
-  };
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -254,7 +255,7 @@
     initializeDwsNo();
     
     // Back Button Functionality
-    document.getElementById("backButton").addEventListener("click", function () {
+    document.getElementById("backButton").addEventListener("click", () => {
       window.location.href = "login.html"; // Redirect to login page
     });
 
@@ -266,19 +267,18 @@
       settingsDropdown.style.display = settingsDropdown.style.display === 'block' ? 'none' : 'block';
     });
 
-    // Hide dropdown when clicking outside
     document.addEventListener('click', (event) => {
       if (!settingsButton.contains(event.target) && !settingsDropdown.contains(event.target)) {
         settingsDropdown.style.display = 'none';
       }
     });
 
-    // Log Out Functionality
-    document.getElementById("logoutButton").addEventListener("click", async function () {
+    // Logout Functionality
+    document.getElementById("logoutButton").addEventListener("click", async () => {
       try {
         await signOut(auth);
-        alert("You have been logged out.");
-        window.location.href = "index.html"; // Redirect to the login page
+        alert("Logged out successfully!");
+        window.location.href = "index.html";
       } catch (error) {
         console.error("Error logging out:", error);
         alert("Failed to log out. Please try again.");
