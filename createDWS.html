@@ -263,8 +263,14 @@
       row.innerHTML = `
         <td>${equipmentName}</td>
         <td>${workingHours}</td>
-        <td><button onclick="deleteRow(this)">Delete</button></td>
+        <td><button>Delete</button></td>
       `;
+      document.getElementById("equipmentTable").addEventListener("click", function (event) {
+  if (event.target.tagName === "BUTTON") {
+    const row = event.target.parentNode.parentNode;
+    row.parentNode.removeChild(row);
+  }
+});
     }
 
     function addConsumable() {
@@ -281,27 +287,16 @@
       row.innerHTML = `
         <td>${consumableName}</td>
         <td>${quantity}</td>
-        <td><button onclick="deleteRow(this)">Delete</button></td>
+        <td><button>Delete</button></td>
       `;
-    }
-
-    function deleteRow(button) {
-      
-
-document.getElementById("equipmentTable").addEventListener("click", function (event) {
-  if (event.target.tagName === "BUTTON") {
-    const row = event.target.parentNode.parentNode;
-    row.parentNode.removeChild(row);
-  }
-});
-
-document.getElementById("consumableTable").addEventListener("click", function (event) {
+      document.getElementById("consumableTable").addEventListener("click", function (event) {
   if (event.target.tagName === "BUTTON") {
     const row = event.target.parentNode.parentNode;
     row.parentNode.removeChild(row);
   }
 });
     }
+
 
     async function saveDWS() {
       const dwsNo = document.getElementById("dwsNo").value.trim();
