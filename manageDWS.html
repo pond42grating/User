@@ -237,13 +237,14 @@
 
       results.forEach((record) => {
         const row = resultsTable.insertRow();
+        const recordString = JSON.stringify(record).replace(/"/g, "&quot;");
         row.innerHTML = `
           <td>${record.dwsNo}</td>
           <td>${record.dwsDate}</td>
           <td>${record.siNo}</td>
           <td>${record.workDescription}</td>
           <td>${record.location}</td>
-          <td><button onclick='exportToCSV(${JSON.stringify(record)})'>Export</button></td>
+          <td><button onclick="exportToCSV(${recordString})">Export</button></td>
         `;
       });
     });
@@ -251,5 +252,6 @@
     // Event listener for consolidated export
     document.getElementById("exportAllBtn").addEventListener("click", exportConsolidatedCSV);
   </script>
+
 </body>
 </html>
