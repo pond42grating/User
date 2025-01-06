@@ -26,6 +26,16 @@
       border: 1px solid #ccc;
       border-radius: 4px;
     }
+    textarea {
+  width: 100%; /* Adjust the width */
+  height: 120px; /* Set height to accommodate more lines */
+  padding: 10px; /* Add inner spacing */
+  font-size: 16px; /* Adjust the font size */
+  border: 1px solid #ccc; /* Add border */
+  border-radius: 5px; /* Smooth corners */
+  resize: vertical; /* Allow height resizing only (remove if not required) */
+}
+    
     .preview-section table {
       width: 100%;
       border-collapse: collapse;
@@ -72,8 +82,8 @@
     <input type="text" id="structureName">
     <label for="siNo">SI/TQ No.</label>
     <input type="text" id="siNo">
-    <label for="workDescription">Work Description</label>
-    <input type="text" id="workDescription">
+      <label for="workDescription">Work Description</label>
+  <textarea id="workDescription" rows="5" placeholder="Enter detailed work description here..."></textarea>
     <label for="location">Location</label>
     <input type="text" id="location">
   </div>
