@@ -49,11 +49,6 @@
     th {
       background-color: #f4f7f6;
     }
-    .input-guide {
-      margin-top: 10px;
-      font-size: 14px;
-      color: #555;
-    }
     .feedback {
       margin-top: 10px;
       font-style: italic;
@@ -178,7 +173,9 @@
           <td>${record.workDescription}</td>
           <td>${record.location}</td>
           <td>
-            <button onclick='exportToCSV(${JSON.stringify(record)})'>Export</button>
+            <button onclick='exportToCSV(${JSON.stringify(record)
+              .replace(/'/g, "&#39;")
+              .replace(/"/g, "&quot;")})'>Export</button>
           </td>
         `;
       });
