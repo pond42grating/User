@@ -213,6 +213,41 @@
     }
     
     initializeDwsNo();
+    
+    const dwsCollectionRef = collection(db, "DWS");
+
+// Function to check Firestore for duplicate badge number
+async function checkDuplicateBadge(dwsDate, badgeNo) {
+  if (!dwsDate) {
+    alert("Please enter the DWS Date before adding manpower.");
+    return false;
+  }
+
+  try {
+    // Query Firestore for records matching the given date
+    const querySnapshot = await getDocs(query(dwsCollectionRef, where("dwsDate", "==", dwsDate)));
+    let duplicateFound = false;
+
+    // Iterate through records to find the badge number
+    querySnapshot.forEach((doc) => {
+      const manpower = doc.data().manpower || [];
+      manpower.forEach((person) => {
+        if (person.badgeNo === badgeNo) {
+          duplicateFound = true;
+          alert(
+            `Badge No. ${badgeNo} already exists in DWS No. ${doc.id} for the same date ${dwsDate}.`
+          );
+        }
+      });
+    });
+
+    return duplicateFound;
+  } catch (error) {
+    console.error("Error checking duplicate badge in Firestore:", error);
+    alert("Failed to validate badge number. Please try again.");
+    return false;
+  }
+}
 
     
     function addManpower() {
@@ -228,6 +263,15 @@
         alert("All fields in the Manpower section are required.");
         return;
       }
+      
+      const isDuplicate = await checkDuplicateBadge(dwsDate, badgeNo);
+  if (isDuplicate) {
+    const proceed = confirm(
+      `Badge No. ${badgeNo} is already found in Firestore for the same date ${dwsDate}. Do you still want to add it?`
+    );
+    if (!proceed) return; // Stop if the user cancels
+  }
+
 
       const manpowerTable = document.getElementById("manpowerTable");
       const row = manpowerTable.insertRow();
