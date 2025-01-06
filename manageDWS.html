@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Simple DWS Export</title>
+  <title>Detailed DWS Export</title>
 </head>
 <body>
   <script type="module">
@@ -33,20 +33,36 @@
       return results;
     }
 
-    // Function to export a DWS record to CSV
-    function exportToCSV(record) {
+    // Function to export DWS record with full details to CSV
+    function exportToDetailedCSV(record) {
       // CSV headers
-      let csvContent = "DWS No.,Date,SI/TQ No.,Work,Location\n";
+      let csvContent =
+        "DWS No.,Date,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
 
-      // Append record details
-      csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}"\n`;
+      // Append manpower details
+      const manpower = record.manpower || [];
+      manpower.forEach((person) => {
+        csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,,\n`;
+      });
+
+      // Append equipment details
+      const equipment = record.equipment || [];
+      equipment.forEach((item) => {
+        csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},,,\n`;
+      });
+
+      // Append consumables details
+      const consumables = record.consumables || [];
+      consumables.forEach((material) => {
+        csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit}\n`;
+      });
 
       // Create and trigger the CSV download
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${record.dwsNo}.csv`;
+      a.download = `${record.dwsNo}_detailed.csv`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -59,7 +75,7 @@
         .then((results) => {
           if (results.length > 0) {
             console.log("Found DWS record:", results[0]);
-            exportToCSV(results[0]);
+            exportToDetailedCSV(results[0]);
           } else {
             console.log("No DWS record found for:", dwsNo);
             alert(`No record found for DWS No. ${dwsNo}`);
