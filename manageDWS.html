@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Individual DWS Export</title>
+  <title>Simple Export Function</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -58,7 +58,7 @@
 </head>
 <body>
 
-  <h1>Individual DWS Export</h1>
+  <h1>Simple DWS Export</h1>
 
   <!-- Search Section -->
   <div class="form-section">
@@ -113,29 +113,13 @@
 
     // Function to export individual DWS record to CSV
     function exportToCSV(record) {
-      let csvContent = "Sl No,DWS No,Date,SI/TQ No,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
+      // Define CSV headers
+      let csvContent = "DWS No.,Date,SI/TQ No.,Work,Location\n";
 
-      const manpower = record.manpower || [];
-      const equipment = record.equipment || [];
-      const consumables = record.consumables || [];
+      // Add record details
+      csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}"\n`;
 
-      let rowCounter = 1;
-
-      manpower.forEach((person) => {
-        csvContent += `${rowCounter},${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,, \n`;
-        rowCounter++;
-      });
-
-      equipment.forEach((item) => {
-        csvContent += `${rowCounter},${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},, \n`;
-        rowCounter++;
-      });
-
-      consumables.forEach((material) => {
-        csvContent += `${rowCounter},${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit} \n`;
-        rowCounter++;
-      });
-
+      // Create downloadable CSV
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -173,9 +157,7 @@
           <td>${record.workDescription}</td>
           <td>${record.location}</td>
           <td>
-            <button onclick='exportToCSV(${JSON.stringify(record)
-              .replace(/'/g, "&#39;")
-              .replace(/"/g, "&quot;")})'>Export</button>
+            <button onclick='exportToCSV(${JSON.stringify(record)})'>Export</button>
           </td>
         `;
       });
