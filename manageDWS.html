@@ -68,6 +68,15 @@
     .fixed-button:hover {
       background-color: #45a049;
     }
+    .format-info {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+      font-style: italic;
+    }
+    .format-info strong {
+      color: #333;
+    }
   </style>
 </head>
 <body>
@@ -79,6 +88,15 @@
     <input type="text" id="searchQuery" placeholder="Enter DWS No., Structure, SI/TQ No., or Date">
     <button id="searchBtn">Search</button>
     <div class="feedback" id="feedbackMessage"></div>
+    <div class="format-info">
+      <p><strong>Sample Format for Search:</strong></p>
+      <ul>
+        <li><strong>DWS No.:</strong> DWS-0001</li>
+        <li><strong>Date:</strong> YYYY-MM-DD (e.g., 2025-01-06)</li>
+        <li><strong>Structure Name:</strong> Structure-123</li>
+        <li><strong>SI/TQ No.:</strong> SI-123 or TQ-123</li>
+      </ul>
+    </div>
   </div>
 
   <!-- Results Table -->
@@ -222,14 +240,14 @@
       });
     });
 
-    // Consolidated Export (existing functionality remains unchanged)
+    // Consolidated Export Button Functionality
     document.getElementById("exportAllBtn").addEventListener("click", async () => {
       const dwsCollection = collection(db, "DWS");
-      const querySnapshot = await getDocs(dwsCollection);
+            const querySnapshot = await getDocs(dwsCollection);
       const records = [];
       querySnapshot.forEach((doc) => records.push({ id: doc.id, ...doc.data() }));
-      // Call export function for all records
-            let csvContent =
+
+      let csvContent =
         "DWS No.,Date,Structure Name,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
 
       records.forEach((record) => {
@@ -258,5 +276,6 @@
       URL.revokeObjectURL(url);
     });
   </script>
+
 </body>
 </html>
