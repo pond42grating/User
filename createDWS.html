@@ -238,8 +238,14 @@
         <td>${normalHour}</td>
         <td>${otHour}</td>
         <td>${holiday}</td>
-        <td><button onclick="deleteRow(this)">Delete</button></td>
+        <td><button>Delete</button></td>
       `;
+      document.getElementById("manpowerTable").addEventListener("click", function (event) {
+  if (event.target.tagName === "BUTTON") {
+    const row = event.target.parentNode.parentNode;
+    row.parentNode.removeChild(row);
+  }
+});
     }
 
 
@@ -280,12 +286,7 @@
     }
 
     function deleteRow(button) {
-      document.getElementById("manpowerTable").addEventListener("click", function (event) {
-  if (event.target.tagName === "BUTTON") {
-    const row = event.target.parentNode.parentNode;
-    row.parentNode.removeChild(row);
-  }
-});
+      
 
 document.getElementById("equipmentTable").addEventListener("click", function (event) {
   if (event.target.tagName === "BUTTON") {
