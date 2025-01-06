@@ -264,22 +264,30 @@
     initializeDwsNo();
     
     async function incrementDwsNo() {
-      const counterDocRef = doc(db, "Counters", "DWSCounter");
-      try {
-        await runTransaction(db, async (transaction) => {
-          const counterDoc = await transaction.get(counterDocRef);
-          if (!counterDoc.exists()) {
-            transaction.set(counterDocRef, { counter: 2 });
-            return;
-          }
-          const currentCounter = counterDoc.data().counter || 1;
-          transaction.update(counterDocRef, { counter: currentCounter + 1 });
-        });
-      } catch (error) {
-        console.error("Error incrementing DWS No:", error);
-        alert("Error incrementing DWS No. Please try again.");
+  const counterDocRef = doc(db, "Counters", "DWSCounter");
+  try {
+    console.log("Starting transaction...");
+    await runTransaction(db, async (transaction) => {
+      const counterDoc = await transaction.get(counterDocRef);
+      console.log("Transaction started. Document fetched:", counterDoc.exists());
+
+      if (!counterDoc.exists()) {
+        console.log("Document not found. Initializing...");
+        transaction.set(counterDocRef, { counter: 2 });
+        return;
       }
-    }
+
+      const currentCounter = counterDoc.data().counter || 1;
+      console.log("Current counter value:", currentCounter);
+
+      transaction.update(counterDocRef, { counter: currentCounter + 1 });
+      console.log("Counter incremented successfully.");
+    });
+  } catch (error) {
+    console.error("Error incrementing DWS No:", error);
+    alert("Error incrementing DWS No. Please try again.");
+  }
+}
     
     // Back Button Functionality
     document.getElementById("backButton").addEventListener("click", () => {
