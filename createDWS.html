@@ -214,10 +214,11 @@
     
     initializeDwsNo();
     
-    const dwsCollectionRef = collection(db, "DWS");
+    
 
 // Function to check Firestore for duplicate badge number
 async function checkDuplicateBadge(dwsDate, badgeNo) {
+  const dwsCollectionRef = collection(db, "DWS");
   if (!dwsDate) {
     alert("Please enter the DWS Date before adding manpower.");
     return false;
