@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Detailed DWS Export</title>
+  <title>Consolidated DWS Export</title>
 </head>
 <body>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
@@ -22,39 +22,41 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Function to search for a DWS record
-    async function searchDWS(dwsNo) {
+    // Function to fetch all DWS records
+    async function fetchAllDWS() {
       const dwsCollection = collection(db, "DWS");
-      const searchQuery = query(dwsCollection, where("dwsNo", "==", dwsNo));
-      const querySnapshot = await getDocs(searchQuery);
+      const querySnapshot = await getDocs(dwsCollection);
 
       const results = [];
       querySnapshot.forEach((doc) => results.push({ id: doc.id, ...doc.data() }));
       return results;
     }
 
-    // Function to export DWS record with full details to CSV
-    function exportToDetailedCSV(record) {
+    // Function to export consolidated DWS records to CSV
+    function exportConsolidatedCSV(records) {
       // CSV headers
       let csvContent =
         "DWS No.,Date,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
 
-      // Append manpower details
-      const manpower = record.manpower || [];
-      manpower.forEach((person) => {
-        csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,,\n`;
-      });
+      // Append records
+      records.forEach((record) => {
+        // Append manpower details
+        const manpower = record.manpower || [];
+        manpower.forEach((person) => {
+          csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,,\n`;
+        });
 
-      // Append equipment details
-      const equipment = record.equipment || [];
-      equipment.forEach((item) => {
-        csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},,,\n`;
-      });
+        // Append equipment details
+        const equipment = record.equipment || [];
+        equipment.forEach((item) => {
+          csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},,,\n`;
+        });
 
-      // Append consumables details
-      const consumables = record.consumables || [];
-      consumables.forEach((material) => {
-        csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit}\n`;
+        // Append consumables details
+        const consumables = record.consumables || [];
+        consumables.forEach((material) => {
+          csvContent += `${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit}\n`;
+        });
       });
 
       // Create and trigger the CSV download
@@ -62,31 +64,25 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${record.dwsNo}_detailed.csv`;
+      a.download = "Consolidated_DWS.csv";
       a.click();
       URL.revokeObjectURL(url);
     }
 
     // Example execution
-    const dwsNo = prompt("Enter DWS No. to search and export (e.g., DWS-0001):");
-
-    if (dwsNo) {
-      searchDWS(dwsNo)
-        .then((results) => {
-          if (results.length > 0) {
-            console.log("Found DWS record:", results[0]);
-            exportToDetailedCSV(results[0]);
-          } else {
-            console.log("No DWS record found for:", dwsNo);
-            alert(`No record found for DWS No. ${dwsNo}`);
-          }
-        })
-        .catch((error) => {
-          console.error("Error searching for DWS:", error);
-        });
-    } else {
-      alert("DWS No. is required!");
-    }
+    fetchAllDWS()
+      .then((records) => {
+        if (records.length > 0) {
+          console.log("Fetched all DWS records:", records);
+          exportConsolidatedCSV(records);
+        } else {
+          console.log("No DWS records found.");
+          alert("No DWS records found for export.");
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching DWS records:", error);
+      });
   </script>
 </body>
 </html>
