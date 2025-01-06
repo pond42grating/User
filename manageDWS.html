@@ -3,8 +3,101 @@
 <head>
   <meta charset="UTF-8">
   <title>DWS Search and Export</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f7f6;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+    }
+    .form-section, .table-section, .export-section {
+      margin-bottom: 20px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      margin-right: 10px;
+      width: 80%;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f7f6;
+    }
+    .feedback {
+      margin-top: 10px;
+      font-style: italic;
+      color: #333;
+    }
+    .fixed-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #4CAF50;
+      color: white;
+      padding: 15px;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .fixed-button:hover {
+      background-color: #45a049;
+    }
+  </style>
 </head>
 <body>
+
+  <h1>DWS Search and Export</h1>
+
+  <!-- Search Section -->
+  <div class="form-section">
+    <input type="text" id="searchQuery" placeholder="Enter DWS No., Structure, SI/TQ No., or Date">
+    <button id="searchBtn">Search</button>
+    <div class="feedback" id="feedbackMessage"></div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="table-section">
+    <table id="resultsTable">
+      <tr>
+        <th>DWS No.</th>
+        <th>Date</th>
+        <th>SI/TQ No.</th>
+        <th>Work</th>
+        <th>Location</th>
+        <th>Actions</th>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Consolidated Export Button -->
+  <button class="fixed-button" id="exportAllBtn">Export All</button>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
@@ -22,22 +115,36 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Function to search for a specific DWS record
-    async function searchDWS(dwsNo) {
-      const dwsCollection = collection(db, "DWS");
-      const searchQuery = query(dwsCollection, where("dwsNo", "==", dwsNo));
-      const querySnapshot = await getDocs(searchQuery);
+    // Function to detect search type
+    function detectSearchType(input) {
+      const dwsNoPattern = /^DWS-\d{4}$/; // DWS No. format
+      const datePattern = /^\d{4}-\d{2}-\d{2}$/; // Date format
+      const siNoPattern = /^SI-\d+$/; // SI/TQ format
+      const tqNoPattern = /^TQ-\d+$/; // TQ format
 
-      const results = [];
-      querySnapshot.forEach((doc) => results.push({ id: doc.id, ...doc.data() }));
-      return results;
+      if (dwsNoPattern.test(input)) return "dwsNo";
+      if (datePattern.test(input)) return "date";
+      if (siNoPattern.test(input) || tqNoPattern.test(input)) return "siNo";
+      return "structureName"; // Default to Structure Name
     }
 
-    // Function to fetch all DWS records
-    async function fetchAllDWS() {
+    // Function to search DWS records
+    async function searchDWS(input) {
+      const searchType = detectSearchType(input);
       const dwsCollection = collection(db, "DWS");
-      const querySnapshot = await getDocs(dwsCollection);
+      let searchQuery;
 
+      if (searchType === "dwsNo") {
+        searchQuery = query(dwsCollection, where("dwsNo", "==", input));
+      } else if (searchType === "date") {
+        searchQuery = query(dwsCollection, where("dwsDate", "==", input));
+      } else if (searchType === "siNo") {
+        searchQuery = query(dwsCollection, where("siNo", "==", input));
+      } else {
+        searchQuery = query(dwsCollection, where("structureName", "==", input));
+      }
+
+      const querySnapshot = await getDocs(searchQuery);
       const results = [];
       querySnapshot.forEach((doc) => results.push({ id: doc.id, ...doc.data() }));
       return results;
@@ -73,7 +180,12 @@
     }
 
     // Function to export all DWS records to a consolidated CSV
-    function exportConsolidatedCSV(records) {
+    async function exportConsolidatedCSV() {
+      const dwsCollection = collection(db, "DWS");
+      const querySnapshot = await getDocs(dwsCollection);
+      const records = [];
+      querySnapshot.forEach((doc) => records.push({ id: doc.id, ...doc.data() }));
+
       let csvContent =
         "DWS No.,Date,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
 
@@ -103,39 +215,41 @@
       URL.revokeObjectURL(url);
     }
 
-    // Execution
-    const action = prompt(
-      "Enter 'search' to export a single DWS or 'consolidated' to export all DWS records:"
-    );
-
-    if (action === "search") {
-      const dwsNo = prompt("Enter DWS No. to search and export (e.g., DWS-0001):");
-      if (dwsNo) {
-        searchDWS(dwsNo)
-          .then((results) => {
-            if (results.length > 0) {
-              exportToCSV(results[0]);
-            } else {
-              alert(`No record found for DWS No. ${dwsNo}`);
-            }
-          })
-          .catch((error) => console.error("Error fetching DWS record:", error));
-      } else {
-        alert("DWS No. is required!");
+    // Event listener for search
+    document.getElementById("searchBtn").addEventListener("click", async () => {
+      const input = document.getElementById("searchQuery").value.trim();
+      if (!input) {
+        alert("Please enter a search query.");
+        return;
       }
-    } else if (action === "consolidated") {
-      fetchAllDWS()
-        .then((records) => {
-          if (records.length > 0) {
-            exportConsolidatedCSV(records);
-          } else {
-            alert("No DWS records found for export.");
-          }
-        })
-        .catch((error) => console.error("Error fetching DWS records:", error));
-    } else {
-      alert("Invalid action. Please enter 'search' or 'consolidated'.");
-    }
+
+      const results = await searchDWS(input);
+      const resultsTable = document.getElementById("resultsTable");
+      resultsTable.innerHTML =
+        "<tr><th>DWS No.</th><th>Date</th><th>SI/TQ No.</th><th>Work</th><th>Location</th><th>Actions</th></tr>";
+
+      if (results.length === 0) {
+        document.getElementById("feedbackMessage").textContent = "No results found.";
+        return;
+      }
+
+      document.getElementById("feedbackMessage").textContent = `Found ${results.length} result(s).`;
+
+      results.forEach((record) => {
+        const row = resultsTable.insertRow();
+        row.innerHTML = `
+          <td>${record.dwsNo}</td>
+          <td>${record.dwsDate}</td>
+          <td>${record.siNo}</td>
+          <td>${record.workDescription}</td>
+          <td>${record.location}</td>
+          <td><button onclick='exportToCSV(${JSON.stringify(record)})'>Export</button></td>
+        `;
+      });
+    });
+
+    // Event listener for consolidated export
+    document.getElementById("exportAllBtn").addEventListener("click", exportConsolidatedCSV);
   </script>
 </body>
 </html>
