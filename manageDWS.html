@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manage DWS - Search and Export</title>
+  <title>Individual DWS Export</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -63,21 +63,12 @@
 </head>
 <body>
 
-  <h1>Manage DWS - Search and Export</h1>
+  <h1>Individual DWS Export</h1>
 
   <!-- Search Section -->
   <div class="form-section">
-    <h3>Search DWS</h3>
-    <input type="text" id="searchQuery" placeholder="Enter DWS No., Structure Name, SI/TQ No., or Date">
-    <div class="input-guide">
-      Format Guide:
-      <ul>
-        <li><b>DWS No.:</b> DWS-XXXX (e.g., DWS-0001)</li>
-        <li><b>Date:</b> YYYY-MM-DD (e.g., 2025-01-06)</li>
-        <li><b>Structure Name:</b> 62-PR0001</li>
-        <li><b>SI/TQ No.:</b> SI-123 or TQ-123</li>
-      </ul>
-    </div>
+    <h3>Search and Export Individual DWS</h3>
+    <input type="text" id="searchQuery" placeholder="Enter DWS No. (e.g., DWS-0001)">
     <button id="searchBtn">Search</button>
     <div class="feedback" id="feedbackMessage"></div>
   </div>
@@ -114,46 +105,41 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Function to detect search type
-    function detectSearchType(input) {
-      const dwsNoPattern = /^DWS-\d{4}$/; // Pattern for DWS No.
-      const datePattern = /^\d{4}-\d{2}-\d{2}$/; // Pattern for Date (YYYY-MM-DD)
-      const siNoPattern = /^SI-\d+$/; // Pattern for SI No.
-      const tqNoPattern = /^TQ-\d+$/; // Pattern for TQ No.
-
-      if (dwsNoPattern.test(input)) return "dwsNo";
-      if (datePattern.test(input)) return "date";
-      if (siNoPattern.test(input)) return "siNo";
-      if (tqNoPattern.test(input)) return "tqNo";
-      return "structureName"; // Default to Structure Name
-    }
-
     // Function to search DWS records
-    async function searchDWS(input) {
-      const searchType = detectSearchType(input);
+    async function searchDWS(dwsNo) {
       const dwsCollection = collection(db, "DWS");
-      let searchQuery;
-
-      if (searchType === "dwsNo") {
-        searchQuery = query(dwsCollection, where("dwsNo", "==", input));
-      } else if (searchType === "date") {
-        searchQuery = query(dwsCollection, where("dwsDate", "==", input));
-      } else if (searchType === "siNo" || searchType === "tqNo") {
-        searchQuery = query(dwsCollection, where("siNo", "==", input));
-      } else {
-        searchQuery = query(dwsCollection, where("structureName", "==", input));
-      }
+      const searchQuery = query(dwsCollection, where("dwsNo", "==", dwsNo));
 
       const querySnapshot = await getDocs(searchQuery);
       const results = [];
       querySnapshot.forEach((doc) => results.push({ id: doc.id, ...doc.data() }));
-      return { results, searchType };
+      return results;
     }
 
     // Function to export individual DWS record to CSV
     function exportToCSV(record) {
-      let csvContent = "Sl No,DWS No,Date,SI/TQ No,Work,Location,Manpower,Equipment,Consumables\n";
-      csvContent += `1,${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}","${JSON.stringify(record.manpower)}","${JSON.stringify(record.equipment)}","${JSON.stringify(record.consumables)}"\n`;
+      let csvContent = "Sl No,DWS No,Date,SI/TQ No,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
+
+      const manpower = record.manpower || [];
+      const equipment = record.equipment || [];
+      const consumables = record.consumables || [];
+
+      let rowCounter = 1;
+
+      manpower.forEach((person) => {
+        csvContent += `${rowCounter},${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,, \n`;
+        rowCounter++;
+      });
+
+      equipment.forEach((item) => {
+        csvContent += `${rowCounter},${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},, \n`;
+        rowCounter++;
+      });
+
+      consumables.forEach((material) => {
+        csvContent += `${rowCounter},${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit} \n`;
+        rowCounter++;
+      });
 
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
@@ -164,31 +150,15 @@
       URL.revokeObjectURL(url);
     }
 
-    // Function to export consolidated CSV
-    function exportConsolidatedCSV(records) {
-      let csvContent = "Sl No,DWS No,Date,SI/TQ No,Work,Location,Manpower,Equipment,Consumables\n";
-      records.forEach((record, index) => {
-        csvContent += `${index + 1},${record.dwsNo},${record.dwsDate},${record.siNo},"${record.workDescription}","${record.location}","${JSON.stringify(record.manpower)}","${JSON.stringify(record.equipment)}","${JSON.stringify(record.consumables)}"\n`;
-      });
-
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "Consolidated_DWS.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // Handle search button click
+    // Event listener for search button
     document.getElementById("searchBtn").addEventListener("click", async () => {
-      const input = document.getElementById("searchQuery").value.trim();
-      if (!input) {
-        alert("Please enter a search query.");
+      const dwsNo = document.getElementById("searchQuery").value.trim();
+      if (!dwsNo) {
+        alert("Please enter a valid DWS No.");
         return;
       }
 
-      const { results, searchType } = await searchDWS(input);
+      const results = await searchDWS(dwsNo);
       const resultsTable = document.getElementById("resultsTable");
       resultsTable.innerHTML = "<tr><th>DWS No.</th><th>Date</th><th>SI/TQ No.</th><th>Work</th><th>Location</th><th>Actions</th></tr>";
 
@@ -197,7 +167,7 @@
         return;
       }
 
-      document.getElementById("feedbackMessage").textContent = `Your query for ${searchType} returned ${results.length} result(s).`;
+      document.getElementById("feedbackMessage").textContent = `Found ${results.length} record(s) for DWS No. ${dwsNo}.`;
 
       results.forEach((record) => {
         const row = resultsTable.insertRow();
@@ -212,13 +182,6 @@
           </td>
         `;
       });
-
-      if (results.length > 1) {
-        const consolidatedExportButton = document.createElement("button");
-        consolidatedExportButton.textContent = "Export Consolidated";
-        consolidatedExportButton.onclick = () => exportConsolidatedCSV(results);
-        resultsTable.parentNode.appendChild(consolidatedExportButton);
-      }
     });
   </script>
 
