@@ -19,7 +19,7 @@
     }
     input[type="text"] {
       padding: 8px;
-      margin: 5px 0 15px;
+      margin: 5px 0 5px;
       width: 100%;
       box-sizing: border-box;
       border: 1px solid #ccc;
@@ -54,6 +54,11 @@
     th {
       background-color: #f4f7f6;
     }
+    .input-guide {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
@@ -64,6 +69,15 @@
   <div class="form-section">
     <h3>Search DWS</h3>
     <input type="text" id="searchQuery" placeholder="Enter DWS No., Structure Name, SI/TQ No., or Date">
+    <div class="input-guide">
+      Format Guide:
+      <ul>
+        <li><b>DWS No.:</b> DWS-XXXX (e.g., DWS-0001)</li>
+        <li><b>Date:</b> YYYY-MM-DD (e.g., 2025-01-06)</li>
+        <li><b>Structure Name:</b> 62-PR0001</li>
+        <li><b>SI/TQ No.:</b> SI-123 or TQ-123</li>
+      </ul>
+    </div>
     <button id="searchBtn">Search</button>
     <div class="feedback" id="feedbackMessage"></div>
   </div>
@@ -103,10 +117,14 @@
     function detectSearchType(input) {
       const dwsNoPattern = /^DWS-\d{4}$/; // Pattern for DWS No.
       const datePattern = /^\d{4}-\d{2}-\d{2}$/; // Pattern for Date (YYYY-MM-DD)
+      const siNoPattern = /^SI-\d+$/; // Pattern for SI No. (e.g., SI-123)
+      const tqNoPattern = /^TQ-\d+$/; // Pattern for TQ No. (e.g., TQ-123)
 
       if (dwsNoPattern.test(input)) return "dwsNo";
       if (datePattern.test(input)) return "date";
-      return "general"; // Assume general search (e.g., Structure Name or SI/TQ No.)
+      if (siNoPattern.test(input)) return "siNo";
+      if (tqNoPattern.test(input)) return "tqNo";
+      return "structureName"; // Default to Structure Name
     }
 
     // Function to search DWS records
@@ -120,11 +138,12 @@
           searchQuery = query(dwsCollection, where("dwsNo", "==", input));
         } else if (searchType === "date") {
           searchQuery = query(dwsCollection, where("dwsDate", "==", input));
+        } else if (searchType === "siNo") {
+          searchQuery = query(dwsCollection, where("siNo", "==", input));
+        } else if (searchType === "tqNo") {
+          searchQuery = query(dwsCollection, where("siNo", "==", input)); // Assuming SI/TQ is stored in the same field
         } else {
-          searchQuery = query(
-            dwsCollection,
-            where("structureName", "==", input)
-          );
+          searchQuery = query(dwsCollection, where("structureName", "==", input));
         }
 
         const querySnapshot = await getDocs(searchQuery);
@@ -152,7 +171,9 @@
             ? "DWS No."
             : searchType === "date"
             ? "Date"
-            : "Structure Name or SI/TQ No.";
+            : searchType === "siNo" || searchType === "tqNo"
+            ? "SI/TQ No."
+            : "Structure Name";
         feedbackMessage.textContent = `Your query for ${typeMessage} is found below.`;
       }
     }
