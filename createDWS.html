@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manpower Table with Export</title>
+  <title>Create DWS</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,33 +11,43 @@
       background-color: #f4f7f6;
       color: #333;
     }
-    table {
+    .form-section {
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 8px;
+    }
+    input[type="text"], input[type="number"], input[type="date"] {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .preview-section table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+    }
+    .preview-section table, th, td {
+      border: 1px solid #ccc;
     }
     th, td {
-      border: 1px solid #ccc;
       padding: 8px;
       text-align: left;
     }
-    th {
-      background-color: #f4f7f6;
-    }
-    input[type="text"], input[type="number"] {
-      margin: 5px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      width: 150px;
+    .error {
+      color: red;
+      font-size: 12px;
     }
     button {
       padding: 10px 15px;
       background-color: #4CAF50;
       color: white;
       border: none;
-      border-radius: 5px;
       cursor: pointer;
+      margin-top: 10px;
     }
     button:hover {
       background-color: #45a049;
@@ -45,102 +55,399 @@
   </style>
 </head>
 <body>
-  <h1>Manpower Table with Export Functionality</h1>
 
-  <!-- Input Form -->
-  <div>
-    <input type="text" id="badgeNo" placeholder="Badge No.">
-    <input type="text" id="name" placeholder="Name">
-    <input type="text" id="trade" placeholder="Trade">
-    <input type="number" id="normalHour" placeholder="Normal Hour">
-    <input type="number" id="otHour" placeholder="OT Hour">
-    <input type="text" id="holiday" placeholder="Holiday">
-    <button id="addManpowerBtn">Add Manpower</button>
+  <h1>Create DWS</h1>
+
+  <!-- DWS No. and Date -->
+  <div class="form-section">
+    <label for="dwsNo">DWS No.</label>
+    <input type="text" id="dwsNo" readonly>
+    <label for="dwsDate">DWS Date</label>
+    <input type="date" id="dwsDate">
   </div>
 
-  <!-- Manpower Table -->
-  <table id="manpowerTable">
-    <tr>
-      <th>Badge No.</th>
-      <th>Name</th>
-      <th>Trade</th>
-      <th>Normal Hour</th>
-      <th>OT Hour</th>
-      <th>Holiday</th>
-      <th>Actions</th>
-    </tr>
-  </table>
+  <!-- Structure Name, SI/TQ No., Work Description, Location -->
+  <div class="form-section">
+    <label for="structureName">Structure Name</label>
+    <input type="text" id="structureName">
+    <label for="siNo">SI/TQ No.</label>
+    <input type="text" id="siNo">
+    <label for="workDescription">Work Description</label>
+    <input type="text" id="workDescription">
+    <label for="location">Location</label>
+    <input type="text" id="location">
+  </div>
 
-  <script>
-    const addManpowerBtn = document.getElementById("addManpowerBtn");
-    const manpowerTable = document.getElementById("manpowerTable");
+  <!-- Manpower Section -->
+  <div class="form-section">
+    <h3>Manpower</h3>
+    <label for="badgeNo">Badge No.</label>
+    <input type="text" id="badgeNo">
+    <label for="manpowerName">Name</label>
+    <input type="text" id="manpowerName">
+    <label for="trade">Trade</label>
+    <input type="text" id="trade">
+    <label for="normalHour">Normal Hour</label>
+    <input type="number" id="normalHour">
+    <label for="otHour">OT Hour</label>
+    <input type="number" id="otHour">
+    <label for="holiday">Holiday</label>
+    <input type="text" id="holiday">
+    <button type="button" id="addManpowerBtn">Add Manpower</button>
 
-    // Add a new row to the table
-    addManpowerBtn.addEventListener("click", () => {
-      const badgeNo = document.getElementById("badgeNo").value.trim();
-      const name = document.getElementById("name").value.trim();
-      const trade = document.getElementById("trade").value.trim();
-      const normalHour = document.getElementById("normalHour").value.trim();
-      const otHour = document.getElementById("otHour").value.trim();
-      const holiday = document.getElementById("holiday").value.trim();
+    <div class="preview-section">
+      <h4>Manpower Preview:</h4>
+      <table id="manpowerTable">
+        <tr>
+          <th>Badge No.</th>
+          <th>Name</th>
+          <th>Trade</th>
+          <th>Normal Hour</th>
+          <th>OT Hour</th>
+          <th>Holiday</th>
+          <th>Actions</th>
+        </tr>
+      </table>
+    </div>
+  </div>
 
-      if (!badgeNo || !name || !trade || !normalHour || !otHour || !holiday) {
-        alert("Please fill in all fields.");
+  <!-- Equipment Section -->
+  <div class="form-section">
+    <h3>Equipment</h3>
+    <label for="equipmentName">Equipment Name</label>
+    <input type="text" id="equipmentName">
+    <label for="workingHours">Working Hours</label>
+    <input type="number" id="workingHours">
+    <button type="button" id="addEquipmentBtn">Add Equipment</button>
+
+    <div class="preview-section">
+      <h4>Equipment Preview:</h4>
+      <table id="equipmentTable">
+        <tr>
+          <th>Equipment Name</th>
+          <th>Working Hours</th>
+          <th>Actions</th>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Consumables Section -->
+  <div class="form-section">
+    <h3>Consumables</h3>
+    <label for="consumableName">Consumable Name</label>
+    <input type="text" id="consumableName">
+    <label for="quantity">Quantity (Nos/ML)</label>
+    <input type="number" id="quantity">
+    <button type="button" id="addConsumableBtn">Add Consumable</button>
+
+    <div class="preview-section">
+      <h4>Consumable Preview:</h4>
+      <table id="consumableTable">
+        <tr>
+          <th>Consumable Name</th>
+          <th>Quantity</th>
+          <th>Actions</th>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Save DWS -->
+  <button type="button" id="saveDwsBtn">Save DWS</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, runTransaction, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+    apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+    authDomain: "dws-management.firebaseapp.com",
+    projectId: "dws-management",
+    storageBucket: "dws-management.firebasestorage.app",
+    messagingSenderId: "23827231923",
+    appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+    measurementId: "G-L14GLJDYW7"
+  };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 1. Fetch and Display DWS No.
+    async function initializeDwsNo() {
+      const counterDocRef = doc(db, "Counters", "DWSCounter");
+      try {
+        const counterDoc = await getDoc(counterDocRef);
+        if (!counterDoc.exists()) {
+          console.log("DWSCounter does not exist. Initializing...");
+          await setDoc(counterDocRef, { counter: 1 });
+          document.getElementById("dwsNo").value = "DWS-0001";
+          return;
+        }
+        const currentCounter = counterDoc.data().counter || 1;
+        const dwsNo = `DWS-${String(currentCounter).padStart(4, "0")}`;
+        document.getElementById("dwsNo").value = dwsNo;
+      } catch (error) {
+        console.error("Error initializing DWS No:", error);
+        alert("Error fetching DWS No. Please try again.");
+      }
+    }
+
+    // 2. Increment DWS Counter
+    async function incrementDwsNo() {
+      const counterDocRef = doc(db, "Counters", "DWSCounter");
+      try {
+        await runTransaction(db, async (transaction) => {
+          const counterDoc = await transaction.get(counterDocRef);
+          if (!counterDoc.exists()) {
+            transaction.set(counterDocRef, { counter: 2 });
+            return;
+          }
+          const currentCounter = counterDoc.data().counter || 1;
+          transaction.update(counterDocRef, { counter: currentCounter + 1 });
+        });
+      } catch (error) {
+        console.error("Error incrementing DWS No:", error);
+        alert("Error incrementing DWS No. Please try again.");
+      }
+    }
+    
+    initializeDwsNo();
+    
+    
+
+// Function to check Firestore for duplicate badge number
+async function checkDuplicateBadge(dwsDate, badgeNo) {
+  const dwsCollectionRef = collection(db, "DWS");
+  if (!dwsDate) {
+    alert("Please enter the DWS Date before adding manpower.");
+    return false;
+  }
+
+  try {
+    // Query Firestore for records matching the given date
+    const querySnapshot = await getDocs(query(dwsCollectionRef, where("dwsDate", "==", dwsDate)));
+    let duplicateFound = false;
+
+    // Iterate through records to find the badge number
+    querySnapshot.forEach((doc) => {
+      const manpower = doc.data().manpower || [];
+      manpower.forEach((person) => {
+        if (person.badgeNo === badgeNo) {
+          duplicateFound = true;
+          alert(
+            `Badge No. ${badgeNo} already exists in DWS No. ${doc.id} for the same date ${dwsDate}.`
+          );
+        }
+      });
+    });
+
+    return duplicateFound;
+  } catch (error) {
+    console.error("Error checking duplicate badge in Firestore:", error);
+    alert("Failed to validate badge number. Please try again.");
+    return false;
+  }
+}
+
+    
+    async function addManpower() {
+  const badgeNo = document.getElementById("badgeNo").value.trim();
+  const name = document.getElementById("manpowerName").value.trim();
+  const trade = document.getElementById("trade").value.trim();
+  const normalHour = document.getElementById("normalHour").value.trim();
+  const otHour = document.getElementById("otHour").value.trim();
+  const holiday = document.getElementById("holiday").value.trim();
+  const dwsDate = document.getElementById("dwsDate").value.trim();
+
+  if (!badgeNo || !name || !trade || !dwsDate) {
+    alert("All fields in the Manpower section are required.");
+    return;
+  }
+
+  const isDuplicate = await checkDuplicateBadge(dwsDate, badgeNo);
+  if (isDuplicate) {
+    const proceed = confirm(
+      `Badge No. ${badgeNo} is already found in Firestore for the same date ${dwsDate}. Do you still want to add it?`
+    );
+    if (!proceed) return; // Stop if the user cancels
+  }
+
+  const manpowerTable = document.getElementById("manpowerTable");
+  const row = manpowerTable.insertRow();
+  row.innerHTML = `
+    <td>${badgeNo}</td>
+    <td>${name}</td>
+    <td>${trade}</td>
+    <td>${normalHour}</td>
+    <td>${otHour}</td>
+    <td>${holiday}</td>
+    <td><button>Delete</button></td>
+  `;
+
+  // Add delete functionality for newly added rows
+  manpowerTable.addEventListener("click", function (event) {
+    if (event.target.tagName === "BUTTON") {
+      const row = event.target.parentNode.parentNode;
+      row.parentNode.removeChild(row);
+    }
+  });
+}
+
+
+    function addEquipment() {
+      const equipmentName = document.getElementById("equipmentName").value.trim();
+      const workingHours = document.getElementById("workingHours").value.trim();
+
+      if (!equipmentName || !workingHours) {
+        alert("All fields in the Equipment section are required.");
         return;
       }
 
-      const row = manpowerTable.insertRow();
+      const equipmentTable = document.getElementById("equipmentTable");
+      const row = equipmentTable.insertRow();
       row.innerHTML = `
-        <td>${badgeNo}</td>
-        <td>${name}</td>
-        <td>${trade}</td>
-        <td>${normalHour}</td>
-        <td>${otHour}</td>
-        <td>${holiday}</td>
-        <td>
-          <button class="delete-btn">Delete</button>
-          <button class="export-btn">Export</button>
-        </td>
+        <td>${equipmentName}</td>
+        <td>${workingHours}</td>
+        <td><button>Delete</button></td>
       `;
+      document.getElementById("equipmentTable").addEventListener("click", function (event) {
+  if (event.target.tagName === "BUTTON") {
+    const row = event.target.parentNode.parentNode;
+    row.parentNode.removeChild(row);
+  }
+});
+    }
 
-      // Clear input fields
+    function addConsumable() {
+      const consumableName = document.getElementById("consumableName").value.trim();
+      const quantity = document.getElementById("quantity").value.trim();
+
+      if (!consumableName || !quantity) {
+        alert("All fields in the Consumable section are required.");
+        return;
+      }
+
+      const consumableTable = document.getElementById("consumableTable");
+      const row = consumableTable.insertRow();
+      row.innerHTML = `
+        <td>${consumableName}</td>
+        <td>${quantity}</td>
+        <td><button>Delete</button></td>
+      `;
+      document.getElementById("consumableTable").addEventListener("click", function (event) {
+  if (event.target.tagName === "BUTTON") {
+    const row = event.target.parentNode.parentNode;
+    row.parentNode.removeChild(row);
+  }
+});
+    }
+
+
+    async function saveDWS() {
+      const dwsNo = document.getElementById("dwsNo").value.trim();
+      const dwsDate = document.getElementById("dwsDate").value.trim();
+      const structureName = document.getElementById("structureName").value.trim();
+      const siNo = document.getElementById("siNo").value.trim();
+      const workDescription = document.getElementById("workDescription").value.trim();
+      const location = document.getElementById("location").value.trim();
+
+      if (!dwsDate || !structureName || !siNo || !workDescription || !location) {
+        alert("All fields are required before saving.");
+        return;
+      }
+
+      const manpower = Array.from(document.querySelectorAll("#manpowerTable tr"))
+        .slice(1)
+        .map(row => ({
+          badgeNo: row.cells[0].textContent,
+          name: row.cells[1].textContent,
+          trade: row.cells[2].textContent,
+          normalHour: row.cells[3].textContent,
+          otHour: row.cells[4].textContent,
+          holiday: row.cells[5].textContent,
+        }));
+
+      const equipment = Array.from(document.querySelectorAll("#equipmentTable tr"))
+        .slice(1)
+        .map(row => ({
+          name: row.cells[0].textContent,
+          workingHours: row.cells[1].textContent,
+        }));
+
+      const consumables = Array.from(document.querySelectorAll("#consumableTable tr"))
+        .slice(1)
+        .map(row => ({
+          name: row.cells[0].textContent,
+          quantity: row.cells[1].textContent,
+        }));
+
+      const dwsData = {
+        dwsNo,
+        dwsDate,
+        structureName,
+        siNo,
+        workDescription,
+        location,
+        manpower,
+        equipment,
+        consumables,
+      };
+
+      try {
+        await setDoc(doc(db, "DWS", dwsNo), dwsData);
+        await incrementDwsNo();
+        await initializeDwsNo();
+        alert(`DWS ${dwsNo} saved successfully!`);
+        clearAllFields();
+        
+      } catch (error) {
+        console.error("Error saving DWS:", error);
+        alert("Failed to save DWS. Please try again.");
+      }
+    }
+
+    function clearAllFields() {
+      document.getElementById("dwsDate").value = "";
+      document.getElementById("structureName").value = "";
+      document.getElementById("siNo").value = "";
+      document.getElementById("workDescription").value = "";
+      document.getElementById("location").value = "";
+      document.getElementById("equipmentName").value = "";
+      document.getElementById("workingHours").value = "";
+      document.getElementById("consumableName").value = "";
+      document.getElementById("quantity").value = "";
       document.getElementById("badgeNo").value = "";
-      document.getElementById("name").value = "";
+      document.getElementById("manpowerName").value = "";
       document.getElementById("trade").value = "";
       document.getElementById("normalHour").value = "";
       document.getElementById("otHour").value = "";
       document.getElementById("holiday").value = "";
-    });
+      document.getElementById("dwsDate").value = "";
+      
 
-    // Add event listeners for Delete and Export buttons
-    manpowerTable.addEventListener("click", (event) => {
-      if (event.target.classList.contains("delete-btn")) {
-        // Delete the row
-        const row = event.target.parentNode.parentNode;
-        row.parentNode.removeChild(row);
-      } else if (event.target.classList.contains("export-btn")) {
-        // Export the row data to CSV
-        const row = event.target.parentNode.parentNode;
-        const rowData = Array.from(row.cells).slice(0, -1).map((cell) => cell.textContent);
-        exportToCSV(rowData);
-      }
-    });
+      const manpowerTable = document.getElementById("manpowerTable");
+      while (manpowerTable.rows.length > 1) manpowerTable.deleteRow(1);
 
-    // Function to export a single row to CSV
-    function exportToCSV(rowData) {
-      const headers = ["Badge No.", "Name", "Trade", "Normal Hour", "OT Hour", "Holiday"];
-      let csvContent = headers.join(",") + "\n";
-      csvContent += rowData.join(",") + "\n";
+      const equipmentTable = document.getElementById("equipmentTable");
+      while (equipmentTable.rows.length > 1) equipmentTable.deleteRow(1);
 
-      // Create a downloadable CSV file
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "Manpower_Export.csv";
-      a.click();
-      URL.revokeObjectURL(url);
+      const consumableTable = document.getElementById("consumableTable");
+      while (consumableTable.rows.length > 1) consumableTable.deleteRow(1);
     }
+    
+    
+    // Initialize DWS No on Page Load
+    
+    
+    document.getElementById("addManpowerBtn").addEventListener("click", addManpower);
+    document.getElementById("addEquipmentBtn").addEventListener("click", addEquipment);
+    document.getElementById("addConsumableBtn").addEventListener("click", addConsumable);
+    document.getElementById("saveDwsBtn").addEventListener("click", saveDWS);
+
+  
+    
   </script>
+
 </body>
 </html>
