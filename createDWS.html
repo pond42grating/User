@@ -52,10 +52,63 @@
     button:hover {
       background-color: #45a049;
     }
+    .settings-container {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+    }
+    .settings-button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .settings-dropdown {
+      display: none;
+      position: absolute;
+      top: 40px;
+      right: 0;
+      background-color: white;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+    }
+    .settings-dropdown a {
+      display: block;
+      padding: 10px;
+      text-decoration: none;
+      color: #333;
+    }
+    .settings-dropdown a:hover {
+      background-color: #f4f7f6;
+    }
+    #backButton {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
+  <!-- Settings Dropdown -->
+  <div class="settings-container">
+    <button class="settings-button">Settings</button>
+    <div class="settings-dropdown">
+      <a href="userprofile.html">User Profile</a>
+      <a id="logoutButton" href="#">Log Out</a>
+    </div>
+  </div>
+  
   <h1>Create DWS</h1>
 
   <!-- DWS No. and Date -->
@@ -155,10 +208,11 @@
 
   <!-- Save DWS -->
   <button type="button" id="saveDwsBtn">Save DWS</button>
-
+  <button id="backButton">Back</button>
+  
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, runTransaction, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, runTransaction, collection, query, where, getDocs, getAuth, signOut} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
     const firebaseConfig = {
     apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
@@ -214,6 +268,37 @@
     
     initializeDwsNo();
     
+    // Back Button Functionality
+    document.getElementById("backButton").addEventListener("click", function () {
+      window.location.href = "login.html"; // Redirect to login page
+    });
+
+    // Settings Dropdown Toggle
+    const settingsButton = document.querySelector('.settings-button');
+    const settingsDropdown = document.querySelector('.settings-dropdown');
+
+    settingsButton.addEventListener('click', () => {
+      settingsDropdown.style.display = settingsDropdown.style.display === 'block' ? 'none' : 'block';
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', (event) => {
+      if (!settingsButton.contains(event.target) && !settingsDropdown.contains(event.target)) {
+        settingsDropdown.style.display = 'none';
+      }
+    });
+
+    // Log Out Functionality
+    document.getElementById("logoutButton").addEventListener("click", async function () {
+      try {
+        await signOut(auth);
+        alert("You have been logged out.");
+        window.location.href = "index.html"; // Redirect to the login page
+      } catch (error) {
+        console.error("Error logging out:", error);
+        alert("Failed to log out. Please try again.");
+      }
+    });
     
 
 // Function to check Firestore for duplicate badge number
