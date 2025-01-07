@@ -1,1 +1,148 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import Manpower</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f7f6;
+      color: #333;
+    }
+    h1 {
+      color: #4CAF50;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #importStatus {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+    input[type="file"] {
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Import CSV to Firestore</h1>
+    <input type="file" id="csvFile" accept=".csv">
+    <br>
+    <button id="importButton">Import CSV</button>
+    <button id="clearButton" style="background-color: red;">Clear Data</button>
+    <p id="importStatus"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAXZgxM6PU-T3D2811KnBszblRWju7rv1Y",
+      authDomain: "dws-management.firebaseapp.com",
+      projectId: "dws-management",
+      storageBucket: "dws-management.firebasestorage.app",
+      messagingSenderId: "23827231923",
+      appId: "1:23827231923:web:97141b6d19c7cd109d2cc6",
+      measurementId: "G-L14GLJDYW7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const csvFileInput = document.getElementById("csvFile");
+    const clearButton = document.getElementById("clearButton");
+    const importButton = document.getElementById("importButton");
+    const importStatus = document.getElementById("importStatus");
+
+    // Function to clear all documents in the Manpower collection
+    clearButton.addEventListener("click", async () => {
+      if (!confirm("Are you sure you want to clear all manpower data?")) return;
+
+      try {
+        const manpowerCollection = collection(db, "Manpower");
+        const snapshot = await getDocs(manpowerCollection);
+
+        for (const docRef of snapshot.docs) {
+          await deleteDoc(doc(db, "Manpower", docRef.id));
+          console.log(`Deleted: ${docRef.id}`);
+        }
+
+        importStatus.style.color = "red";
+        importStatus.innerText = "All manpower data has been cleared.";
+      } catch (error) {
+        console.error("Error clearing manpower data:", error);
+        alert("Failed to clear manpower data. Please try again.");
+      }
+    });
+
+    // Function to import CSV data into the Manpower collection
+    importButton.addEventListener("click", async () => {
+      const file = csvFileInput.files[0];
+      if (!file) {
+        alert("Please select a CSV file!");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function (e) {
+        const csvData = e.target.result.split("\n").map(row => row.split(","));
+        const headerRow = csvData.shift(); // Remove the header row
+        if (headerRow.length < 3) {
+          alert("Invalid CSV format! Ensure it has 'Badge No,Name,Trade' headers.");
+          return;
+        }
+
+        let successCount = 0;
+        let failureCount = 0;
+
+        for (const [badgeNo, name, trade] of csvData) {
+          if (badgeNo && name && trade) {
+            try {
+              await setDoc(doc(db, "Manpower", badgeNo.trim()), {
+                name: name.trim(),
+                trade: trade.trim()
+              });
+              console.log(`Imported: ${badgeNo}`);
+              successCount++;
+            } catch (error) {
+              console.error(`Error importing ${badgeNo}:`, error);
+              failureCount++;
+            }
+          }
+        }
+
+        // Show alert with entry count
+        alert(`Import Completed: ${successCount} entries added successfully!`);
+
+        importStatus.style.color = "green";
+        importStatus.innerText = `Import Completed: ${successCount} successful, ${failureCount} failed.`;
+      };
+
+      reader.onerror = () => {
+        alert("Error reading the CSV file. Please try again.");
+      };
+
+      reader.readAsText(file);
+    });
+  </script>
+</body>
+</html>
