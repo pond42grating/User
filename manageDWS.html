@@ -149,6 +149,7 @@
     <button id="exportFilteredBtn">Export Filtered</button>
     <button id="exportAllBtn">Export All</button>
   </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
@@ -166,22 +167,21 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let currentResults = []; // To store the current filtered search results
+    let currentResults = []; // Store current search results
 
     // Function to detect search type
     function detectSearchType(input) {
-      const dwsNoPattern = /^DWS-\d{4}$/; // DWS No. format
-      const datePattern = /^\d{4}-\d{2}-\d{2}$/; // Date format
-      const siNoPattern = /^SI-\d+$/; // SI/TQ format
-      const tqNoPattern = /^TQ-\d+$/; // TQ format
+      const dwsNoPattern = /^DWS-\d{4}$/;
+      const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+      const siNoPattern = /^SI-\d+$/;
+      const tqNoPattern = /^TQ-\d+$/;
 
       if (dwsNoPattern.test(input)) return "dwsNo";
       if (datePattern.test(input)) return "date";
       if (siNoPattern.test(input) || tqNoPattern.test(input)) return "siNo";
-      return "structureName"; // Default to Structure Name
+      return "structureName";
     }
 
-    // Function to search DWS records
     async function searchDWS(input) {
       const searchType = detectSearchType(input);
       const dwsCollection = collection(db, "DWS");
@@ -200,11 +200,10 @@
       const querySnapshot = await getDocs(searchQuery);
       const results = [];
       querySnapshot.forEach((doc) => results.push({ id: doc.id, ...doc.data() }));
-      currentResults = results; // Store the current filtered results
+      currentResults = results; // Store filtered results
       return results;
     }
 
-    // Function to export filtered results to CSV
     function exportFilteredResults() {
       if (currentResults.length === 0) {
         alert("No filtered results to export.");
@@ -240,7 +239,6 @@
       URL.revokeObjectURL(url);
     }
 
-    // Event listener for search
     document.getElementById("searchBtn").addEventListener("click", async () => {
       const input = document.getElementById("searchQuery").value.trim();
       if (!input) {
@@ -249,7 +247,7 @@
       }
 
       const results = await searchDWS(input);
-      const resultsTable = document.getElementById("resultsTable");
+            const resultsTable = document.getElementById("resultsTable");
       resultsTable.innerHTML =
         "<tr><th>DWS No.</th><th>Date</th><th>Structure Name</th><th>SI/TQ No.</th><th>Work</th><th>Location</th><th>Actions</th></tr>";
 
@@ -274,7 +272,7 @@
         // Create and append the Export button
         const exportButton = document.createElement("button");
         exportButton.textContent = "Export";
-        exportButton.className = "export-btn";
+        exportButton.className = "action-btn export-btn";
         exportButton.addEventListener("click", () => {
           exportToCSV(record);
         });
@@ -282,14 +280,43 @@
       });
     });
 
-    // Consolidated Export Button Functionality
+    function exportToCSV(record) {
+      let csvContent =
+        "DWS No.,Date,Structure Name,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
+
+      const manpower = record.manpower || [];
+      manpower.forEach((person) => {
+        csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,,\n`;
+      });
+
+      const equipment = record.equipment || [];
+      equipment.forEach((item) => {
+        csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},,,\n`;
+      });
+
+      const consumables = record.consumables || [];
+      consumables.forEach((material) => {
+        csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit}\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${record.dwsNo}_details.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById("exportFilteredBtn").addEventListener("click", exportFilteredResults);
+
     document.getElementById("exportAllBtn").addEventListener("click", async () => {
       const dwsCollection = collection(db, "DWS");
       const querySnapshot = await getDocs(dwsCollection);
       const records = [];
       querySnapshot.forEach((doc) => records.push({ id: doc.id, ...doc.data() }));
 
-              let csvContent =
+      let csvContent =
         "DWS No.,Date,Structure Name,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
 
       records.forEach((record) => {
@@ -317,9 +344,6 @@
       a.click();
       URL.revokeObjectURL(url);
     });
-
-    // Event listener for filtered export
-    document.getElementById("exportFilteredBtn").addEventListener("click", exportFilteredResults);
   </script>
 
 </body>
