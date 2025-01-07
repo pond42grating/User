@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7,75 +7,105 @@
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
-      background-color: #f4f7f6;
+      background-color: #f9fafb;
       color: #333;
     }
     h1 {
       text-align: center;
+      margin-bottom: 20px;
+      color: #4CAF50;
     }
-    .form-section, .table-section, .export-section {
+    .form-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       margin-bottom: 20px;
     }
     input[type="text"] {
-      padding: 10px;
-      margin-right: 10px;
-      width: 80%;
-      box-sizing: border-box;
+      padding: 12px;
+      margin-bottom: 10px;
+      width: 60%;
       border: 1px solid #ccc;
       border-radius: 4px;
+      font-size: 16px;
     }
     button {
-      padding: 10px 15px;
+      padding: 12px 20px;
+      margin: 5px;
       background-color: #4CAF50;
       color: white;
       border: none;
       border-radius: 5px;
+      font-size: 16px;
       cursor: pointer;
+      transition: background-color 0.3s ease;
     }
     button:hover {
       background-color: #45a049;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .export-buttons {
+      display: flex;
+      justify-content: center;
       margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #f4f7f6;
     }
     .feedback {
       margin-top: 10px;
       font-style: italic;
-      color: #333;
-    }
-    .fixed-button {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: #4CAF50;
-      color: white;
-      padding: 15px;
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .fixed-button:hover {
-      background-color: #45a049;
+      color: #555;
     }
     .format-info {
       margin-top: 10px;
       font-size: 14px;
       color: #555;
       font-style: italic;
+      text-align: center;
     }
     .format-info strong {
       color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f7f6;
+      color: #555;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    .action-btn {
+      padding: 8px 12px;
+      font-size: 14px;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .export-btn {
+      background-color: #007BFF;
+    }
+    .export-btn:hover {
+      background-color: #0056b3;
+    }
+    .fixed-buttons {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    .fixed-buttons button {
+      width: 180px;
     }
   </style>
 </head>
@@ -114,10 +144,11 @@
     </table>
   </div>
 
-  <!-- Export Buttons -->
-  <button class="fixed-button" id="exportAllBtn">Export All</button>
-  <button class="fixed-button" id="exportFilteredBtn" style="right: 100px;">Export Filtered</button>
-
+  <!-- Fixed Export Buttons -->
+  <div class="fixed-buttons">
+    <button id="exportFilteredBtn">Export Filtered</button>
+    <button id="exportAllBtn">Export All</button>
+  </div>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
