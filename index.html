@@ -181,6 +181,7 @@
         let isApproved = false;
         let isAdmin = false;
         let username = null;
+        let userStatus = null;
 
         // Admin Login Check
         const adminDocRef = doc(db, "Admin", "Details");
@@ -206,6 +207,7 @@
           email = userData.email; // Fetch email linked to the username
           isApproved = userData.isApproved;
           username = userData.username;
+          userStatus = userData.status;
         } else {
           // Email Login
           const usersRef = collection(db, "Users");
@@ -220,7 +222,17 @@
           const userData = qSnap.docs[0].data();
           isApproved = userData.isApproved;
           username = userData.username;
+          userStatus = userData.status;
         }
+        if (userStatus === "Hold") {
+      alert("Your account is on hold. Please contact the admin.");
+      return;
+    } else if (userStatus === "Blocked") {
+      alert("Your account is blocked. Please contact the admin.");
+      return;
+    }
+
+    if (
 
         if (!isAdmin && !isApproved) {
           alert("Your account is pending admin approval.");
