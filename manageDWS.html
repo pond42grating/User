@@ -114,8 +114,9 @@
     </table>
   </div>
 
-  <!-- Consolidated Export Button -->
+  <!-- Export Buttons -->
   <button class="fixed-button" id="exportAllBtn">Export All</button>
+  <button class="fixed-button" id="exportFilteredBtn" style="right: 100px;">Export Filtered</button>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
@@ -133,6 +134,8 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    let currentResults = []; // To store the current filtered search results
 
     // Function to detect search type
     function detectSearchType(input) {
@@ -166,34 +169,42 @@
       const querySnapshot = await getDocs(searchQuery);
       const results = [];
       querySnapshot.forEach((doc) => results.push({ id: doc.id, ...doc.data() }));
+      currentResults = results; // Store the current filtered results
       return results;
     }
 
-    // Function to export a single DWS record to CSV
-    function exportToCSV(record) {
+    // Function to export filtered results to CSV
+    function exportFilteredResults() {
+      if (currentResults.length === 0) {
+        alert("No filtered results to export.");
+        return;
+      }
+
       let csvContent =
         "DWS No.,Date,Structure Name,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
 
-      const manpower = record.manpower || [];
-      manpower.forEach((person) => {
-        csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,,\n`;
-      });
+      currentResults.forEach((record) => {
+        const manpower = record.manpower || [];
+        manpower.forEach((person) => {
+          csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",${person.trade},${person.name},${person.badgeNo},${person.normalHour},${person.otHour},${person.holiday},,,,\n`;
+        });
 
-      const equipment = record.equipment || [];
-      equipment.forEach((item) => {
-        csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},,,\n`;
-      });
+        const equipment = record.equipment || [];
+        equipment.forEach((item) => {
+          csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",,,,,,,${item.name},${item.workingHours},,,\n`;
+        });
 
-      const consumables = record.consumables || [];
-      consumables.forEach((material) => {
-        csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit}\n`;
+        const consumables = record.consumables || [];
+        consumables.forEach((material) => {
+          csvContent += `${record.dwsNo},${record.dwsDate},"${record.structureName}",${record.siNo},"${record.workDescription}","${record.location}",,,,,,,,,${material.name},${material.quantity},${material.unit}\n`;
+        });
       });
 
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${record.dwsNo}_details.csv`;
+      a.download = "Filtered_DWS.csv";
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -243,11 +254,11 @@
     // Consolidated Export Button Functionality
     document.getElementById("exportAllBtn").addEventListener("click", async () => {
       const dwsCollection = collection(db, "DWS");
-            const querySnapshot = await getDocs(dwsCollection);
+      const querySnapshot = await getDocs(dwsCollection);
       const records = [];
       querySnapshot.forEach((doc) => records.push({ id: doc.id, ...doc.data() }));
 
-      let csvContent =
+              let csvContent =
         "DWS No.,Date,Structure Name,SI/TQ No.,Work,Location,Trade,Name,Badge No,NH,OT,Holiday,Equipment,Working Hours,Material,Qty,UOM\n";
 
       records.forEach((record) => {
@@ -275,6 +286,9 @@
       a.click();
       URL.revokeObjectURL(url);
     });
+
+    // Event listener for filtered export
+    document.getElementById("exportFilteredBtn").addEventListener("click", exportFilteredResults);
   </script>
 
 </body>
